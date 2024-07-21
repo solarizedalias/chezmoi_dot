@@ -1,0 +1,71 @@
+# shellcheck source=/dev/null
+# shellcheck shell=bash
+:
+
+# export PATH="$PATH:/Users/ykksd/.nodebrew/current/bin"
+
+# replacing /Users/ykksd/miniconda3/bin:/ in PATH with ""
+# alias brew="env PATH=${PATH/\/Users\/ykksd\/miniconda3\/bin:/} brew"
+
+# If not running interactively, don't do anything
+# ref. https://www.gnu.org/software/bash/manual/html_node/Is-this-Shell-Interactive_003f.html
+if [ -z "$PS1" ]; then
+   return
+fi
+
+source ~/.bash_alias
+setalias
+source ~/.bash_function
+source ~/.bash_only_function
+source ~/.commacd.sh
+
+if type cod >/dev/null; then
+  source <(cod init $$ bash);
+fi
+
+# if type navi >/dev/null; then source "$(navi widget bash)"; fi
+[[ -s "$HOME/bin/.git-prompt.sh" ]] && source ~/bin/.git-prompt.sh
+[[ -s "$HOME/bin/.git-completion" ]] && source ~/bin/.git-completion.bash
+
+if type thefuck >/dev/null; then eval "$(thefuck --alias)"; fi
+if type hub >/dev/null; then eval "$(hub alias -s)"; fi
+
+# source ~/dotfiles/.bashfunction
+
+PS1="\[\e[33m\]\#\[\e[0m\] \t \[\e[4;31m\]\W\[\e[0m\]$(__git_ps1 " %s") \$ "
+PROMPT_COMMAND='add_line'
+
+# Long
+# export PS1="\[\e[4;91m\]\w\[\e[0m\]\n\[\e[92m\]\#\[\e[0m\] \t \[\e[92m\]$(__git_ps1 "%s")\[\e[0m\] \$ > "
+export PS1
+
+# HSTR configuration - add this to ~/.bashrc
+alias hh=hstr                   # hh to be alias for hstr
+export HSTR_CONFIG=hicolor      # get more colors
+shopt -s histappend             # append new history items to .bash_history
+export HISTCONTROL=ignorespace  # leading space hides commands from history
+export HISTFILESIZE=10000       # increase history file size (default is 500)
+export HISTSIZE=${HISTFILESIZE} # increase history size (default is 500)
+# ensure synchronization between bash memory and history file
+export PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND}"
+# if this is interactive shell, then bind hstr to Ctrl-r (for Vi mode check doc)
+if [[ $- =~ .*i.* ]]; then bind '"\C-r": "\C-a hstr -- \C-j"'; fi
+# if this is interactive shell, then bind 'kill last command' to Ctrl-x k
+if [[ $- =~ .*i.* ]]; then bind '"\C-xk": "\C-a hstr -k \C-j"'; fi
+
+# Source goto
+[[ -s "/usr/local/share/goto.sh" ]] && source /usr/local/share/goto.sh
+
+. ~/.bash.d/cht.sh
+source /Users/ykksd/solarizedalias/github.com/alacritty/alacritty/extra/completions/alacritty.bash
+
+#complete -C /Users/ykksd/bin/vault vault
+
+source /Users/ykksd/Library/Preferences/org.dystroy.broot/launcher/bash/br
+source ~/.shared_rc
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# tab multiplexer configuration: https://github.com/austinjones/tab-rs/
+source /Users/ykksd/.tab/completion/tab.bash
+# end tab configuration
+
