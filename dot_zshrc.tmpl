@@ -1,6 +1,6 @@
 # Created by newuser for 5.8
 
-{{- if .chezmoi.os "darwin" }}
+{{- if eq .chezmoi.os "darwin" }}
 # (~/.zshrc 冒頭)
 # in ~/.zshenv, executed `unsetopt GLOBAL_RCS` and ignored /etc/zshrc
 [[ -r /etc/zshrc ]] && . /etc/zshrc
@@ -55,7 +55,7 @@ if [[ ! -o login ]];then
   return
 fi
 
-{{ if eq .chezmoi.os "MBP2017SA" }}
+{{ if eq .chezmoi.hostname "MBP2017SA" }}
 
 typeset -A ZINIT
 ZINIT[ZCOMPDUMP_PATH]="${HOME}/.zcompdump"
@@ -90,11 +90,11 @@ autoload -Uz bashcompinit && bashcompinit
 
 # Zinit Plugs
 
-{{ if eq .chezmoi.os "MBP2017SA" }}
+{{ if eq .chezmoi.hostname "MBP2017SA" }}
 source ~/dotfiles/.zinit_plugin
 {{ end }}
 
-{{ if eq .chezmoi.os "MBP2017SA" }}
+{{ if eq .chezmoi.hostname "MBP2017SA" }}
 builtin pushd -q "${DROOT:-${HOME}/dotfiles}"
 
 . ./.bash_alias
