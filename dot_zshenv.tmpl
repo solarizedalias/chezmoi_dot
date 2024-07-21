@@ -1,7 +1,9 @@
 
 (( ZSH_PROFILE_STARTUP_TIME )) && builtin zmodload zsh/zprof
 
+{{- if eq .chezmoi.hostname "MBP2017SA" }}
 if [[ -o interactive ]]; then
+  # FIXME: this might not be working as expected
   if [[ -n ~/.zinit/bin/zmodules/Src/zdharma/zplugin(|2).(bundle|so)(#qND-*) ]]; then
     module_path+=( ~/.zinit/bin/zmodules/Src )
 
@@ -11,6 +13,7 @@ if [[ -o interactive ]]; then
     }
   fi
 fi
+{{- end }}
 
 export PATH
 export MANPATH
