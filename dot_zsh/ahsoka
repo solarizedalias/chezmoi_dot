@@ -1,0 +1,55 @@
+# vim: set ft=zsh:
+
+#unf#
+typeset -ag E_AHSOKA
+E_AHSOKA=( ${(k)functions} )
+trap "unset -f -- \"\${(k)functions[@]:|E_AHSOKA}\" &>/dev/null; unset E_AHSOKA" EXIT
+trap "unset -f -- \"\${(k)functions[@]:|E_AHSOKA}\" &>/dev/null; unset E_AHSOKA; return 1" INT
+
+function ahsoka::runiq() {
+  local IS_RUNIQ_AVAILABLE
+  type runiq >/dev/null 2>&1 && IS_RUNIQ_AVAILABLE=1 || IS_RUNIQ_AVAILABLE=0
+  (( IS_RUNIQ_AVAILABLE )) && runiq - || cat -
+}
+
+function ahsoka::main() {
+  for key in ${(k)commands} ${(k)functions} ${(k)aliases} ${(k)galiases} ${(k)saliases} ${(k)builtins} ${(k)widgets} ${(k)parameters} ${(k)modules} ${(k)options} ${(@)reswords}; do
+    [[ "${key}" =~ ^\s*$ ]] && continue
+    {
+      if (( ${+commands[${key}]} )) || (( ${+functions[${key}]} )) || (( ${+builtins[${key}]} )) || (( ${+aliases[${key}]} )) || (( ${+galiases[${key}]} )); then
+        type "${key}" 2>/dev/null
+      elif (( ${+widgets[${key}]} )); then
+        echo "${key} is a zle widget."
+      elif (( ${+parameters[${key}]} )); then
+        echo "${key} is a variable ${(tP)${(b)key}}."
+      elif (( ${+saliases[${key}]} )); then
+        echo "${key} is a suffix alias $(alias -s ${key})."
+      elif (( ${+modules[${key}]} )); then
+        echo "${key} is a zsh module (${modules[${key}]})."
+      elif (( ${+options[${key}]} )); then
+        echo "${key} is a zsh option (${options[${key}]})."
+      else
+        echo "${key} is (should be) a reserved word $(type ${key} 2>/dev/null)."
+      fi
+    } always {
+      case ${TRY_BLOCK_ERROR} in
+        (0) : ;;
+        (1) echo "Try Block ERROR: keys is ${key}." ;;
+        (*) echo "Weird: ${TRY_BLOCK_ERROR}." ;;
+      esac
+      (( TRY_BLOCK_ERROR = 0 ))
+    }
+  done
+}
+
+{
+  ahsoka::main | ahsoka::runiq
+} always {
+  case ${TRY_BLOCK_ERROR} in
+    (0) : ;;
+    (1) echo "Try Block Error in Global scope." ;;
+    (*) echo "So weird: ${TRY_BLOCK_ERROR}" ;;
+  esac
+  (( TRY_BLOCK_ERROR = 0 ))
+}
+

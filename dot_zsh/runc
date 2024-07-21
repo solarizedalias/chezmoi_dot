@@ -1,0 +1,37 @@
+
+# ==========================================================
+# runc
+# Sat Dec 12 23:38:31 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber         NO_append_create
+
+local CNAME=${(%):-'%D{%F-%H%M%S}'}.c
+local TMPBASE="${TMPDIR:-/tmp}/${0}-$$"
+builtin trap '[[ -d '"${TMPBASE}"' ]] && rm -rf '"${TMPBASE:?}" 1 2 3 15
+
+local CODE=${TMPBASE}/${CNAME}
+local CC=${CC:-/usr/bin/cc}
+local BINNAME="${BINNAME:-${CNAME:r}}"
+
+local -a code_argv=( ${(@)argv[1,${argv[(i)--]} - 1]} )
+local -a prg_argv=( ${(@)argv[${argv[(i)--]} + 1,-1]} )
+
+(
+  {
+    builtin umask 0077
+    builtin zmodload zsh/files
+    mkdir -p ${TMPBASE}
+    builtin print -rl -- ${(@)code_argv} >| ${CODE}
+    ${CC} -o ${TMPBASE}/${BINNAME} ${CODE}
+    ${TMPBASE}/${BINNAME} ${(@)prg_argv}
+  } always {
+    rm -rf ${TMPBASE:?}
+  }
+)
+

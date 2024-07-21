@@ -1,0 +1,30 @@
+# shellcheck shell=bash
+
+function echo_r () {
+  echo -e "\033[1;31m$*\033[0;39m"
+  return 0
+}
+function echo_blood () {
+  echo -e "\e[38;5;160m$*\e[0;39m"
+}
+function echo_superblue () {
+  echo -e "\e[38;5;021m$*\e[0;39m"
+}
+function echo_b () {
+  echo -e "\033[1;34m$*\033[0;39m"
+  return 0
+}
+function echo_y () {
+  echo -e "\033[0;33m$*\033[0;39m"
+  return 0
+}
+function echo_g () {
+  echo -e "\033[0;32m$*\033[0;39m"
+  return 0
+}
+function echo_darkside() {
+ echo -e "\e[1;4;3;5;38;5;160m$*\e[0;39m"
+}
+function echo_blink_green() {
+  echo -e "\e[4;5;32m$*\e[0;39m"
+}

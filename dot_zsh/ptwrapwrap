@@ -1,0 +1,23 @@
+
+# ==========================================================
+# ptwrapwrap
+# Sat May 15 20:56:46 2021
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+(( ${+commands[ptwrap]} )) || return 127
+
+() {
+  if (( ${+aliases[$1]} + ${+functions[$1]} + ${+builtins[$1]} == 0)) ; then
+    command ptwrap "$@"
+    return $?
+  else
+    eval "$@"
+  fi
+} "$@"
+

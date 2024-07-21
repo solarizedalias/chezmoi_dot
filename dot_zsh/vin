@@ -1,0 +1,62 @@
+
+# ==========================================================
+# vin
+# Mon Nov 16 19:48:58 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber         NO_append_create
+
+local -a opts
+integer F_STR F_GL
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  s -strings=s \
+  g -graph=g
+
+(( ${opts[(I)(-h|--help|-v|--version)]} )) && return 0
+: ${F_STR::=${opts[(I)(-s|--strings)]}} \
+  ${F_GL::=${opts[(I)(-g|--graph)]}}
+
+local -a targets=( ${^@}(ND-.) )
+[[ -t 0 ]] || targets=( /dev/stdin )
+
+(
+  local F BUF
+  builtin zmodload zsh/system
+  integer ERRNO RET FD
+  local NL=$'\n'
+  for F in ${(@)targets}; do
+    builtin sysopen -r -u FD ${F} || continue
+    while builtin sysread -s 65535 -i $(( FD )) BUF ; do
+      (( F_GL )) && BUF="${BUF//[^[:graph:]]/ }"
+      (( F_STR )) &&
+        BUF="${BUF:gs@[^[:print:]][[:print:]][^[:print:]]@$'\0'@:gs@[^[:print:]]@$'\0'@:gs@[$'\0']##@${NL}@:gs@[${NL}]##@${NL}@}"
+      (( F_STR )) || BUF="${(V)BUF}"
+      builtin syswrite -o 1 ${BUF}
+    done
+    RET=$?
+    exec {FD}<&-
+    case ${RET} in
+      (<1-4>)
+        (( ERRNO )) && builtin syswrite ${ERRNO}
+        RET=$(( ERRNO != 0 ? ERRNO : RET ))
+      ;;
+      (0|5)
+        : EOF
+      ;;
+      (*)
+        : should\'t happen
+      ;;
+    esac
+  done
+  exit RET
+)
+
+return $?
+

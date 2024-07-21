@@ -1,0 +1,33 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# rgf
+# Tue Aug  4 12:20:59 2020
+# AUTHOR: solarizedalias
+# Interactive grep (fzf + ripgrep)
+# ==========================================================
+
+emulate -L zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+# Integration with ripgrep
+local RG_PREFIX="rg --hidden --pcre2 --follow --glob='!**/.git/**' --column --line-number --no-heading --color=always --smart-case "
+local INITIAL_QUERY="$*"
+local FZF_DEFAULT_COMMAND
+
+local -a res
+res=(
+  ${(f)"$(
+    FZF_DEFAULT_COMMAND="$RG_PREFIX '$INITIAL_QUERY'" \
+      fzf \
+        --reverse \
+        --bind "change:reload:$RG_PREFIX {q} || true" \
+        --ansi --phony --query "$INITIAL_QUERY" \
+        --preview='preview.sh {}'
+  )"}
+)
+
+print -l ${(@)res}
+

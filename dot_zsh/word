@@ -1,0 +1,31 @@
+
+
+# ==========================================================
+# word
+# Wed Sep 16 15:30:47 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a opts
+zparseopts -a opts -D -K -M -E s:=opts -separator:=s
+# Don't double quote this expansion or get rid of single quotes in `\040`
+local SEP=${${(@R)opts:#(-s|--separator)}:-${(g:o:):-'\040'}}
+
+local line
+local MATCH MBEGIN MEND
+
+while read -r line; do
+  if (( ${(SB)${:-${SEP}${line}}%${SEP}} > 1 )); then
+    eval 'print -r --' \
+      '${(@)line//(#m)*/${(@)"${(@ps:'${SEP}':)${MATCH}}"['${(@)^${(@M)@:#(-|)<1->(,(-|)<1->)(#c0,1)}:-0}']}}'
+  else
+    local -a words=( ${line} )
+    eval 'print -r --' '${words['${(@)^${(@M)@:#(-|)<1->(,(-|)<1->)(#c0,1)}:-0}']}'
+  fi
+done
+

@@ -1,0 +1,35 @@
+# vim: set ft=zsh:
+
+# ==========================================================
+# whichcomp
+# Wed Jun 17 21:56:44 2020
+#
+# Prints currently defined completion funcs for given commands.
+# ==========================================================
+
+emulate -L zsh
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+# https://zdharma.org/Zsh-100-Commits-Club/Zsh-Plugin-Standard.html
+0="${${ZERO:-${0:#$ZSH_ARGZERO}}:-${(%):-%N}}"
+0="${${(M)0:#/*}:-$PWD/$0}"
+# Then ${0:h} to get plugin’s directory
+
+local THISFILE="${0:t}"
+
+(( ${+_comps[${THISFILE}]} )) || {
+  compdef _command_names ${THISFILE}
+  rehash
+}
+
+local -a args
+args=(
+  $@
+)
+
+local i
+
+for i in "${(@)args}"; do
+  print $i ${${$(whence -v ${_comps[(K)$i]})/(#s)[^\/]##/}:-${_comps[(K)$i]}}
+done
+

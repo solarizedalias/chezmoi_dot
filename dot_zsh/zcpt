@@ -1,0 +1,6 @@
+
+local zwc
+for zwc in $@; do
+  [[ -f ${zwc} && ${zwc} == *.zwc(.old)# ]] && builtin zcompile -t ${zwc}
+done
+

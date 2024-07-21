@@ -1,0 +1,24 @@
+
+# ==========================================================
+# edocrahc
+# Sun Dec 20 14:01:17 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a opts fd var pats
+zparseopts -a opts -D -K -M -E \
+  a b c C:=opts \
+  D i l m:=opts \
+  n N o O p P r R s S \
+  u:=opts v:=opts x:=opts X:=opts z
+
+builtin set -- ${(@R)argv:#(-|--)}
+
+local MATCH MBEGIN MEND
+builtin print ${(@)opts} ${(@V)argv/(#m)*/${(#X)MATCH}}
+

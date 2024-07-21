@@ -1,0 +1,23 @@
+# vim: set filetype=zsh:
+
+local VIM
+
+case "${EDITOR}" in
+  (*/vim)  VIM=vim  ;;
+  (*[/]#nvim) VIM=nvim ;;
+  (*)    VIM=vim  ;;
+esac
+
+[[ $# -lt 1 ]] && {
+  echo ''
+  echo '.+* Vim + ack .+*'
+  echo ''
+  echo 'Usage: vck [:pattern:]'
+  return 1
+}
+
+unset __file__ && local __file__
+
+__file__=$(ack $* --files-with-matches --ignore-case | fzf --ansi --reverse --height=50% --preview "preview.sh {}")
+[[ -f "${__file__}" ]] && ${VIM} "${__file__}"
+

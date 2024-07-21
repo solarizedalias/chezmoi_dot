@@ -1,0 +1,106 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# zxargs
+# Tue Nov 24 13:41:09 2020
+# AUTHOR: solarizedalias
+# Use with care
+# ==========================================================
+
+emulate -L zsh
+setopt NO_notify NO_monitor
+setopt extendedglob
+
+integer ALREADY_HAS_JOBS=${#jobstates}
+(( ALREADY_HAS_JOBS )) ||
+  trap '(( ${#jobstates} )) && kill %${(@k)^jobstates}; return 1' 1 2 3 15
+
+local -a opts eof=( -e ::: ) procs=( -p 1 )
+local -A Cond
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  e:=eof -eof:=e \
+  p:=procs -parallel:=p -max-procs:=p \
+  n -dry-run=n \
+  c:=Cond -if:=c \
+  -debug
+
+(( ${opts[(I)(-h|--help|-v|--verison)]} )) && return
+
+integer DRY_RUN MAXP DEBUG
+local IFS="${IFS}" PH
+
+: ${DRY_RUN::=${opts[(I)(-n|--dry-run)]}} \
+  ${PH::=${eof[2]}} \
+  ${MAXP::=${procs[(R)<1->]:-1}} \
+  ${DEBUG::=${opts[(I)(--debug)]}}
+
+if (( ${argv[(I)*${PH}*]} +
+      ${argv[(I)(*[^[:IDENT:]]|)(line)(|[^[:IDENT:]]*)]} == 0 )); then
+  argv+=( ${PH} )
+fi
+
+if (( ALREADY_HAS_JOBS )); then
+  if (( MAXP > 1 )); then
+    local Y D
+    [[ -t 2 ]] && : ${Y::=${(%):-'%F{yellow}'}} ${D::=${(%):-%f}}
+    builtin print -u2 -rl -- \
+      "${Y}WARNING${D}: You have jobs already running." \
+      "${Y}WARNING${D}: max process count is set to 1 (no forking)"
+    (( MAXP = 1 ))
+  fi
+fi
+
+# Injected variables
+# NR       Line number
+# line     Line content
+#
+integer NR JOBS
+local line
+while read -r line && (( ++NR )); do
+  (( DEBUG )) &&
+    builtin print -u2 -r -- "line: ${line}" &&
+    builtin print -u2 -nr -- "Cond: ${(vj: || :)Cond}" &&
+    { eval ${(vj: || :)Cond} && print -u2 -r ' is true' || print -u2 -r ' is false' }
+
+  # ${(z)${DRY_RUN:+builtin print --}} eval \
+  # eval ${argv[1,${argv[(i)::]} - 1]} ${line} ${argv[${argv[(i)::]} + 1,-1]}
+
+  if (( ${#Cond} < 1 )) || eval ${(vj: || :)Cond} ; then
+    if (( DRY_RUN )); then
+      (( DEBUG )) && print -u2 -r -- "Run: builtin print -r -- ${(@)${(@z)argv}//${PH}/${(q+)line}}"
+      builtin print -r -- ${(@)${(@z)argv}//${PH}/${(q+)line}}
+    else
+      JOBS=${#${jobstates[(R)*=running]}}
+      if (( ${JOBS} < MAXP - 1 )); then
+        (( DEBUG )) && print -u2 -r -- "Run: builtin eval ${(@)${(@z)argv}//${PH}/${(q+)line}} &"
+        builtin eval "${(@)${(@z)argv}//${PH}/${(q+)line}}" &
+      else
+        (( DEBUG )) && print -u2 -r -- "Run: builtin eval ${(@)${(@z)argv}//${PH}/${(q+)line}}"
+        builtin eval "${(@)${(@z)argv}//${PH}/${(q+)line}}"
+      fi
+    fi
+  fi
+  (( DEBUG )) && print -u2 ''
+done </dev/stdin
+
+if (( ! ALREADY_HAS_JOBS )); then
+  while (( ${#${(@)jobstates[(R)*=running]}} )); do
+    builtin print -u2 -nr -- \
+      $'\r'${(pr:COLUMNS:):-}$'\r'${#jobstates}$'\r' &&
+        : $( builtin read -u 1 -t 1 )
+  done
+fi
+
+# Workaround for `: | { : } &>/dev/null` breaking tty's stdout
+# (redirect is not restored at exit)
+# ZSH_SUBSHELL == 0 means it's running in the current shell.
+if (( ZSH_SUBSHELL < 1 )); then
+  if [[ -c ${TTY} ]]; then
+    [[ -t 1 ]] || exec >/dev/tty
+    [[ -t 2 ]] || exec 2>/dev/tty
+  fi
+fi
+

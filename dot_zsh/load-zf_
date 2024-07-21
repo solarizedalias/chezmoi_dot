@@ -1,0 +1,6 @@
+# vim: set ft=zsh:
+
+# loads zsh builtin clones for common commands
+# but only the prefixed zf_* equivalents so all the externals (with more features) still available.
+zmodload -F -m zsh/files b:zf_\*
+

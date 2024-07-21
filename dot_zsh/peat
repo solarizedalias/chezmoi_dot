@@ -1,0 +1,35 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# peat
+# Thu Oct  8 22:29:47 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber NO_APPEND_CREATE
+
+integer RUNS WARMUP
+local -a opts warms runs
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  w:=warms -warmup:=w \
+  r:=runs -runs:=r
+
+: ${WARMUP::=${${(@)warms[(R)<0->]}:-0}} \
+  ${RUNS::=${${(@)runs[(R)<1->]}:-10}}
+
+# Doesn't really look like a meaningful warmup
+repeat WARMUP; do
+  ( eval $@ >/dev/null )
+done && time (
+  repeat RUNS; do
+    ( eval $@ >/dev/null )
+  done
+)
+

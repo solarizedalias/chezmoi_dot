@@ -1,0 +1,52 @@
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent   no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots        rc_quotes      hist_subst_pattern
+setopt NO_clobber         NO_append_create
+
+
+if (( $# < 1 )); then
+  print -u2 "wrong number of arguments got $#, expected 1"
+  return 1
+fi
+if (( ${+functions[$1]} < 1 )); then
+  print -u2 "no such function: $1"
+  return 1
+fi
+
+local TESTEE="${1}"
+local COMPLOG_DIR="${COMPLOG_DIR:-${HOME}/.complog.d}"
+local COMPLOG_FILE=${COMPLOG:-${(%):-${TESTEE}-'%D{%Y-%m-%d-%H-%M-%S}'.log}}
+
+function "COMPLOG_${TESTEE}"() {
+  local T=$'\t' D='$'
+  local -a fields=(
+    CURRENT
+    words
+    curcontext
+    IPREFIX
+    PREFIX
+    SUFFIX
+    ISUFFIX
+  )
+
+  print -r -- "${EPOCHSECONDS}:${TESTEE}"
+  local F
+  for F in ${(@)fields}; do
+    print -r -- "${T}${F}: ${(j: :)${(P)F}} ${D}"
+  done
+
+  print -r -- "${T}compstate: "
+  for KEY in ${(k@)compstate}; do
+    print -r -- "${T}${T}${KEY}: ${(j: :)${compstate[${KEY}]}} ${D}"
+  done
+
+  print
+  print -r -- "${T}BUFFER: ${BUFFER} ${D}"
+
+} >>| "${COMPLOG_DIR}/${COMPLOG_FILE}"
+
+function COMPLOG_DESTROY() {
+  unfunction -m 'COMPLOG_*'
+}
+

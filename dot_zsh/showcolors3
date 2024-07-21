@@ -1,0 +1,16 @@
+# vim:ft=zsh:
+
+local COLS
+COLS=$(( COLUMNS * 16 / 200 ))
+print -aC${COLS} ${(s: :)=:-$(
+  local -A FG BG
+  for color in {0..255}; do
+    FG[${color}]="%{[38;5;${color}m%}"
+    BG[${color}]="%{[48;5;${color}m%}"
+  done
+  for color in {0..255}; do
+      print -Pn "${FG[${color}][3,-3]}${(l:3::0:)color}:${(l:2::0:):-$(([##16] ${color}))}%f   "
+      print -Pn "${BG[${color}][3,-3]}${(l:3::0:)color}:${(l:2::0:):-$(([##16] ${color}))}%k   "
+  done
+)}
+

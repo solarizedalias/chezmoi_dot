@@ -1,0 +1,33 @@
+# vim: set ft=zsh:
+
+emulate -LR zsh
+setopt rc_quotes
+
+# COMPILE with NO COMPLY
+alias ntzwc='print -l -- ./*~*.zwc(-NDe:''[[ "${REPLY}" -nt "${REPLY}".zwc ]]'':)'
+alias missingzwc='print -l -- ./*(-NDe:''[[ ! "${REPLY}" == *.zwc ]] && [[ ! -f "${REPLY}".zwc ]]'':)'
+alias strayzwc='print -l -- ./*(-NDe:''[[ "${REPLY}" == *.zwc ]] && [[ ! -e ${REPLY%.zwc} ]]'':)'
+
+alias rntzwc='print -l -- ./**/*~*.zwc(-NDe:''[[ "${REPLY}" -nt "${REPLY}".zwc  ]]'':)'
+alias rmissingzwc='print -l -- ./**/*(-NDe:''[[ ! "${REPLY}" == *.zwc ]] && [[ ! -f "${REPLY}".zwc ]]'':)'
+alias rstrayzwc='print -l -- ./**/*(-NDe:''[[ "${REPLY}" == *.zwc ]] && [[ ! -e "${REPLY%.zwc}" ]]'':)'
+
+# Destroy the Broken
+alias brokenlinks='print -l -- ./*(ND-@)'
+alias ubrokenlinks='print -l -- ./*(ND-@) | zxargs -- unlink :::'
+
+alias rbrokenlinks='print -l -- ./**/*(ND-@)'
+alias rubrokenlinks='print -l -- ./**/*(ND-@) | zxargs -- unlink :::'
+alias urbrokenlinks='print -l  -- ./**/*(ND-@) | zxargs -- unlink :::'
+
+alias gitignored='print -l -- ${(@)^~${(@)${(@)${(f)"$(
+  ${NULLCMD:?} "$(
+    git config --get --global core.excludesfile
+  )"(ND) .gitignore(ND)
+)"}:#(#s)[[:blank:]]#\#*(#e)}:gs/(#s)\!/*~^/:gs@(#s)/@"$(
+  git rev-parse --show-toplevel
+)"/@}%[[:blank:]]#\#*}(ND)'
+
+alias unsafe='print -l -- ./*(ND^@f:?00:)'
+alias dangerous='print -l -- ./*(ND^@f:??0:)'
+

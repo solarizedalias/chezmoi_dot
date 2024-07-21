@@ -1,0 +1,29 @@
+# vim: set ft=zsh:
+
+local viminfofile
+viminfofile="${viminfo:-$HOME/.viminfo}"
+local files
+files="$(grep '^>' "${viminfofile}" | sed 's/^> *//' )"
+local target
+target="$(echo "${files}" | while read -r line ; do [[ -f "${line/\~/${HOME}}" ]] && echo "${line/\~/${HOME}}" ; done | sk --ansi --height=70% --layout=reverse --preview-window=right:50% --preview='preview.sh {}')"
+
+# {
+#   echo ${target}
+#   target=${target/\~/${HOME}}
+#   echo ${target}
+#   echo ${(e)target}
+#   [[ -f ${target} ]] && echo "exists."
+# } >&2
+
+# Ensure migration.
+
+local VIM
+
+case "${EDITOR}" in
+  (*/vim)  VIM=vim  ;;
+  (*[/]#nvim) VIM=nvim ;;
+  (*)    VIM=vim  ;;
+esac
+
+[[ -f "${target}" ]] && ${VIM} "${target}" || true
+

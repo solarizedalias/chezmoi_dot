@@ -1,0 +1,13 @@
+# vim: set filetype=zsh:
+
+#function _get_gists() {
+#}
+
+
+unset _gist_content && local _gist_content
+_gist_content=$(gist -r $(gist -l | fzf --ansi --reverse --height=50% | sed 's/^.*\///g' | sed 's/ .*$//') )
+
+
+
+echo "${_gist_content}" | pygmentize -O style=monokai -g
+

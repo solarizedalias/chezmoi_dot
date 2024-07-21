@@ -1,0 +1,41 @@
+
+# ==========================================================
+# charcode
+# Thu Sep 17 22:28:36 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt c_bases octal_zeroes
+
+integer STDIN=0
+[[ -t 0 ]] || (( ++STDIN ))
+
+local c
+if (( STDIN )); then
+  while IFS= read -r -d '' -u0 -k 1 c; do
+    print -r -- \
+      ${(r:3:)${(V)c}} \
+      ${(r:4:):-${(l<3><0>)$(( #c ))}} \
+      ${(r:6:)$(( [#8] #c ))} \
+      ${(r:5:)$(( [#16] #c ))} \
+      ${(r:12:)${:-0b${(l<7><0>)$(( [#2] #c ))/(#s)2\#/}}}
+  done
+else
+  local MATCH MBEGIN MEND
+  local -a chars=(
+    ${(@u)${(s::)${(j::)argv[@]}}}
+  )
+  for c in ${(@)chars}; do
+    print -r -- \
+      ${(r:3:)${(V)c}} \
+      ${(r:4:):-${(l<3><0>)$(( #c ))}} \
+      ${(r:6:)${:-0o${(l<3><0>)$(( [#8] #c ))}}} \
+      ${(r:5:)$(( [#16] #c ))} \
+      ${(r:12:)${:-0b${(l<7><0>)$(( [#2] #c ))/(#s)2\#/}}}
+  done
+fi
+

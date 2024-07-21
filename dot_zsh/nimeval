@@ -1,0 +1,20 @@
+
+# ==========================================================
+# nimeval
+# Fri Nov 20 22:57:19 2020
+# AUTHOR: solarizedalias
+# Evaluates string from commmand param as nim code
+# In this way, you can use stdin for the input to the program,
+# not to the compiler.
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber NO_append_create
+
+(( ${+commands[nim]} )) || return 1
+
+local TMPSUFFIX='.nim'
+command nim -r --hints:off c =( builtin print -r -- "$@" )
+

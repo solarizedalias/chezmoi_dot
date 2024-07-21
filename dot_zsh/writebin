@@ -1,0 +1,26 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# writebin
+# Sat Oct 24 12:31:21 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber NO_append_create
+
+local LC_ALL=C
+local -a data=( $@ )
+local DATA
+
+[[ -t 0 ]] || \
+  while read -r -u 0 -A DATA; do
+    data+=( ${DATA} )
+  done
+
+printf "$( printf '\\x%x' "${(@)data}" )"
+

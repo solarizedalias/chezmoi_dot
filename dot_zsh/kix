@@ -1,0 +1,21 @@
+# vim: set filetype=zsh:
+
+function _show_usage() {
+  cat <<- EOS
+    Usage:
+      kix [:keybind:][:key sequence:?]
+      [:keybind:] is one of $(bindkey -l | tr '\n' ' ') .
+      [:key sequence:] is, for example, '^X' (Ctrl+x).
+      For more information, it would be useful to check every binding of the current keymap with the command 'bindkey -L',
+      which reveals each command defining its binding.
+EOS
+  return 1
+}
+
+# ==============================================
+if [[ $# -eq 0 ]];then
+  _show_usage
+else
+  bindkey -M "$1" | tr '"' ' ' | fzf
+fi
+

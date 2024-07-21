@@ -1,0 +1,385 @@
+
+# vim:foldmethod=marker:ft=zsh:
+
+# ==========================================================
+# komp
+# Mon Jul 13 13:55:21 2020
+# AUTHOR: solarizedalias
+# Compare the versions of comp funcs currently in use and
+# that of the same name in zsh repository.
+# ==========================================================
+
+# TODO
+#  * GITHUB_TOKEN for API limit issues
+#  * Users might want to fetch from different branches
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_aliases NO_clobber NO_append_create
+
+local THISFILE=$0
+
+# shellspec
+${__SOURCED__:+unsetopt warn_create_global}
+
+
+# don't expose params created by glob
+local -a match mbegin mend
+
+# local param to store path to temp file (used to dump remote files)
+# It's placed here only for setting traps.
+local TMP DATE
+DATE=${(%):-'%D{%F-%H%M%S}'}
+TMP="${TMPPREFIX:-/tmp}/${THISFILE}-$$-${DATE}"
+
+mkdir -p ${TMP:h}
+(
+  builtin umask 0077
+  : >| ${TMP}
+)
+
+function __TATEXIT() {
+  local TMP=$1
+  [[ -f ${TMP:?} ]] && rm -f ${TMP:?} 2>/dev/null
+  unset -f rm mkdir ${functions[(I)${THISFILE}::*]} 2>/dev/null
+  unset -f $0
+  return 0
+}
+
+builtin trap '(( ${+functions[__TATEXIT]} )) && __TATEXIT '${TMP}'; return 1' 1 2 3 15
+
+# store path to the file actually in use, and the path to the file to be compared, respectively.
+local IN_USE FROM_HEAD
+
+# Options
+integer FETCH=1 QUIET=0 SEARCH=0 VERBOSE=0 RAWURL=0
+local OWNER='zsh-users' REPO='zsh' FNAME
+
+# [[[
+local USAGE="$( <<EOF
+Usage: ${0}
+  ${0} [OPTIONS] <SERVICE | _FUNCTION> [[OWNER/]REPOSITORY]
+
+  Show diffs of the completion function source codes between the versions in the local
+  environment and that on the github repositories.
+  The first argument (required) is to specify service (usually command names), or the name
+  of the function providing the completion (e.g. _ls for ls).
+  You can specify the Github repository as the optional 2nd argument formatted in
+  \`OWNER/REPO\` or the direct url of the raw contents of the completion files
+  (\`https://raw.githubusercontent/...\`).
+  If you omit the \`OWNER/\` part of the 2nd argument, \`zsh-users\` is assumed, hence it
+  is possible to search completions in \`zsh-users/zsh-completions\` with just
+  \`${0} yarn zsh-completions\`, for example.
+  You can also omit the 2nd argument entirely, in which case, \`zsh-users/zsh\` is searched.
+
+  Exit status will be
+    - 0 if there is no difference between the two files,
+    - 1 if there is,
+    - 2 or 127 on errors.
+
+OPTIONS:
+  -v, --verbose         Print verbose messages for every step in stderr.
+
+  -q, --quiet           Returns 1 as exit code if files have diffs, but prints nothing.
+                        Note that you can use \`--verbose\` and \`--quiet\` both at the same
+                        time, in which cases messages are shown for every step but only the
+                        result is skipped for printing.
+
+  -h, --help            Print this help and return.
+
+  -f, --search-fpath    Search fpath if the provided name was not identical to its filename.
+                        This might be useful for files which provides completions for multiple
+                        commands or completions which work by replacing other completions.
+
+                        For example, _hub (completion for \`hub\` command) works by replacing
+                        the original \`_git\` function (completions for \`git\` command),
+                        which might prevent \`${0}\` detecting the completion source correctly.
+                        In such cases, you might want to use this flag so that ${0} would
+                        look for the source file by the exact name (\`_git\` in this case)
+                        from the \`FPATH/fpath\` variable.
+                        The one first found in fpath would be used. Without this flag,
+                        ${0} will abort with warnings on name disagreements.
+
+  -d, --dir=DIR         Don't search remote repositories and specify the local directory
+                        to be searched instead. Search is done recursively.
+
+  -n, --name=NAME       Specify the name used for the upstream search (or local dir search
+                        for \`-d/--dir\` option). This is useful when the source file containing
+                        the completion is named differently from the name of the function.
+                        (e.g. \`_ninja\` -> \`github.com/ninja-build/ninja/misc/zsh-completion\`)
+
+EXAMPLES:
+  ${0} cat
+    Compare completions defined for cat (usually _cat) and _cat on \`zsh-users/zsh\`.
+
+  ${0} -q -d ~/functions _curl
+    Compare _curl in your environment and _curl from ~/functions or its subdirectories.
+    Suppress diff output.
+
+  ${0} --verbose -- -array-value-
+    Compare completions for -array-value- context (usually _value),
+    with verbose outputs. The usage of \`--\` is suggested to delimit
+    the options from other arguments.
+
+  ${0} -- '-redirect-,>,gzip'
+    Compare completion files for the context \`gzip ...> \`.
+    \`<\` and \`>\` should be escaped from the shell.
+    It's recommended to quote the whole string when possbile.
+
+  ${0} _docker-compose 'docker/compose'
+    Compare _docker-compose in the user's environment and that from the
+    docker's repository.
+EOF
+)"
+# ]]]
+
+# ****************************************
+#               FUNCTIONS
+# ****************************************
+
+function ${THISFILE}::verbose() {
+  (( VERBOSE )) && print -u2 -- $@
+}
+
+# [[[
+# called when FETCH != 0 (default)
+function ${THISFILE}::get_remote_HEAD() {
+
+  local UPSTREAM_URL
+  if (( RAWURL )); then
+    UPSTREAM_URL="${REPO}"
+  else
+    local REMOTE_BASE_URL="https://raw.githubusercontent.com"
+    local API_URL="https://api.github.com/search/code?q=${FNAME}+repo:${OWNER}/${REPO}+in:path"
+    ${THISFILE}::verbose "Searching... ${API_URL}"
+
+    local -a api_res
+    api_res=(
+      ${(f)"$(
+        curl -Ls -H "Authorization: Bearer ${GITHUB_TOKEN:-${GHT}}" ${API_URL}
+      )"}
+    )
+
+    local PATH_TO_UPSTREAM REPOSITORY
+    PATH_TO_UPSTREAM="${${(M@)api_res:#*\"path\":[[:blank:]]#\"*/${FNAME}\"*}/*\"(#b)(*\/*)\"*/${match[@]}}"
+
+    if [[ -z ${PATH_TO_UPSTREAM} ]]; then
+      print -u2 \
+        "Expected ${OWNER}/${REPO}/master/\`PATH/TO/FILE\` on remote for ${FNAME}" \
+        ", but got ${OWNER}/${REPO}/${PATH_TO_UPSTREAM:-\'empty\'}"
+      return 2
+    fi
+    UPSTREAM_URL="${REMOTE_BASE_URL}/${OWNER}/${REPO}/master/${PATH_TO_UPSTREAM}"
+  fi
+
+  ${THISFILE}::verbose "Temp file created at ${TMP}"
+
+  ${THISFILE}::verbose "Fetching ${UPSTREAM_URL}"
+  curl -Ls ${UPSTREAM_URL} >| ${TMP}
+
+  if (( $? )); then
+    print -u2 "Error on fetchng ${UPSTREAM_URL}"
+    return 2
+  fi
+
+  # Mutate
+  FROM_HEAD="${TMP}"
+}
+
+# ]]]
+
+# called when FETCH=0 && ${#dir} == 2
+function ${THISFILE}::get_local_HEAD() {
+  local LOCAL_ROOT
+
+  LOCAL_ROOT="${KOMP_LOCAL_SEARCH_ROOT:?}"
+
+  local -a _tmp
+  _tmp=( ${LOCAL_ROOT}/**/${FNAME}(#qN-.Y1) )
+
+  # Mutate
+  FROM_HEAD="${_tmp[1]}"
+  if [[ -z "${FROM_HEAD}" ]]; then
+    print -u2 "Cannot find ${FNAME} in ${LOCAL_ROOT}"
+    return 2
+  fi
+}
+
+# shellspec
+${__SOURCED__:+return}
+
+# *****************************************
+#               Parse options
+# *****************************************
+local -a opts dir fname
+zparseopts -a opts -D -E -M \
+  h -help \
+  V -version \
+  v -verbose \
+  q -quiet \
+  f -search-fpath \
+  d:=dir -dir:=d \
+  n:=fname -name:=n
+
+[[ -n ${(@M)opts:#(-h|--help)}         ]] && print ${USAGE} && return 0
+[[ -n ${(@M)opts:#(-V|--version)}      ]] && print "0.0.0"  && return 0
+[[ -n ${(@M)opts:#(-q|--quiet)}        ]] && QUIET=1
+[[ -n ${(@M)opts:#(-f|--search-fpath)} ]] && SEARCH=1
+[[ -n ${(@M)opts:#(-v|--verbose)}      ]] && VERBOSE=1
+
+# Push the whole block into a subshell is easier than cleaning up everything manually
+# Especially, about loaded modules
+(
+  function mkdir rm() {
+    if builtin zmodload zsh/files 2>/dev/null; then
+      function mkdir rm() {
+        builtin $0 $@
+      }
+    else
+      function mkdir rm() {
+        command $0 $@
+      }
+    fi
+    $0 $@
+  }
+
+  if (( ${#dir} == 2 )); then
+    FETCH=0
+    local \
+      KOMP_LOCAL_SEARCH_ROOT="${KOMP_LOCAL_SEARCH_ROOT:-${(@)dir[(r)^(-d|--dir)]}}"
+
+    if ! [[ -d "${KOMP_LOCAL_SEARCH_ROOT}" ]]; then
+      print -u2 "${KOMP_LOCAL_SEARCH_ROOT} is not a valid directory."
+      return 2
+    fi
+  elif (( ${#dir} == 0 )); then
+    FETCH=1
+  else
+    # this should not happen but just in case.
+    FETCH=0
+    print -u2 'Invalid number of ${#dir}'
+    return 2
+  fi
+
+  # ******************************************
+  #       Validate positional parameters
+  # ******************************************
+
+  while [[ $1 == -- ]]; do
+    shift
+  done
+
+  if (( $# < 1 || 2 < $# )); then
+    print -u2 "Invalid number of arguments"
+    print -u2 ${USAGE}
+    return 2
+  fi
+
+  # Any string not starting with `_` would be assumed as the name of service
+  # and the corresponding function would be assumed,
+  # or the string is passed to subsequent code blocks as is if it is starting
+  # with `_` (should be already the name of the function in question.)
+
+  local TARGET
+  case "$1" in
+    (_[^_]*)
+      TARGET="$1"
+    ;;
+    ([^_]*)
+      TARGET=${_comps[$1]}
+    ;;
+  esac
+
+  # set filename used for upstream search
+  if (( ${#fname} > 1 )); then
+    FNAME="${fname[2]}"
+  else
+    FNAME="${TARGET}"
+  fi
+
+  # Users might specify the repository as $2
+  if (( $# == 2 )); then
+      # REPO
+      [[ "$2" == [^[:blank:]/]## ]] && REPO=$2
+      # OWNER/REPO
+      if [[ "$2" == (#b)([^[:blank:]/]##)/([^[:blank:]/]##) ]]; then
+        OWNER="${match[1]}"
+        REPO="${match[2]}"
+      fi
+      # Direct URL to raw contents
+      if [[ "$2" == (#b)(http(|s)://raw.githubusercontent.com/[[:graph:]]##) ]]; then
+        REPO="${match[@]}" && RAWURL=1
+      fi
+  fi
+
+  if (( ${+functions[${TARGET}]} < 1 )); then
+    print -u2 "I don't think the function you're looking for doesn't exist in our archive."
+    return 2
+  fi
+
+  # resolve the path if the function is not yet loaded.
+  if [[ -z ${functions_source[${TARGET}]} ]]; then
+    ${THISFILE}::verbose "Resolving the path to the source of ${TARGET}"
+    builtin autoload -R ${TARGET}
+  fi
+
+  IN_USE="${functions_source[${TARGET}]}"
+  if [[ ! -f "${IN_USE}" && "${IN_USE}" == */*.zwc/* && -f "${IN_USE//.zwc/}" ]]; then
+     IN_USE="${IN_USE//.zwc/}"
+  fi
+  ${THISFILE}::verbose "${TARGET} is found at ${IN_USE}"
+
+  # if the name of TARGET != the name of the function
+  if [[ ${IN_USE:t} != ${TARGET} ]]; then
+    if (( SEARCH )); then
+      ${THISFILE}::verbose "Unexpected name for ${TARGET}"
+      ${THISFILE}::verbose "Searching fpath..."
+      # Pick the first one found.
+      local -a found
+      found=( ${${:-${(@)^${(@)^fpath}%%(.zwc)#}/${TARGET}(#qNY1)}[1]} )
+      IN_USE="${found[1]}"
+      ${THISFILE}::verbose "Found ${IN_USE}"
+    else
+      # end this file
+      print -u2 "Expected a name ${TARGET}, but got ${IN_USE}."
+      return 2
+    fi
+  fi
+
+  if (( FETCH )); then
+    ${THISFILE}::get_remote_HEAD || return $?
+  else
+    ${THISFILE}::get_local_HEAD  || return $?
+  fi
+
+  integer RET
+  #
+  # Show diff
+  # Files for the comparison should be ready by this line.
+  if [[ -f ${IN_USE} && -f ${FROM_HEAD} ]]; then
+    # XXX Users might prefer different diff programs, pagers.
+    if ! (( QUIET )); then
+      icdiff ${IN_USE} ${FROM_HEAD} | more -R -e
+    fi
+
+    diff ${IN_USE} ${FROM_HEAD} &>/dev/null
+    RET=$?
+    if (( ! RET )); then
+      ${THISFILE}::verbose "There is nothing to print. (No difference found)."
+    fi
+  else
+    print -u2 "Do both of these really exist?"
+    print -u2 ${IN_USE:-\'empty\'} ${FROM_HEAD:-\'empty\'}
+    RET=127
+  fi
+
+  return RET
+)
+
+integer RET=$?
+
+__TATEXIT ${TMP}
+
+return RET
+

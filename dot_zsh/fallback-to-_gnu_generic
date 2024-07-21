@@ -1,0 +1,26 @@
+# vim: set ft=zsh:
+
+#
+# The main idea is from below.
+# https://github.com/Valodim/zshrc/blob/master/config/05-completion.zsh
+#
+
+((${+functions[compaudit]})) || {
+  autoload -Uz compinit && compinit
+}
+
+compaudit || {
+  echo "Abort." >&2
+  return 1
+}
+
+local ITEM
+for ITEM in ${(okM)commands:#[a-z0-9]*}; do
+  # Skip existing.
+  (( ${+_comps[${ITEM}]} )) && continue
+  # make sure it's really an executable.
+  [[ -x ${ITEM:c} ]] || continue
+
+  compdef _gnu_generic ${ITEM}
+done
+

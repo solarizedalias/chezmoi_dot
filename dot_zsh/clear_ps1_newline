@@ -1,0 +1,5 @@
+unset PS1_NEWLINE_LOGIN
+# echoti clear
+# printf '\e[3J'
+printf '\x1b[H\x1b[2J\x1b[3J'
+

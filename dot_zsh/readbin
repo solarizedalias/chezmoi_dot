@@ -1,0 +1,29 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# readbin
+# Sat Oct 24 11:50:04 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a __data
+local LC_ALL=C BYTE
+integer i=0
+while IFS= read -r -d '' -k 1 -u 0 BYTE; do
+  __data[++i]="'${BYTE}"
+done
+__data=( $(builtin printf '%d ' "${(@)__data}") )
+
+if (( ${#} )); then
+  (( ${(P)+1} )) || typeset -ga $1
+  : ${(AP)1::=${(@)__data}}
+else
+  builtin print -r -- ${(@)__data}
+fi
+

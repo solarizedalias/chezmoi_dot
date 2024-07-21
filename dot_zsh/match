@@ -1,0 +1,46 @@
+
+# ==========================================================
+# match
+# Thu Sep 17 14:21:34 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a opts inverts
+zparseopts -a opts -D -K -M -E v:=inverts -invert-match:=v
+
+integer i=0
+if (( ${#inverts} )); then
+  local -A Inv=( ${(@)inverts} )
+  inverts=( ${(v@)Inv} )
+fi
+
+# local -a pos neg
+# integer i
+# eval 'i='{1..$(( ${#inverts} / 2 ))}'; neg+=( ${inverts[i*2]} )'
+# pos=( $@ )
+
+local -a pats=( $@ )
+(( $# )) || pats=( \* )
+
+local PATCHARS="*([\*\#\~\^\?\|]|\[*\]|\(*\)|\<*\>)*"
+pats=( \*${(@)^pats:#${~PATCHARS}}\* ${(@M)pats:#${~PATCHARS}} )
+inverts=( \*${(@)^inverts:#${~PATCHARS}}\* ${(@M)inverts:#${~PATCHARS}} )
+
+local PAT="(${(j:|:)${(@)pats}})${${inverts}:+~(${(j:|:)}${(@)inverts})}"
+
+local line
+integer RET=1
+while read -r line; do
+  if [[ ${line} == ${~PAT} ]]; then
+    (( RET = 0 ))
+    print -r -- ${line}
+  fi
+done
+
+return RET
+

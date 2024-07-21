@@ -1,0 +1,25 @@
+
+# ==========================================================
+# pofrpof
+# Mon Jul 20 00:34:29 2020
+# AUTHOR: solarizedalias
+# What a stupid name.
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a match mbegin mend
+while [[ $# -ne 0 ]]; do
+  local P="${1//(#b)([\[])([^\]]#)(#e)/${(b)match[1]}${match[2]}}"
+  local -aU temp=(
+    ${(v)^functions_source[(I)${~P}]}(#qN-.:A)
+    ${(v)^functions_source[(I)${~P}]:s@(.zwc)##/@/}(#qN-.:A)
+    ${(@)^fpath%%(.zwc)#}/${~${(j:[^/]#~/*[^/]##/:)${(s:~:)P}}}~*.zwc(#qN-.:A)
+    ${(@)^path}/${~${(j:[^/]#~/*[^/]##/:)${(s:~:)P}}}(#qND-*:A)
+  )
+  print -lr -- ${(@u)temp}
+  shift
+done
+

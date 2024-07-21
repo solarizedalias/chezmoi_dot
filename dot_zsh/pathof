@@ -1,0 +1,42 @@
+
+# ==========================================================
+# pathof
+# Thu Jun 25 13:09:43 2020
+# Always show the absolute paths of the given command or
+# function source files if any.
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+integer STDIN=0
+
+[[ -t 0 ]] || (( STDIN = 1 ))
+
+local -a match mbegin mend
+
+if (( STDIN )); then
+  local line
+  while read -r line; do
+    local P="${line//(#b)([\[])([^\]]#)(#e)/${(b)match[1]}${match[2]}}"
+    local -aU temp=(
+      ${(v)functions_source[(I)${~P}]}
+      ${(@)^fpath%%(.zwc)}/${~${(j:~/*[^/]##/:)${(s:~:)P}}}~*.zwc(#qN-.)
+      ${(@)^path}/${~${(j:~/*[^/]##/:)${(s:~:)P}}}(#qN-*)
+    )
+    print -rl -- ${(@u)temp}
+  done </dev/stdin
+else
+  while (( $# )); do
+    local P="${1//(#b)([\[])([^\]]#)(#e)/${(b)match[1]}${match[2]}}"
+    local -aU temp=(
+      ${(v)functions_source[(I)${~P}]}
+      ${(@)^fpath%%(.zwc)}/${~${(j:~/*[^/]##/:)${(s:~:)P}}}~*.zwc(#qN-.)
+      ${(@)^path}/${~${(j:~/*[^/]##/:)${(s:~:)P}}}(#qN-*)
+    )
+    print -rl -- ${(@u)temp}
+    shift
+  done
+fi
+

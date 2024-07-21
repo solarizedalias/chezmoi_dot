@@ -1,0 +1,36 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# rand
+# Wed Nov 25 17:02:56 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber         NO_append_create
+
+# emulate zsh -o cbases -o octalzeroes -c 'repeat 100 p -n ${(g::V):-\\$(( [#8] RANDOM % ( 126 - 33 + 1 ) + 33  ))}'
+
+local -a opts len
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  n:=len -length:=n
+
+local MATCH MBEGIN MEND
+local -aU chars=( ${(@s::ou)${(@)@}} )
+(( ${#chars} )) || chars=( {\!..\~} )
+
+integer LEN=${len[(R)<0->]:-10}
+
+repeat LEN; do
+  integer R=$(( EPOCHREALTIME * 1000000 ))
+  (
+    builtin print -rn -- ${chars[R % ${#chars} + 1]}
+  )
+done
+

@@ -1,0 +1,60 @@
+
+# ==========================================================
+# versions
+# Fri Oct 16 13:35:42 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent   no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots        rc_quotes      hist_subst_pattern
+setopt NO_clobber         NO_append_create
+
+local CMD EXEC FLAG
+(( ${+_comps[$0]} )) || compdef _command_names $0
+local -a execs
+
+# XXX Cannot handle things like `lua5.4`, `gcc-10`
+local -A FlagMap=(
+  [tmux]='-V'
+  [zig]='version'
+  [go]='version'
+  [lua]='-v'
+  [luajit]='-v'
+)
+
+local -a opts optflags
+
+# Options:
+# * h, help ignored
+# * v, version ignored
+# * m, match enable pattern match
+# * o, option specify arbitrary command line flags
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  m -match=m \
+  o:=optflags -option:=o \
+
+integer M=${opts[(I)(-m|--match)]}
+
+while (( ${#} > 0 )); do
+  CMD=${argv[1]}
+  shift
+  if (( M )); then
+    execs=( ${(@)^path}/${~CMD}(ND-*:a) )
+  else
+    execs=( ${(@)^path}/${CMD}(ND-*:a) )
+  fi
+
+  while (( ${#execs} )); do
+    EXEC=${execs[1]}
+    shift execs
+    print -r -P -- "%F{cyan}${EXEC}%f"
+    FLAG=${optflags[2]:-${FlagMap[${CMD}]:---version}}
+    eval ${(b)EXEC} ${FLAG}
+    (( ${#execs} + ${#} == 0 )) || print ''
+  done
+done
+

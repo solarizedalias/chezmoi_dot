@@ -1,0 +1,8 @@
+# vim: set filetype=zsh:
+if ! type batman >/dev/null 2>&1; then
+  echo 'batman required' >&2
+  return 1
+fi
+
+batman --pager='less -R -M -c' "$*"
+

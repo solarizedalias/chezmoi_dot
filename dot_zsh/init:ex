@@ -1,0 +1,12 @@
+# vim: set ft=zsh:
+
+:h() {
+  local VIM="${VISUAL:-${EDITOR:-vim}}"
+  command ${VIM} +":h $1" +":only"
+}
+
+:Man() {
+  local VIM="${VISUAL:-${EDITOR:-vim}}"
+  command ${VIM} +":Man $1" +":only"
+}
+

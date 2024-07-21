@@ -1,0 +1,30 @@
+# vim: set ft=zsh:
+
+emulate -LR zsh
+setopt extended_glob warn_create_global typeset_silent rc_quotes no_auto_pushd
+
+integer RET=0
+
+integer STDIN=0
+[[ -t 0 ]] || STDIN=1
+
+local i
+for i in $@; do
+  if ! zcompile -Uz -- "${i}"(ND:a) 2>/dev/null; then
+     print -r -u2 -- "Failed to compile: ${i:a}"
+     (( ++RET ))
+  fi
+done
+
+(( STDIN )) && {
+  local line
+  while read -r line; do
+    if ! zcompile -Uz -- "${line}"(ND:a) 2>/dev/null; then
+       print -r -u2 -- "Failed to compile: ${line:a}"
+       (( ++RET ))
+    fi
+  done </dev/stdin
+}
+
+return RET
+

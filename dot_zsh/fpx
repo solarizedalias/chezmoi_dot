@@ -1,0 +1,55 @@
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+builtin trap '(( ${#fpath} < ${#fpath_save} )) && fpath=( ${(@)fpath_save} ); return 2' INT
+
+local -a fpath_save
+fpath_save=(
+  ${(@)fpath}
+)
+
+# normalize elements
+fpath=( ${${(@)^fpath}%%(.zwc)#} )
+integer entries=${#fpath}
+
+#
+# Re-sort fpath for my preferences.
+#
+local -a skipped=(
+  /usr/local/opt/zsh/share/zsh/functions(N-/)
+  ~/.zsh/comp/outofsync(N-/)
+  ~/.zsh/comp(N-/)
+  /usr/local/share/zsh-completions(N-/)
+)
+fpath=(
+  ~/.zsh/comp/outofsync(N-/)
+  ~/.zsh/comp(N-/)
+  # /usr/local/share/zsh-completions(N-/)
+  ${(@)fpath:|skipped}
+  /usr/local/opt/zsh/share/zsh/functions(N-/)
+)
+
+#
+# Replace fpath dir with the corresponding *.zwc.
+#
+integer i
+for (( i = 1; i <= ${#fpath[@]}; i++ )); do
+  local save=${fpath[i]}
+  if [[ -r "${fpath[i]}".zwc &&
+    ${(@)${(f)"$(builtin zcompile -t ${fpath[i]}.zwc)"}[1]} == *${ZSH_VERSION}
+  ]] ; then
+    fpath[i]=${fpath[i]}.zwc
+  else
+    fpath[i]=${save}
+  fi
+done
+
+# If anything goes wrong, revert the change and return.
+if [[ ${entries} -ne ${#fpath} ]]; then
+  fpath=( ${(@)fpath_save} )
+  return 2
+fi
+typeset -ag oldfpath=( ${(@)fpath_save} )
+

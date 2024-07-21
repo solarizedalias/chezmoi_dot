@@ -1,0 +1,56 @@
+# vim: set ft=zsh:
+
+# @solarizedalias
+# Modifications for zsh and my personal preferences.
+# Original script can be found below.
+# https://gist.github.com/davejamesmiller/1965569
+
+typeset -ag E_ASK_FUNCS
+E_ASK_FUNCS=( ${(k)functions} )
+trap "unset -f -- \"\${(k)functions[@]:|E_ASK_FUNCS}\" &>/dev/null; unset E_ASK_FUNCS" EXIT
+trap "unset -f -- \"\${(k)functions[@]:|E_ASK_FUNCS}\" &>/dev/null; unset E_ASK_FUNCS; return 1" INT
+
+# This is a general-purpose function to ask Yes/No questions in Bash, either
+# with or without a default answer. It keeps repeating the question until it
+# gets a valid answer.
+
+ask::main() {
+  # https://djm.me/ask
+  local prompt default reply
+
+  if [[ "${2:-}" = "Y" ]]; then
+      prompt="Y/n"
+      default=Y
+  elif [[ "${2:-}" = "N" ]]; then
+      prompt="y/N"
+      default=N
+  else
+      prompt="y/n"
+      default=
+  fi
+
+  while true; do
+
+      # Ask the question (not using "read -p" as it uses stderr not stdout)
+      # No, dude. I prefer stdout.
+      echo -n "${1} [${prompt}] " >&2
+
+      # Read the answer (use /dev/tty in case stdin is redirected from somewhere else)
+      read reply </dev/tty
+
+      # Default?
+      if [[ -z "${reply}" ]]; then
+          reply=${default}
+      fi
+
+      # Check if the reply is valid
+      case "${reply}" in
+          Y*|y*) return 0 ;;
+          N*|n*) return 1 ;;
+      esac
+
+  done
+}
+
+ask::main $@
+

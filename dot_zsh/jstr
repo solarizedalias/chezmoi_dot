@@ -1,0 +1,83 @@
+
+# ==========================================================
+# jstr
+# Sat Nov 28 16:14:33 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent
+setopt extended_glob NO_clobber NO_append_create NO_aliases NO_short_loops
+
+integer UNLOAD
+zmodload -e zsh/system
+UNLOAD=$?
+(( UNLOAD )) && trap 'builtin zmodload -u zsh/system' 1 2 3 15
+
+local RREF
+if [[ -n $1 ]]; then
+  typeset -ag $1
+  RREF=$1
+else
+  typeset -ag reply && RREF=reply
+fi
+
+local BUF DATA
+local -a result
+zmodload zsh/system
+integer ERRNO RET
+while sysread -i 0 BUF ; do
+  DATA+="${BUF}"
+done
+RET=$?
+case ${RET} in
+  (<1-4>)
+    print -u2 sysread
+    return '(( ERRNO != 0 ? ERRNO : RET ))'
+  ;;
+  (5)
+    : EOF
+  ;;
+  (*)
+    : shouldn\'t happen
+  ;;
+esac
+
+integer i IN LAST=1
+for ((i = 1; i <= ${#DATA}; ++i)); do
+  if [[ ${DATA[i]} == '"' ]]; then
+    if (( IN )); then
+      { { : ${(QX)DATA[IN,i]} } &>/dev/null } always {
+        case ${TRY_BLOCK_ERROR} in
+          (0)
+            result+=( ${(Q)DATA[IN,i]} )
+            (( IN = 0, LAST = i ))
+          ;;
+          (<1->)
+            (( TRY_BLOCK_ERROR = 0 ))
+          ;;
+        esac
+        continue
+      }
+    else
+      { { : ${(QX)DATA[LAST+1,i]} } &>/dev/null } always {
+        case ${TRY_BLOCK_ERROR} in
+          (0)
+            :
+          ;;
+          (<1->)
+            (( IN = i ))
+            (( TRY_BLOCK_ERROR = 0 ))
+          ;;
+        esac
+        continue
+      }
+    fi
+  fi
+done
+
+: ${(PA)RREF::=${(@)result}}
+
+(( UNLOAD )) && zmodload -u zsh/system || :
+

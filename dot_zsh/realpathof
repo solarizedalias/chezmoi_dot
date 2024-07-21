@@ -1,0 +1,22 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# realpathof
+# Mon Jun 29 12:02:52 2020
+# AUTHOR: solarizedalias
+# Prints the physical path for any given path string.
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+(( $# )) && print -rl -- ${(@)^argv}(#qN:A)
+[[ -t 0 ]] || {
+  local line
+  while read -r line; do
+    print -r -- ${line}(#qN:A)
+  done </dev/stdin
+}
+

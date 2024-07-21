@@ -1,0 +1,41 @@
+
+# vim: set ft=zsh:
+
+emulate -L zsh
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+local COLS SEP BRAVE_HISTORY #open
+
+local TEMP_HIST
+# dependency
+TEMP_HIST=$(make_tempfile)
+
+COLS=$(( COLUMNS / 4 ))
+SEP='{::}'
+
+if [[ "$(uname)" = "Darwin" ]]; then
+  BRAVE_HISTORY="${HOME}/Library/Application Support/BraveSoftware/Brave-Browser/Default/History"
+  # open=open
+else
+  :
+  #BRAVE_HISTORY="${HOME}/.config/brave-browser/Default/History"
+  #open=xdg-open
+fi
+cp -f "${BRAVE_HISTORY}" "${TEMP_HIST}"
+local -a urls
+urls=(
+  ${(f)"$(
+    sqlite3 -separator ${SEP} "${TEMP_HIST}" \
+      "select substr(title, 1, ${COLS}), url
+       from urls order by last_visit_time desc" \
+    | awk -F ${SEP} '{printf "\x1b[38;5;2m%s\x1b[0;39m --- %-'${COLS}'s\n", $2, $1}' \
+    | fzf --ansi --bind="ctrl-space:execute(echo {} | sed -- 's# ---.*##' | xargs -- open -g ),ctrl-t:top,tab:down,btab:up,change:top" \
+    | sed 's# ---.*##'
+  )"}
+)
+
+local URL
+for URL in "${(@)urls}"; do
+  open -g "${URL}"
+done
+

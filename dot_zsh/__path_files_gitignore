@@ -1,0 +1,148 @@
+
+# ==========================================================
+# _path_files_gitignore
+# Fri Sep 11 14:30:56 2020
+#
+# AUTHOR: solarizedalias
+# Description:
+#   A wrapper functions to the builtin `_path_files` which respects
+#   the contents of `.gitignore`
+# ==========================================================
+# Usage:
+#   - First, make sure you have `_path_files` in the `FPATH/fpath`.
+#     (You should already have unless it's explicitly removed or something)
+#     This script is only a wrapper of the original `_path_files` and cannot
+#     work without it.
+#
+#   - Set styles for your preferences with the `zstyle` builtin.
+#     e.g., `zstyle ':completion:*:*:nvim:*' gitignore yes`
+#
+#   - Load this file the same way as for any other autoload functions and run it once.
+#     `autoload -Uz $0 && $0` should be fine.
+
+# TODO: rewrite the whole thing based on `git ls-files`
+
+emulate -LR zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt warn_create_global
+
+(( ${+functions[is-at-least]} )) || autoload -Uz is-at-least
+
+if ! is-at-least 5.8; then
+  return 0
+fi
+
+(( ${+functions[_path_files]} && ${+functions_source[_path_files]})) || {
+  builtin autoload +X _path_files
+}
+
+(( INJECTED__path_files )) || functions -c _path_files _path_files_original
+
+local -a reply
+local -a match mbegin mend
+
+local -a ignored negated
+
+integer -g INJECTED__path_files
+
+# Colletct patterns from the file `$1` and
+# Set `ignored` and `negated`.
+# $1:<FILE>
+(( ${+functions[__path_files_gitignore_parse]} )) || \
+  function __path_files_gitignore_parse() {
+    local -a match mbegin mend
+    local -a i
+    # Do we want to replace cat? It's possible.
+    i=( ${(f)"$(<$1 2>/dev/null)"} )
+
+    (( ${#i} )) || return 1
+
+
+    # Remove empty (blank only) lines
+    i=( ${(@)i:#(#s)[[:blank:]]#(#e)} )
+
+    # Remove comment lines.
+    i=( ${(@)i:#(#s)[[:blank:]]#\#*(#e)} )
+
+    # Remove inline comments.
+    i=( ${(@)i//(#b)([^\\])\#*(#e)/${match[1]}} )
+
+    # separate patterns with/without leading `!`
+    negated=( ${(@)${(@M)i:#\!*}#\!} )
+    ignored=( ${(@)i:#\!*} )
+
+    return 0
+  }
+
+# Call __path_files_gitignore_parse for every file given as $@
+# Set `ignored` and `negated` as result
+# $@: <FILES>
+(( ${+functions[__path_files_gitignore_resolve]} )) || \
+  function __path_files_gitignore_resolve() {
+    integer RET=1
+    local -a ip np
+    local f
+    for f in $@; do
+      if __path_files_gitignore_parse ${f:a}; then
+        ip+=( ${(@)ignored} )
+        np+=( ${(@)negated} )
+        RET=0
+      fi
+    done
+
+    ignored=( ${(@)ip} )
+    negated=( ${(@)np} )
+    return RET
+  }
+
+#
+# $1:REF <ignore_patterns>
+# $2:REF <negated_ignore_patterns>
+# ${@[3,-1]} <Arguments to _path_files_original>
+(( ${+functions[__path_files_gitignore_match]} )) || \
+  function __path_files_gitignore_match() {
+    local -a match mbegin mend
+    integer RET=1
+    local -a ip np
+    ip=( ${(@P)1} )
+    np=( ${(@P)2} )
+    shift 2
+
+    (( ${#ip} + ${#np} )) || return 1
+
+    # escape some characters which does NOT mean what they literally are in the context of zsh.
+    ip=( ${(@)ip//(#b)([\|\~\(\)\[\]\<\>\^])/\\${match[1]}} )
+    np=( ${(@)np//(#b)([\|\~\(\)\[\]\<\>\^])/\\${match[1]}} )
+
+    local IGN_PAT="(${(j:|:)ip})~(${(j:|:)np})"
+
+    _path_files_original -F IGN_PAT $@ && RET=0
+    return RET
+  }
+
+function _path_files() {
+  local -a ignored negated
+  local -a reply
+  local DO_IGNORE
+
+  if zstyle -b ":completion:${curcontext}" gitignore DO_IGNORE; then
+    local -a gitignore_files
+    gitignore_files=(
+      "$(command git config --global --get core.excludesfile 2>/dev/null)"(ND-.)
+      "$(command git rev-parse --show-toplevel 2>/dev/null)"/.gitignore(ND-.)
+      ./.gitignore(ND-.)
+      ${IPREFIX}${PREFIX}/.gitignore(ND-.)
+    )
+    if __path_files_gitignore_resolve ${(@)gitignore_files}; then
+        __path_files_gitignore_match ignored negated $@
+    else
+      _path_files_original $@
+    fi
+  else
+    _path_files_original $@
+  fi
+}
+
+INJECTED__path_files=1
+

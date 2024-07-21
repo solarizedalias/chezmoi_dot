@@ -1,0 +1,5 @@
+.git/
+
+{{- if ne .chezmoi.os "darwin" }}
+
+{{- end}}

@@ -1,0 +1,29 @@
+# vim: set ft=zsh:
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+trap '(( ${+functions[__typeof::variable]} )) && builtin unset -f __typeof::variable' EXIT
+trap '(( ${+functions[__typeof::variable]} )) && builtin unset -f __typeof::variable; return 1' INT
+
+integer RET=0
+
+function __typeof::variable() {
+  # '-p' is necessarry for determining if a var is undefined.
+  # `1` or `--` is necessarry for specifiying the subsequent [0-9] is not an argument to `-p`.
+  if builtin typeset -p -- "${1}" >/dev/null 2>&1; then
+    builtin print -r -- "${(tP)${1}}"
+  else
+    builtin print -r --  "no such variable: ${1}" >&2
+    return 1
+  fi
+}
+
+local ARG
+for ARG in "$@"; do
+  __typeof::variable "${ARG}" || (( ++RET ))
+done
+
+return RET
+

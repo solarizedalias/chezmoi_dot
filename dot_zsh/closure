@@ -1,0 +1,40 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# closure
+# Thu Aug 20 16:58:38 2020
+# AUTHOR: solarizedalias
+#   An experiment to implement local functions.
+#   This file must be autoloaded without `+X` flag as referring
+#   to functions_source does not work well with it.
+#   This function unset and immediately autoloads itself when
+#   it returns (or when it is interrupted).
+# ==========================================================
+
+emulate -LR zsh
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt noclobber      noappendcreate
+setopt warn_create_global
+
+
+local NAME="${0:-${(%):-%N}}"
+local SOURCE="${functions_source[${NAME}]}"
+
+trap 'unset -f ${(k)functions_source[(R)'${SOURCE:?}']}; autoload -Uz '${NAME:?}' ' EXIT
+trap 'unset -f ${(k)functions_source[(R)'${SOURCE:?}']}; autoload -Uz '${NAME:?}'; return 1' INT
+
+function foooooo() {
+  echo $0
+}
+
+barrrrrrrrrrrr() {
+  : Come and find me
+  echo $@
+}
+
+print -- I\'m going to unset ${(k)functions_source[(R)${SOURCE:?}]} when I exit.
+foooooo
+barrrrrrrrrrrr I belong to $0
+

@@ -1,0 +1,25 @@
+# vim: set ft=zsh:
+
+emulate -L zsh
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+local BOOKMARK_PATH
+BOOKMARK_PATH="${HOME}/Library/Application Support/BraveSoftware/Brave-Browser/Default/Bookmarks"
+   # bookmarks_path=~/Library/Application\ Support/Google/Chrome/Default/Bookmarks
+
+local jq_script
+jq_script='
+   def ancestors: while(. | length >= 2; del(.[-1,-2]));
+   . as $in | paths(.url?) as $key | $in | getpath($key) | {name,url, path: [$key[0:-2] | ancestors as $a | $in | getpath($a) | .name?] | reverse | join("/") } | .path + "/" + .name + "\t" + .url
+'
+
+local URL
+URL="$(
+  jq -r ${jq_script} < "${BOOKMARK_PATH}" \
+    | sed -E -- $'s/(.*)\t(.*)/\x1b[36m\\2\t---\t\x1b[m\t\\1/g' \
+    | fzf --ansi --bind="ctrl-space:execute(echo {} | sed -- 's#.---.*##' | xargs -I @@ -- open -g @@ ),ctrl-t:top,tab:down,btab:up,change:top"  \
+    | cut -d$'\t' -f1
+)"
+
+[[ -n "${URL}" ]] && open -g "${URL}"
+

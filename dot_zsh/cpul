@@ -1,0 +1,10 @@
+# vim: set ft=zsh:
+# shellcheck shell=bash
+# shellcheck disable=2154
+
+## ! read command is really different from that of bash
+read -r processname\?'process name? > ' ;
+read -r limitperc\?'percentage? > ' ;
+echo 'Press control + c to exit';
+pgrep -o "${processname}" | (read -r peeaidee; cpulimit -i -z -l "${limitperc}" --pid="${peeaidee}";)
+

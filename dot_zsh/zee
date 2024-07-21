@@ -1,0 +1,48 @@
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt noclobber          noappendcreate
+
+#
+# MAIN
+#
+(
+  zmodload zsh/system
+  integer ERRNO RET FD
+  local FILE
+  local -aU fds
+  for FILE in $@; do
+    builtin sysopen -w -o create -u FD ${FILE} &&
+      fds+=( ${FD} )
+  done
+
+  local BUF
+  while builtin sysread -i 0 BUF; do
+    builtin syswrite -o 1 -- ${BUF}
+    for FD in ${(@)fds}; do
+      builtin syswrite -o ${FD} -- ${BUF}
+    done
+  done
+  RET=$?
+  for FD in ${(@)fds}; do
+    builtin exec {FD}<&-
+  done
+  case ${RET} in
+    (<1-4>)
+      if (( ERRNO )); then
+        local MSG
+        builtin syserror -e MSG ERRNO
+        builtin print -u 2 -- "${0}: ${MSG}"
+      fi
+      return '(( ERRNO != 0 ? ERRNO : RET ))'
+    ;;
+    (5)
+      : EOF
+    ;;
+    (*)
+      : shouldn\'t happen
+    ;;
+  esac
+)
+

@@ -1,0 +1,21 @@
+# vim: set ft=zsh:
+
+local VIM
+
+case "${EDITOR}" in
+  (*/vim)  VIM=vim  ;;
+  (*[/]#nvim) VIM=nvim ;;
+  (*)    VIM=vim  ;;
+esac
+
+
+local file
+local line
+local skimline
+skimline=$(sk --ansi -i -c "ack '{}' --follow --color --column --noheading" --preview "preview.sh {}")
+file=$(cut -d ':' -f1 <<< ${skimline})
+line=$(cut -d ':' -f2 <<< ${skimline})
+column=$(cut -d ':' -f3 <<< ${skimline})
+
+[[ -n "${file}" ]] && ${VIM} +"normal! ${line}gg" +"normal! ${column}|" "${file}" || true
+

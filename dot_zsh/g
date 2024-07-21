@@ -1,0 +1,52 @@
+
+emulate -LR zsh
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+#
+# set up the same style as git for completion
+#
+(( ${+functions[g::init]} )) || {
+  g::init() {
+    local -a g_commands
+    g_commands=(
+      'brws:open repository, file, commit, diff, tag, pull request, blame, issue or project website in browser'
+      'cal:visualize the git commit history in github''s contribution calendar style.'
+      'catchup:run batch of `git rebase <UPSTREAM> <BRANCH>`'
+      'clang-format:run clang-format on all lines that differ between the working directory and <commit>, which defaults to HEAD.'
+      'cp:Copy a file keeping its history'
+      'cvsserver:A CVS server emulator for Git'
+      'dsf:Good-lookin'' diffs. Actually… nah… The best-lookin'' diffs.'
+      'file-history:Quickly browse the history of a file from any git repository.'
+      'flow:Extensions to follow Vincent Driessen''s branching model'
+      'get:Get Captain Pellaeon.'
+      'gone:manage "gone" branches'
+      'filter-repo:Rewrite repository history'
+      'history:Quickly browse the history of a file from any git repository.'
+      'icdiff:Improved colored diff.'
+      'now:A temporary commit tool for git.'
+      'trim:Automatically trims your tracking branches whose upstream branches are merged or stray.'
+      'pork:Pork it.'
+      'quick-stats:simple and efficient way to access various statistics in a git repository.'
+      'recent:See your latest local git branches, formatted real fancy'
+      'repositories:Recursively search for repositories under the given directory.'
+      'rscp: Copies specific files from the working directory of a remote repository to the current working directory.'
+      'secrets:Prevents you from committing passwords and other sensitive information to a git repository.'
+      'sma:add the remote URL retrieved from a local directory as a submodule'
+      'xpull:Execute commands for multiple repositories in xargs manner.'
+    )
+    local -a gstyle
+    if zstyle -a ':completion:*:*:git:*' user-commands gstyle; then
+      zstyle ':completion:*:*:git:*'         user-commands ${gstyle} ${g_commands}
+      zstyle ':completion:*:*:(git|g|hub):*' user-commands ${gstyle} ${g_commands}
+    fi
+  }
+
+  g::init
+}
+
+local CMD
+# ((${+commands[hub]})) && CMD='hub' || CMD='git'
+CMD=git
+
+${CMD} ${@:-status}
+

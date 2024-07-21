@@ -1,0 +1,16 @@
+
+# ==========================================================
+# rpg
+# Thu May 27 01:49:18 2021
+# AUTHOR: solarizedalias
+# See https://github.com/facundoolano/rpg-cli
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local RPG_CLI=( =rpg-cli )
+${RPG_CLI[1]} "$@"
+builtin cd "$(${RPG_CLI[1]} --pwd)"
+

@@ -1,0 +1,4 @@
+# shellcheck shell=bash
+# fgi ('f'etch 'g'it 'i'gnore)
+query=$(echo "$*" | tr ' ' ',')
+curl -L -sS https://www.gitignore.io/api/"$query"

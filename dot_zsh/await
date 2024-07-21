@@ -1,0 +1,31 @@
+# shellcheck shell=bash
+emulate -L zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+trap "[[ -f '/tmp/'${0}-$$-[0-9]## ]] && rm '/tmp/'${0}-$$-[0-9]##" EXIT
+trap "[[ -f '/tmp/'${0}-$$-[0-9]## ]] && rm '/tmp/'${0}-$$-[0-9]##; return 1" INT
+
+local -a args=( $@ )
+(( ${+commands[$1]} || ${+functions[$1]} || ${+aliases[$1]} || ${+builtins[$1]} || ${+reswords[(I)$1]} )) || return 1
+local CMD="${aliases[$1]:-$1}"
+shift
+local -a result
+integer RET
+local TEMPFILE
+
+TEMPFILE="$(
+  local TIME
+  TIME="$(command date +'%Y%m%d%H%M%S')"
+  local FILE="${TEMPDIR:=/tmp}/${0}-$$-${TIME}"
+  umask 0077
+  set -C
+  : > "${FILE}" || exit $?
+  echo "${FILE}"
+)"
+result=( ${(f)"$(eval "${=CMD} $@" 2>"${TEMPFILE:?}" )"} )
+RET=$?
+cat "${TEMPFILE:?}" >&2
+print -l ${(@)result}
+return RET
+

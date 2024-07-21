@@ -1,0 +1,97 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# xdo
+# Thu Aug 20 15:00:56 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt typeset_silent     no_short_loops no_auto_pushd
+setopt noclobber          noappendcreate
+setopt warn_create_global
+
+local NAME="${0:-${(%):-%N}}"
+
+
+#
+# TRAP
+#
+trap '[[ -p ${PIPE} ]] && rm -f ${PIPE}' EXIT
+trap '[[ -p ${PIPE} ]] && rm -f ${PIPE}; return 1' INT
+
+#
+# Preparations
+#
+
+local DATE
+DATE="$(command date +F-%H%M%S)"
+local PIPE="/tmp/${NAME}-$$-${DATE}"
+mkfifo -m 600 ${PIPE}
+
+#
+# Parse Arguments
+#
+local -a opts replace=( -i '{}' ) eoa=( -e '--' ) sep=( -s '@' )
+zparseopts -a opts -D -K -M -E \
+  h -help=h v -version=v \
+  i:=replace I:=i \
+  e:=eoa -end-of-args:=e \
+  s:=sep  -command-separator:=s
+
+local -a operations targets
+local REPLACE="${replace[(R)^(-i|-I)]}"
+local EOA="${ends[(R)^(-e|--end-of-args)]}"
+local SEP="${sep[(R)^(-s|--command-separator)]}"
+
+# Collect Targets until EOA
+while (( $# )); do
+  case $1 in
+    (${EOA})
+      shift
+      break
+    ;;
+    (${REPLACE:?})
+      print -- "Unexpected ${REPLACE} before ${EOA}" >&2
+      return 2
+    ;;
+    (*)
+      targets+=( $1 )
+      shift
+    ;;
+  esac
+done
+
+# XXX Invalidate the cases lacking arguments after ${EOA}
+
+local CURR
+while (( $# )); do
+  case $1 in
+    (${SEP})
+      [[ -n ${CURR} ]] && operations+=( ${CURR} )
+      CURR=
+      shift
+    ;;
+    (*)
+      CURR="${CURR} $1"
+      shift
+    ;;
+  esac
+done
+
+for t in ${(@)targets}; do
+  for op in ${(@)operations}; do
+    local -a tokens=( ${(ps:${REPLACE:?}:)op} )
+    integer IMPLICIT_LAST="$(( ${#tokens} < 2 ? 1 : 0 ))"
+    local OP="${(pj:${t}:)tokens}"
+    (( IMPLICIT_LAST )) && OP="${OP} ${t}"
+    eval ${OP} >| ${PIPE} &!
+  done
+done
+
+cat ${PIPE} && return 0
+
+

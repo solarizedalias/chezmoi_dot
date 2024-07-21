@@ -1,0 +1,6 @@
+# vim: set ft=zsh:
+
+# set -o | sed -e 's/^no\(.*\)on$/\1  off/' -e 's/^no\(.*\)off$/\1  on/'
+
+set -o | sed -e 's/^no\([^n].*\)on$/\1  off/' -e 's/^no\([^n].*\)off$/\1  on/' -e 's/^no\(no.*\)on$/\1  off/' -e 's/^no\(no.*\)off$/\1  on/'
+

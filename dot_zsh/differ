@@ -1,0 +1,64 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# differ
+# Fri Oct 30 15:43:24 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber NO_append_create
+
+local -a opts diff_cmds=( diff ) eof=( -e '--' ) placeholders=( -i '{}' )
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  d+:=diff_cmds -diff-command+:=d -diff-cmd+:=d \
+  e:=eof -eof:=e \
+  i:=placeholders I:=placeholders
+
+local -a lhs rhs
+integer DELIMITED
+while (( $# )); do
+  case ${1} in
+    (${eof[2]})
+      (( DELIMITED )) && rhs+=( ${1} )
+      (( DELIMITED < 1 && ++DELIMITED ))
+      shift
+    ;;
+    (*)
+      if (( DELIMITED ));then
+        rhs+=( $1 )
+      else
+        lhs+=( $1 )
+      fi
+      shift
+    ;;
+  esac
+done
+
+local CMD RHS ITEM
+set -- ${(@)rhs}
+for CMD in ${(@)diff_cmds:#(-d|--*)}; do
+  while (( $# )); do
+    ITEM=$1 && shift
+    if [[ ${ITEM} != ${eof[2]} ]] && (( $# )) ; then
+      RHS="${RHS} ${ITEM}"
+    else
+      (( $# )) || RHS="${RHS} ${ITEM}"
+      local -a sub=(
+        '${(s: :)RHS//'${placeholders[2]}'/'${(@)^lhs}'}'
+      )
+      sub=( ${(@Q)sub} )
+      sub=( '=('${(@)^sub}')' )
+      eval ${CMD} ${(@)sub}
+      RHS=
+    fi
+  done
+done
+
+

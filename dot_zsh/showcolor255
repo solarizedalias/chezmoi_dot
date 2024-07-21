@@ -1,0 +1,15 @@
+# vim: set ft=zsh:
+# shellcheck shell=bash
+# shellcheck disable=2004
+
+echo ''
+for cn in "${@}"; do
+  if [[ "${cn}" =~ ^.*[^0-9]+.*$ ]] || [[ ${cn} -lt 0 || ${cn} -gt 255 ]]; then
+    echo ''
+    echo "${cn} is invalid. Must be a number (0 <= num <= 255)." >&2
+  else
+    echo -n "\e[38;5;${cn}m${cn}\e[0;39m "
+  fi
+done
+echo ''
+

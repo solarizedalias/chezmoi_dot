@@ -1,0 +1,18 @@
+# vim: set ft=zsh:
+
+local MODULES
+
+MODULES=( ${@:-${(ok)modules:-$(zmodload)}} )
+
+local module
+
+for module in ${MODULES[@]}; do
+  print -lP "%F{75}%B${module}%b%f"
+  local -a features=(
+    ${(@)^$(zmodload -FL ${module} 2> >( print -Pn "%F{1}$(cat -)%f" >/dev/tty ) ):/^([a-zA-Z]:[a-z\-]##)/}
+  )
+  print -P -C4 "%F{202}${(@)^features}%f"
+  echo ''
+done
+
+# print -C4 -P %F{202}${^$(zmodload -FL)://(#m)^([a-zA-B]:[a-z]##)/}%f

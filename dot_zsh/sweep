@@ -1,0 +1,25 @@
+# shellcheck shell=bash
+# shellcheck disable=2154
+
+original=$(pwd)
+echo
+if [ ! $# -eq 1 ]; then
+  echo "Plz specify one (and only one) directory!"
+else
+  # && instead of ; to make sure the directory is available
+  # (if the path was invalid, cd throws error and the following commands do not execute)
+  cd "$1" && exa -axF --git &&
+    {
+      echo -e "\n↑↑↑↑↑↑Sure you wanna sweep everything above?↑↑↑↑↑↑"
+      read -r sweepornot\?"[Y/n] >> "
+      case "$sweepornot" in
+      [Yy]) (
+        trash ./*
+        trash .*
+      ) && echo -e '\n---------#*+.Swept.+*#---------' ;;
+      [Nn]) echo -e '\nCoward' ;;
+      *) echo -e '\nwut?' ;;
+      esac
+    }
+  cd "$original" || return
+fi

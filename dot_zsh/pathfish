@@ -1,0 +1,46 @@
+# vim: set ft=zsh:
+
+# https://github.com/felixgravila/zsh-abbr-path/blob/master/.abbr_pwd
+function felix_pwd_abbr {
+  local formed_pwd firstchar
+  local base_pwd
+  base_pwd=$(pwd)
+  local tilda_notation=${base_pwd//$HOME/\~}
+  local pwd_list=(${(s:/:)tilda_notation})
+  local list_len=${#pwd_list}
+
+  if [[ $list_len -le 1 ]]; then
+    echo ${tilda_notation}
+    return
+  fi
+
+  if [[ ${pwd_list[1]} != '~' ]]; then
+    formed_pwd='/'
+  fi
+
+  firstchar=$(echo ${pwd_list[1]} | cut -c1)
+  if [[ ${firstchar} == '.' ]] ; then
+    firstchar=$(echo ${pwd_list[1]} | cut -c1,2)
+  fi
+
+  formed_pwd=${formed_pwd}${firstchar}
+
+  for ((i=2; i <= ${list_len}; i++)) do
+    if [[ $i != ${list_len} ]]; then
+
+      firstchar=$(echo ${pwd_list[$i]} | cut -c1)
+      if [[ ${firstchar} == '.' ]] ; then
+        firstchar=$(echo ${pwd_list[$i]} | cut -c1,2)
+      fi
+      formed_pwd=${formed_pwd}/${firstchar}
+    else
+      formed_pwd=${formed_pwd}/${pwd_list[$i]}
+    fi
+  done
+
+  echo ${formed_pwd}
+  return
+}
+
+felix_pwd_abbr
+

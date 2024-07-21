@@ -1,0 +1,47 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# chomp
+# Sun Oct 11 21:41:46 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+(
+  zmodload zsh/system
+  local -a buffers
+  local ERRNO
+  local REPLY
+  integer RET
+  while true; do
+    if sysread -i 0 REPLY ; then
+      buffers+=( ${REPLY} )
+      REPLY=
+      if (( ${#buffers} > 1 )) && syswrite -o 1 -- ${buffers[1]}; then
+        buffers=( ${(@)buffers[2,-1]}  )
+      fi
+    else
+      RET=$?
+      break
+    fi
+  done
+
+  case ${RET} in
+    (<1-4>)
+      return '(( ERRNO != 0 ? ERRNO : RET ))'
+    ;;
+    (5)
+      buffers=( ${(@)buffers[1,-2]} ${(@)buffers[-1]%$'\n'} )
+      [[ -n ${buffers} ]] && syswrite -o 1 -- ${(@)buffers}
+    ;;
+    (*)
+      :
+    ;;
+  esac
+)
+

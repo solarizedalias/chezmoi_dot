@@ -1,0 +1,20 @@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# uncompdef
+# Sat Jul 18 22:56:28 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -L zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local ITEM
+
+for ITEM in $@; do
+  ((${+_comps[${ITEM}]})) && noglob unset _comps[${ITEM}]
+done
+

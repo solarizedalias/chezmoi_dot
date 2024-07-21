@@ -1,0 +1,7 @@
+
+local item
+for item in ${@}; do
+  (( ${+functions[${item}]} )) && unfunction ${item}
+  autoload -Uz +X "${item}"
+done
+

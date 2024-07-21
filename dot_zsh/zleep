@@ -1,0 +1,39 @@
+
+# ==========================================================
+# zleep
+# Fri Oct  9 19:54:45 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -F 32 DELAY
+local -a match mbegin mend
+if [[ $1 == (#b)([[:digit:]](#c1,).(#c0,1)[[:digit:]](#c0,))(s|m|h|d|w|) ]]; then
+  case ${match[2]} in
+    ((s|))
+      (( DELAY = ${match[1]} ))
+    ;;
+    (m)
+      (( DELAY = ${match[1]} * 60.0 ** 1 ))
+    ;;
+    (h)
+      (( DELAY = ${match[1]} * 60.0 ** 2 ))
+    ;;
+    (d)
+      (( DELAY = ( ${match[1]} * 60.0 ** 2 ) * 24 ))
+    ;;
+    (w)
+      (( DELAY = ( ( ${match[1]} * 60.0 ** 2 ) * 24 ) * 7 ))
+    ;;
+  esac
+  # Alternatively, zselect with no fd argument can be useful `zmodload zsh/zselect && zselect -t 1/100-seconds`.
+  : $( read -u 1 -t $(( DELAY )) )
+else
+  print -u2 -- "Invalid delay time: $1"
+  return 1
+fi
+

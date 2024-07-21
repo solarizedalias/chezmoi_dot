@@ -1,0 +1,2 @@
+# shellcheck shell=bash
+ghq list | fzf --preview "ls -lap --color $(ghq root)/{} | tail -n+4 | awk '{print \$9\"/\"\$6\"/\"\$7 \" \" \$10}'"

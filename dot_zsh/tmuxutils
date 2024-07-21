@@ -1,0 +1,198 @@
+
+# ==========================================================
+# tmuxutils
+# Sat Oct 31 17:18:07 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+local FPREFIX=$0
+
+function ${FPREFIX}::pipetopane() {
+
+  emulate -L zsh
+  setopt extended_glob
+  local -a opts selfopts size target
+  local -a match mbegin mend
+  local MATCH MBEGIN MEND
+  local OPTPAT='(#b)(--[[:graph:]]##)'
+  local -A OptAliases=(
+    [--before-target]=-b
+    [--horizontal]=-h
+    [--vertical]=-v
+    [--full]=-f
+    [--size]=-l
+    [--target]=-t
+    [--help]=-H
+    [--version]=-V
+    [--stay-open]=-o
+  )
+  zparseopts -a opts -D -K -M \
+    H=selfopts -help=H \
+    V=selfopts -version=V \
+    b -before-target=b \
+    h -horizontal=h \
+    v -vertical=v \
+    f -full=f \
+    l:=size -size:=l \
+    t:=target -target:=t \
+    o=selfopts -stay-open=o
+
+  if (( ${selfopts[(I)(-H|--help)]} )); then
+    builtin print -rl -- "Usage: ${0} [OPTION] COMMAND... " \
+      "Options:" \
+      ${(@)${(@k)OptAliases}//(#m)*/${(r:60:):-${(r:20:):-\
+  ${OptAliases[${MATCH}]}, ${MATCH}}  specify ${MATCH#--}}}
+    return 0
+  elif (( ${selfopts[(I)(-V|--version)]} )); then
+    return 0
+  fi
+
+  integer STAY_OPEN=${selfopts[(I)(-o|--stay-open)]}
+
+  : ${TMUX?}
+  local -a cmd=( ${(Z:C:)@} )
+  local P
+  P=$(
+    command tmux split-window -Pd -F '#{session_id}:#{window_id}.#{pane_id}' \
+      ${(@)opts//${~OPTPAT}/${OptAliases[${match[1]}]}} \
+      ${(@)size//--size/-l} \
+      ${(@)target//--target/-t} \
+      ''
+  )
+
+  # # () {
+  # #   emulate -L zsh
+  # #   (( STAY_OPEN )) ||
+  # #   builtin trap \
+  # #     'command tmux kill-pane -t '${(q+)P:?}' 2>/dev/null; return 1' 1 2 3 15
+
+  # #   # builtin jobs -Z "${(j: :)cmd}"
+  # #   builtin eval "{ ${(@)cmd} ; }" 2>&1 | command tmux display-message -I -t ${P:?}
+  # #   (( STAY_OPEN )) || command tmux kill-pane -t ${P:?}
+  # # } &
+  #
+  # Above is what this supposed to do
+  # The extra `{ }` block and `:` command is for nice `${jobtexts}`
+  # Actually, the whole reason of eval here is for `${jobtexts}`
+  # since otherwise you always end up with the same `() { ... }` for each job.
+  local CODE='
+    {
+      : '"${(j: :q+)cmd}"'
+      () {
+        emulate -L zsh
+        (( STAY_OPEN )) ||
+        builtin trap \
+          '\''command tmux kill-pane -t '\''${(q+)P:?}'\'' 2>/dev/null; return 1'\'' 1 2 3 15
+
+        builtin eval "{
+          ${(@)cmd} ;
+        }" 2>&1 | command tmux display-message -I -t ${P:?}
+        (( STAY_OPEN )) || command tmux kill-pane -t ${P:?}
+      }
+    } &
+  '
+  builtin eval ${CODE}
+
+}
+
+# COMPLETION
+function _${FPREFIX}::pipetopane() {
+  (( ${+TMUX} )) || _default
+
+  emulate -LR zsh
+  setopt extended_glob warn_create_global typeset_silent no_short_loops
+  setopt hist_subst_pattern no_auto_pushd rc_quotes
+
+  local context curcontext=${curcontext} state line expl state_descr
+  integer ret=1
+  local -A opt_args val_args
+
+  local -a optspecs=(
+    '(-b --before-target)'{-b,--before-target}'[create new pane left or above target pane]'
+    '(-h --horizontal)'{-h,--horizontal}'[split horizontally]'
+    '(-v --vertical)'{-v,--vertical}'[split vertically]'
+    '(-f --full)'{-f,--full}'[create new pane spanning full window height or width]'
+    '(-l --size)'{-l,--size}'[define new pane'\''s size]:size: '
+    '(-t --target)'{-t,--target}'[specify target pane]:pane:{
+      (( ${+functions[__tmx-panes]} )) || _tmux &>/dev/null || :
+      (( ${+functions[__tmux-panes]} )) && __tmux-panes
+    }'
+    '(-o --stay-open)'{-o,--stay-open}'[don'\''t close the pane when the job exits]'
+    '(-H --help)'{-H,--help}'[show help]'
+    '(-V --version)'{-V,--version}'[show version]'
+  )
+  _arguments \
+    ${(@)optspecs} \
+    '1:command:{ _dispatch _ -command- -default- }' \
+    '*:: :{ emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch _ ${words[1]}" }' && ret=0
+  return ret
+}
+
+compdef _${FPREFIX}::pipetopane ${FPREFIX}::pipetopane
+
+function ${FPREFIX}::note() {
+  local -a opts selfopts size=( -l 10 ) target kill
+
+  # XXX There needs to be a reliable way to check panes in
+  # `tmux_note_panes` still exist.
+  # Then you can use one of them as a target pane.
+  # Use the current pane for now.
+  target=( -t "$(
+      command tmux display-message -p -F '#{session_id}:#{window_id}.#{pane_id}'
+    )" )
+
+  local -a match mbegin mend
+  local MATCH MBEGIN MEND
+  local OPTPAT='(#b)(--[[:graph:]]##)'
+  local -A OptAliases=(
+    [--before-target]=-b [--horizontal]=-h
+    [--vertical]=-v [--full]=-f
+    [--size]=-l [--target]=-t
+    [--help]=-H [--version]=-V
+  )
+  zparseopts -a opts -D -K -M \
+    H=selfopts -help=H \
+    V=selfopts -version=V \
+    b -before-target=b \
+    h -horizontal=h \
+    v -vertical=v \
+    f -full=f \
+    l:=size -size:=l \
+    t:=target -target:=t \
+    k:=kill -kill:=k # XXX Not implemented yet
+
+  if (( ${selfopts[(I)(-H|--help)]} )); then
+    builtin print -rl -- "Usage: ${0} [OPTION] COMMAND... " \
+      "Options:" \
+      ${(@)${(@k)OptAliases}//(#m)*/${(r:60:):-${(r:20:):-  ${OptAliases[${MATCH}]}, ${MATCH}}  specify ${MATCH#--}}}
+    return 0
+  elif (( ${selfopts[(I)(-V|--version)]} )); then
+    return 0
+  fi
+
+  local P
+  P=$(
+    command tmux split-window -Pd -F '#{session_id}:#{window_id}.#{pane_id}' \
+      ${(@)opts//${~OPTPAT}/${OptAliases[${match[1]}]}} \
+      ${(@)size//--size/-l} \
+      ${(@)target//--target/-t} \
+      ''
+  )
+  local REF
+  if [[ ${(tP)1} == array(|-*) ]]; then
+    REF="$1"
+    shift
+  elif [[ ${1} == [[:IDENT:]]## && $# -gt 1 ]]; then
+    REF="$1"
+    typeset -ag "${REF}"
+    shift
+  else
+    typeset -ag tmux_note_panes
+    REF='tmux_note_panes'
+  fi
+  : ${(PAs: :)REF::=${(@P)REF} ${P}}
+  [[ "$1" == (-|--) && $# -gt 1 ]] && shift
+  builtin print -rl -- $@ | command tmux display-message -I -t ${P:?}
+}
+

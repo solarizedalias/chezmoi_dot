@@ -1,0 +1,10 @@
+# vim: set ft=zsh:
+# shellcheck shell=bash
+# shellcheck disable=2004
+local cn=000
+for cn in {000..255}; do
+  echo -n "\e[38;5;${cn}m $cn" ;
+  [ $(($cn%16)) -eq 15 ] && echo;
+done
+echo
+

@@ -1,0 +1,18 @@
+
+# ==========================================================
+# tail (autoload)
+# Sun Sep 13 06:49:11 2020
+# AUTHROR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt typeset_silent no_short_loops no_auto_pushd  warncreateglobal
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+if (( ${@[(I)(-[Ffqr]#[b][0-9]##)]} + ${@[(I)(-[Ffq]#[r][Ffq]#([bcn][0-9]##)#)]} )); then
+  /usr/bin/tail $@
+else
+  /usr/local/opt/coreutils/libexec/gnubin/tail $@
+fi
+

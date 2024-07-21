@@ -1,0 +1,8 @@
+# vim: set filetype=zsh:
+
+# { ((${+functions[colors]})) || autoload -Uz colors; } && colors
+local args=$*
+
+# http*s* was important for this to work or maybe it works with "curl --insecure".
+echo -e "\n$(curl --user "${1:-solarizedalias}" https://api.github.com/gists | cat)"
+

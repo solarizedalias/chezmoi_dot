@@ -1,0 +1,21 @@
+# shellcheck shell=bash
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -aU oldpath=( ${(@)path} )
+
+trap 'path=( '" ${(j: :)${(qqqq@)oldpath:?}} "' )' EXIT
+trap 'path=( '" ${(j: :)${(qqqq@)oldpath:?}} "' ); return 1' INT
+
+local -aU to_remove=(
+  '/Users/ykksd/miniconda3/bin'
+  ${(@M)path:#/usr/local/opt/*/gnubin}
+  ${(@M)path:#/*/emscripten-core/emsdk/*}
+)
+
+# don't prefix with `command` when run from shellspec (to make mocking work).
+path=( ${(@)path:|to_remove} ) && ${${SHELLSPEC_EXAMPLE_ID:-command}/${SHELLSPEC_EXAMPLE_ID}/} brew $@
+path=( ${(@)oldpath} )
+

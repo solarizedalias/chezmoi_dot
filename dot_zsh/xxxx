@@ -1,0 +1,13 @@
+# vim: set ft=zsh:
+
+bindkey "^Xa" expand-aliases
+rehash -f
+printf '%s\n' ${(k)commands} ${(k)functions} ${(k)builtins} ${(k)aliases} | \
+  while read -r line ; do
+    type -- ${line} >/dev/null || unhash -- ${line}
+  done
+
+  unset PS1_NEWLINE_LOGIN
+  clear
+  printf '\e[3J'
+

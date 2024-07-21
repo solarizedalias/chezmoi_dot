@@ -1,0 +1,6 @@
+# shellcheck shell=bash
+# shellcheck disable=2230
+
+if (which zprof > /dev/null) ;then
+  zprof | less
+fi

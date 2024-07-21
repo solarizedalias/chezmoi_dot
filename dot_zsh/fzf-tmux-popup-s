@@ -1,0 +1,104 @@
+#!/hint/zsh
+emulate -L zsh -o extended_glob
+
+local -a fzf_opts=($@)
+fzf_opts=(${${fzf_opts/--height*}/--layout*})
+
+# get position of cursor and size of window
+local -a tmp=(
+  $(
+    tmux display-message -p \
+      "#{pane_top} #{cursor_y}
+      #{pane_left} #{cursor_x}
+      #{window_height} #{window_width}
+      #{pane_current_path}
+      #{session_id} #{window_id}
+      #{pane_id}
+      "
+  )
+)
+
+local cursor_y=$(( tmp[1] + tmp[2] ))
+local cursor_x=$((tmp[3] + tmp[4])) window_height=$tmp[5] window_width=$tmp[6]
+local pane_cwd=${tmp[7]} #session_id=${tmp[8]} window_id=${tmp[9]} pane_id=${tmp[10]}
+
+# tmux display-message -p "${session_id}:${window_id}.%${pane_id}"
+
+# create fifo and write to completion lists to file
+[[ -d /tmp/fzf-tab ]] || mkdir /tmp/fzf-tab
+touch /tmp/fzf-tab/result-$$
+cat > /tmp/fzf-tab/list-$$
+
+local -a list_lines=( ${(f)"$(</tmp/fzf-tab/list-$$)"} )
+# get the size of content, note we should remove all ANSI color code
+integer comp_lines=$(( ${#list_lines} ))
+(( comp_lines += comp_lines < 40 ? 20 : 0 ))
+if (( comp_lines <= 500 )); then
+  local comp_length=0 length
+  for line in ${(@)list_lines}; do
+    length=${(m)#${line}}
+    (( length >= comp_length )) && comp_length=$length
+  done
+else
+  local comp_length=$(
+    < /tmp/fzf-tab/list-$$ command perl -ne \
+    's/\x1b\[[0-9;]*m//g;s/\x00//g; $m= length() if $m < length(); END { print $m }'
+  )
+fi
+
+# calculate the popup height and y position
+if (( cursor_y * 2 > window_height )); then
+  # show above the cursor
+  local popup_height=$((
+    comp_lines >= cursor_y ? cursor_y : comp_lines + 4
+  ))
+  popup_height=$((
+    popup_height >= window_height / 2 ? (window_height / 2) : (popup_height)
+  ))
+  local popup_y=$cursor_y
+else
+  # show below the cursor
+  local popup_height=$((
+    comp_lines >=
+      (window_height - cursor_y) ? (window_height - cursor_y) : comp_lines + 4
+  ))
+  popup_height=$((
+    popup_height >= window_height / 2 ? (window_height / 2) : (popup_height)
+  ))
+  local popup_y=$(( cursor_y + popup_height + 2 ))
+  fzf_opts+=(--layout=reverse)
+fi
+
+# calculate the popup width and x position
+local popup_width=$((
+  comp_length + 5 + 60 >
+    (window_width * 70 / 100 ) ? (window_width * 70 / 100) : comp_length + 5 + 60
+  ))
+# popup_width=$(( popup_width * 2 >= window_width ? popup_width : window_width / 2  ))
+local popup_x=$((
+  cursor_x + popup_width > window_width ? window_width - popup_width : cursor_x
+))
+
+print -r -- > /tmp/fzf-tab/fzf-$$ \
+  "${commands[fzf]} ${(qq)fzf_opts[@]} < /tmp/fzf-tab/list-$$ > /tmp/fzf-tab/result-$$"
+
+# XXX tmux removed `-K` and `-R` flags
+integer TMUX_DROPPED_FLAGS_KR
+if [[ "$(command tmux popup --no-such-flag 2>&1)" != *'-R shell-command'* ]]; then
+  (( TMUX_DROPPED_FLAGS_KR = 1 ))
+fi
+
+local -a old_tmux_flags
+(( TMUX_DROPPED_FLAGS_KR )) || old_tmux_flags=( -K -R )
+
+{
+  tmux popup \
+    -d "${PWD}" \
+    -x $popup_x -y $popup_y \
+       -w $popup_width -h $popup_height \
+       -E ${(@)old_tmux_flags} ". /tmp/fzf-tab/fzf-$$"
+  cat /tmp/fzf-tab/result-$$
+} always {
+  rm /tmp/fzf-tab/*-$$
+}
+

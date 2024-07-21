@@ -1,0 +1,9 @@
+
+integer RET=0
+
+for arg in $@; do
+  [[ "$( file -b --mime-type ${arg} )" == 'text/'* ]] || RET=1
+done
+
+return RET
+
