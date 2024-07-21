@@ -1,6 +1,10 @@
 # shellcheck source=/dev/null
 # shellcheck shell=bash
 
+{{- if eq (get .chezmoi.osRelease "name") "ubuntu" }}
+source ~/ubuntu.bashrc
+{{- end}}
+
 # If not running interactively, don't do anything
 # ref. https://www.gnu.org/software/bash/manual/html_node/Is-this-Shell-Interactive_003f.html
 if [ -z "$PS1" ]; then
