@@ -19,20 +19,7 @@ setalias
 source ~/.bash_function
 source ~/.bash_only_function
 
-# if type navi >/dev/null; then source "$(navi widget bash)"; fi
-[[ -s "$HOME/bin/.git-prompt.sh" ]] && source ~/bin/.git-prompt.sh
-[[ -s "$HOME/bin/.git-completion" ]] && source ~/bin/.git-completion.bash
-
-if type hub >/dev/null; then eval "$(hub alias -s)"; fi
-
-# source ~/dotfiles/.bashfunction
-
-PS1="\[\e[33m\]\#\[\e[0m\] \t \[\e[4;31m\]\W\[\e[0m\]$(__git_ps1 " %s") \$ "
 PROMPT_COMMAND='add_line'
-
-# Long
-# export PS1="\[\e[4;91m\]\w\[\e[0m\]\n\[\e[92m\]\#\[\e[0m\] \t \[\e[92m\]$(__git_ps1 "%s")\[\e[0m\] \$ > "
-export PS1
 
 # HSTR configuration - add this to ~/.bashrc
 
@@ -43,6 +30,5 @@ export HISTSIZE=${HISTFILESIZE} # increase history size (default is 500)
 # ensure synchronization between bash memory and history file
 export PROMPT_COMMAND="history -a; history -n; ${PROMPT_COMMAND}"
 
-source ~/.shared_rc
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
