@@ -1,0 +1,127 @@
+
+# shellcheck shell=sh
+
+# https://qiita.com/ko1nksm/items/45574a24ecd5f15a731e
+make_tempfile() {
+  (
+    now=$(date +'%Y%m%d%H%M%S') || return $?
+    file="${3:-${TMPDIR:-/tmp}}/${1:-}$now-$$${2:-}"
+    umask 0077
+    set -C
+    : > "$file" || return $?
+    printf '%s' "$file"
+  )
+}
+
+# 一時ディレクトリ
+make_tempdir() {
+  (
+    now=$(date +'%Y%m%d%H%M%S') || return $?
+    file="${3:-${TMPDIR:-/tmp}}/${1:-}$now-$$${2:-}"
+    umask 0077
+    mkdir "$file" || return $?
+    printf '%s' "$file"
+  )
+}
+
+calcpython() {
+  python3 -c "from math import *; print($*);"
+}
+
+mass() {
+  (
+    printf '%s\n' "          ID  App Name                                                             version"
+    mas search "$*"
+  ) | parse-columns | jq
+
+}
+
+npmsj() {
+  npm search "$@" --json | jq -r '.[] | "\(.name)|\(.version)|\(.description)"' | column -t -s '|'
+}
+
+getabsolutepath() {
+  (
+    f="$*"
+    if [ ! -e "$f" ]; then
+      printf '%s\n' "$f not found" 2>&1
+      return 1
+    fi
+    if [ -d "$f" ]; then
+      base=""
+      dir="$f"
+    else
+      base="/$(basename "$f")"
+      dir=$(dirname "$f")
+    fi
+    dir=$(cd "$dir" && pwd)
+
+    printf '%s\n' "$dir$base"
+  )
+}
+
+absp() {
+  (
+    for args in "$@"; do
+      getabsolutepath "$args"
+    done
+  )
+}
+
+nosync() {
+  (
+    for f in "$@"; do
+      __path__="$(getabsolutepath "$f")"
+      mv "$__path__" "$__path__.nosync"
+      ln -s "$__path__.nosync" "$__path__"
+    done
+  )
+}
+
+qapp() {
+  osascript -e "quit app \"$1\""
+}
+
+mkcd() {
+  mkdir "$1"
+  cd "$1" || return
+}
+
+mergejson() {
+  jq -s '.[0] * .[1]' "$@"
+}
+
+# RIPOFF
+# https://github.com/mathiasbynens/dotfiles/blob/master/.functions
+# Change working directory to the top-most Finder window location
+cdfi() { # short for `cdfinder`
+  cd "$(osascript -e 'tell app "Finder" to POSIX path of (insertion location as alias)')" || return
+}
+
+finder() {
+  open -a Finder "$@"
+}
+
+# Determine size of a file or total size of a directory
+# shellcheck disable=2199
+fs() {
+  (
+    if du -b /dev/null >/dev/null 2>&1; then
+      arg=-sbh
+    else
+      arg=-sh
+    fi
+    if [ -n "$*" ]; then
+      du $arg -- "$@"
+    else
+      # Consider Null glob?
+      du $arg '.[^.]*' ./* 2>/dev/null
+    fi
+  )
+}
+
+hld() {
+ diff -u "$@" | hldiff
+}
+
+# vim: set filetype=sh:
