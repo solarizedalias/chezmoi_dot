@@ -1,0 +1,19 @@
+# https://qiita.com/tomoyamachi/items/e51d2906a5bb24cf1684
+# $9:dir
+# $6: month
+# $7: date
+# $8: hh:mm
+function ghq-fzf() {
+  local src=$(ghq list | fzf --reverse --preview \
+    "exa -al --time-style=iso --git --git-ignore --color=always $(ghq root)/{} |cut -d ' ' -f2- |sed -E 's/^.*->.*$//' | grep -vE '^.*\.git[^a-z]' | sed -E 's/^.*ykksd//' ")
+
+  if [ -n "$src" ]; then
+    BUFFER="cd $(ghq root)/$src"
+    zle accept-line
+  fi
+  zle -R -c
+}
+
+#7456 exa -alh --time=iso --git --git-ignore --color=always
+# cut -d ' ' -f2-
+# ->

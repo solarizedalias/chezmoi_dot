@@ -1,0 +1,34 @@
+# vim: set ft=zsh:
+function help_hanger::show_message() {
+  # I do not have any idea at all how it works but it works!
+  function help_hanger::expand_alias() {
+  local _arg=$*
+  unset 'functions[_expand_alias]'
+  functions[_expand_alias]=${_arg}
+  ((${+functions[_expand_alias]})) && _arg=${functions[_expand_alias]#$'\t'}
+  echo "${_arg##\\}"
+}
+  local _default_message="Insert a command which shows help message on the left of the cursor."
+  function help_hanger::show_default_message() {
+    echo "${_default_message}"
+  }
+
+  local _message_cmd=${*:-}
+  local _message_cmd_split=( ${=_message_cmd} )
+  type ${_message_cmd_split[1]} >/dev/null 2>&1 || _message_cmd="help_hanger::show_default_message"
+  _message_cmd=$(help_hanger::expand_alias ${_message_cmd})
+  echo -E "$( ${=_message_cmd} 2>&1 )" | grep -Ev '^[\s\t\n\r]*$' | head -n $(( $(tput lines) - 5 )) | sed 's/\t/  /g'
+}
+
+if [[ "${LBUFFER}" =~ '^.*[^ ]+ ((--?)?help|-h)( *.*)?$' ]];then
+  local _LBUFFER=${LBUFFER}
+  local _RBUFFER=${RBUFFER}
+  local _cmd=$(echo ${_LBUFFER} | awk '{count=split($0, cmd, "[&|;]") ; for (i=1; i<=count; i++) print cmd[i]}' | grep -E '^(.*\S*\s+)((--?)?help|-h)(\s.*)?$' | tail -n1)
+  zle -R -c
+  zle -M "$(help_hanger::show_message ${_cmd})"
+  LBUFFER=$(echo ${_LBUFFER} | sed 's/-*help *//' | sed 's/-h *//' )
+  RBUFFER=${_RBUFFER}
+else
+  zle -R -c
+fi
+

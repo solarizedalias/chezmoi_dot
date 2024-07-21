@@ -1,0 +1,102 @@
+# vim: set filetype=zsh:
+
+
+(( ${+functions[is-at-least]} )) || autoload -Uz is-at-least
+if ! is-at-least 5.8 ; then
+  return 0
+fi
+
+autoload add-zle-hook-widget
+
+# TODO WIP
+# Meant to be binded to 'v' key in the vicmd binding.
+function _vi-cmd-mode-v-to-visual() {
+  case "${KEYMAP}" in
+    (main|emacs|vicmd)
+      zle visual-mode && {
+        PROMPT=$(starship prompt --keymap=${KEYMAP} --jobs=${(%):-%j})
+        zle reset-prompt
+        zle -R -c
+        zle -M -- "----- 𝙞𝙨𝙪𝙖𝙡 -----"
+      }
+    ;;
+    (*)
+      zle self-insert
+    ;;
+  esac
+}
+
+
+function _visual-mode-indicator() {
+  local INDICATOR='Visual'
+  builtin print -- ""
+  if [[ "${KEYMAP}" == "vicmd" ]];then
+    [[ "${TERM}" != alacritty && -z "${TMUX}" ]] && INDICATOR=" 𝙞𝙨𝙪𝙖𝙡"
+    builtin print -- "----- ${INDICATOR} -----"
+  else
+    builtin print -- "----- ${KEYMAP} -----"
+  fi
+}
+
+function _vi-cmd-mode_visual() {
+  if [[ "${KEYMAP}" != vicmd ]];then
+    zle vi-cmd-mode
+  fi
+
+  {
+    zle visual-mode
+  } && {
+    [[ "${CURSOR}" == "${#BUFFER}" ]] && CURSOR+=1 || true
+  } && {
+    zle -R -c && zle -M -- "$(_visual-mode-indicator)"
+  }
+}
+
+function __vi-mode-prompt::show_keymap() {
+  builtin print -- ""
+  case "${KEYMAP}" in
+    (main|emacs)
+      :
+      builtin print -- "${ZLE_STATE}"
+      #builtin print -- "---.+*emacs.+*---"
+    ;;
+    (viins)
+      #builtin print -- "---.+* vi .+*---"
+      builtin print -- ".+*.+*    .+*.+*"
+    ;;
+    (vicmd)
+      builtin print -- "----- ᴎᴏᴚᴍᴀᴌ -----"
+      #builtin print -- "----8<--8<--8<--8<----"
+    ;;
+    (*)
+      builtin print -- "----- ${KEYMAP} -----"
+    ;;
+  esac
+}
+
+function vi-mode-prompt::zle-keymap-select() {
+  # PROMPT=$(starship prompt --keymap=${KEYMAP} --jobs=${(%):-j})
+  starship_render
+  # zle reset-prompt
+  #zle -R
+  zle -M -- "$(__vi-mode-prompt::show_keymap)"
+}
+
+function vi-mode-prompt::zle-line-init() {
+  zle reset-prompt
+  #zle -R
+  zle -M  -- "$(__vi-mode-prompt::show_keymap)"
+}
+
+# zle -N zle-line-init
+
+add-zle-hook-widget   zle-keymap-select     vi-mode-prompt::zle-keymap-select
+add-zle-hook-widget   zle-line-init         vi-mode-prompt::zle-line-init
+
+# add-zle-hook-widget   zle-line-finish       vi-mode-prompt::zle-line-init
+# add-zle-hook-widget   zle-line-pre-redraw   vi-mode-prompt::zle-line-init
+
+#zle -N zle-pre-redraw
+#zle -N zle-line-finish
+#zle -N zle-keymap-select
+

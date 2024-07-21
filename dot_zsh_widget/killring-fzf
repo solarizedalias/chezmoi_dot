@@ -1,0 +1,52 @@
+#ftz
+# vim: set ft=zsh:
+
+killring-fzf::main() {
+  typeset -agU globalkillring
+  local SELECTED
+  local EMPTY_MESSAGE="$'\n'---- KILLRING is EMPTY ----"
+
+  if [[ ${#globalkillring} -lt 1 ]];then
+    globalkillring=(
+      "${(@)killring}"
+      "${CUTBUFFER}"
+    )
+  else
+    globalkillring+=(
+    "${(@)killring}"
+    "${CUTBUFFER}"
+  )
+  fi
+
+  globalkillring=(
+    ${(@)^globalkillring//(#s)[ $'\n'$'\0']##/}
+  )
+
+  [[ ${globalkillring[@]} ==  ((#s)[ $'\n']#(#e)) ]] && zle -R -c && zle -M "${(Q)EMPTY_MESSAGE}" && return
+
+  # TODO FIXME
+  # Some caracters (\t \b \e[1A...) are invisible in preview.
+  # ${(q)var} is overkill escaping everything.
+  SELECTED="$(
+    print -rN -- ${(@)globalkillring} | \
+      fzf +m --read0 --ansi --tac --height=70% --cycle \
+        --preview-window=right:70%:wrap \
+        --preview="print -r -- {} | bat - --style=numbers --color=always --language=zsh" \
+        --bind="ctrl-v:execute-silent(print -rn -- {} | pbcopy)"
+  )"
+
+  if [[ -n ${SELECTED} ]];then
+    CUTBUFFER="${SELECTED}"
+    globalkillring=(
+      ${globalkillring:#${SELECTED}}
+    )
+    killring=(
+      ${globalkillring[@]}
+    )
+    zle yank
+  fi
+  zle reset-prompt
+}
+
+zle -N killring-fzf killring-fzf::main
+

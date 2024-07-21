@@ -1,0 +1,29 @@
+# vim: set filetype=zsh:
+
+function _visual-mode-indicator() {
+  local INDICATOR='Visual'
+  echo ""
+  if [[ "${KEYMAP}" == "vicmd" ]];then
+    [[ "${TERM}" != alacritty && -z "${TMUX}" ]] && INDICATOR=" 𝙞𝙨𝙪𝙖𝙡"
+    echo "----- ${INDICATOR} -----"
+  else
+    echo "----- ${KEYMAP} -----"
+  fi
+}
+
+function _vi-cmd-mode_visual() {
+  if [[ "${KEYMAP}" != vicmd ]];then
+    zle vi-cmd-mode
+  fi
+
+  {
+    zle visual-mode
+  } && {
+    [[ "${CURSOR}" == "${#BUFFER}" ]] && CURSOR+=1 || true
+  } && {
+    zle -R -c && zle -M -- "$(_visual-mode-indicator)"
+  }
+}
+
+_vi-cmd-mode_visual
+

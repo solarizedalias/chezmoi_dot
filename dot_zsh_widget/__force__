@@ -1,0 +1,43 @@
+# vim: set filetype=zsh:
+
+function __force__() {
+  if [[ "$BUFFER" == *" FORCE"* ]];then
+    _LBUFFER="${BUFFER% FORCE*}"
+    _RBUFFER="${BUFFER#* FORCE}"
+    BUFFER="${_LBUFFER} --force ${_RBUFFER}"
+    zle .accept-line
+    __I_USED_DARK_SIDE__=1
+    export __I_USED_DARK_SIDE__
+  else
+    zle .accept-line
+  fi
+}
+
+# HOOK
+# HOOK
+# HOOK
+
+function __is_turned__() {
+  local __IS_EVERYTHING__GOING_AS_PLANED__="$?"
+  if [[ -z "${__I_USED_DARK_SIDE__}" ]];then
+    return ${__IS_EVERYTHING__GOING_AS_PLANED__}
+  elif [[ ${__IS_EVERYTHING__GOING_AS_PLANED__} -eq 0 ]];then
+    echo_darkside 'UNLIMITED POWER!!!' >&2
+  else
+    echo_darkside 'You have failed me, Inquisitor.' >&2
+  fi
+  unset __I_USED_DARK_SIDE__
+  unset __IS_EVERYTHING__GOING_AS_PLANED__
+#  if [[ ${__I_USED_DARK_SIDE__} -eq 1 ]] && [[ ${__IS_EVERYTHING__GOING_AS_PLANED__} -eq 0 ]];then
+#    echo_darkside 'UNLIMITED POWER!!!' >&2
+#    unset __I_USED_DARK_SIDE__
+#    unset __IS_EVERYTHING__GOING_AS_PLANED__
+#  elif [[ ${__I_USED_DARK_SIDE__} -eq 1 ]] && [[ ${__IS_EVERYTHING__GOING_AS_PLANED__} -ne 0 ]];then
+#    echo_darkside 'You have failed me, Inquisitor.' >&2
+#    unset  __I_USED_DARK_SIDE__
+#    unset __IS_EVERYTHING__GOING_AS_PLANED__
+#  else
+#    :
+#  fi
+}
+

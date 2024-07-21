@@ -1,0 +1,169 @@
+# vim: set filetype=zsh:
+# shellcheck shell=bash
+
+# get the path of the directories containing helper commands
+function __load_helpers() {
+  # ${0:A:h} does not help here
+  # hacky work around is using 'type fzff' (or 'whence -v fzff' ), which should reveal the path to this file.
+  # Note that it's impossible to get the path if fzff is not yet executed for once (just autoload'ed),
+  # but it shouldn't matter since we are here because it has been already executed.
+
+  # Get the path or empty if not available
+  _where_am_i="$(type fzff | sed 's/^.* \//\//' | grep '^\/')"
+  _default_helper_dir="$(dirname "${_where_am_i}")"
+  _helper_dir="${_FZFF_HELPER_DIR:-"${_default_helper_dir}"/_helper}"
+  # TODO export _FZFF_HELPER_DIR
+  export PATH="${_helper_dir}:$PATH"
+}
+
+function _fzff() {
+  local args=${1:-}
+  if [[ ! -e "$args" ]];then
+    echo "Internal function _fzff received an invalid path: $args" >&2
+    return 1
+  fi
+
+  ############################### options ##################################
+  local ls_op=(
+    -1pAB
+    --group-directories-first
+    --color=always
+    "--ignore='*.bak'"
+    "--ignore='.*.zwc'"
+    "--ignore='*.zwc'"
+    "--ignore='.git'"
+    "--ignore='node_modules'"
+    "--ignore='*.code-workspace'"
+    "--ignore='.*code-workspace'"
+  )
+
+  local bat_op=(
+    --color=always
+    --decorations=always
+  )
+  # local gitignore_global=$(grep -v '^#' "$(git config --global --get core.excludesfile)"|grep -v '^\s*$'|sed 's#/$##'|paste -s -d '|')
+
+  # local tree_op=(
+  #   -C
+  #   --noreport
+  #   -a
+  #   --dirsfirst
+  #   -I='.vscode/*|!.vscode/*.json|*.code-workspace|.DS_Store|*~|*tmp*|*.bak|*.zwc|node_modules|.git'
+  # )
+
+  local fzf_op=(
+    --height=80%
+    --layout=reverse
+    --no-clear
+    --preview-window=right:60%
+  )
+
+  ################################ Functions ##############################
+  function _fd_ls() {
+    # local _args
+    # _args="${*:-}"
+    # [ ! -e "${_args}" ] && echo "_fd_ls: Invalid Path Received (${_args}" 2>&1 && return 1
+
+    local _fd_ls_op
+    _fd_ls_op=(
+      -H
+      --maxdepth=1
+      --color=always
+      --exclude=.git
+      --exclude='.*zwc'
+      --exclude='*.zwc'
+      --follow
+    )
+    echo '.'
+    echo '..'
+      # shellcheck disable=2128,2086
+    fd ${_fd_ls_op} -td # -- "${_args}"
+      # shellcheck disable=2128,2086
+    fd ${_fd_ls_op} -tf # -- "${_args}"
+  }
+
+  function _pwd_origin() {
+    echo -e "pwd: \e[4;5;32m$(pwd)\e[0;39m"
+    echo "origin: ${_FZFF_OLDPWD}"
+    echo " "
+    echo " --------------------------------------"
+  }
+
+  function __get_target() {
+    # shellcheck disable=2128,2086
+    _fd_ls | fzf $fzf_op --ansi -m --header="$(_pwd_origin)" \
+      --preview="{ [[ {} == *.md ]] && mdcat --local {} ; } || { [[ -f {} ]] && bat $bat_op -- {} ; [[ -d {} ]] && command ls {} $ls_op ; }"
+  }
+
+  function __select_handler() {
+    local possible_handlers
+    [[ -d "$1" ]] && possible_handlers=(
+    fzff cd vim code code-insiders subl open gh-home nh NONE
+    )
+    [[ -f "$1" ]] && possible_handlers=(
+      fzff vim 'vim -R' code code-insiders subl open bat cat less more NONE
+    )
+    # shellcheck disable=2128,2086
+    printf "%s\n" ${possible_handlers} | fzf ${fzf_op}      \
+      --header="$(echo -e "pwd: \e[4;5;32m$(pwd)\e[0;39m";  \
+          echo "origin: $_FZFF_OLDPWD";                     \
+          echo -e "target: \e[35m${1}\e[0;39m";             \
+          echo " --------------------------------------")"  \
+      --preview '__fzff_handler_preview {}'
+  }
+
+  ##############################################################
+  ########################### BODY #############################
+  ##############################################################
+
+  local target
+  target=$(__get_target)
+  # shellcheck disable=2206
+  local target_line=( ${=target} )
+  local handler
+  # shellcheck disable=2170
+  [[ $(( ${#target_line} )) -gt 0 ]] && [[ $(( ${#target_line} )) -lt 2 ]] && handler=$(__select_handler "$target") || handler=''
+
+  if [ -n "$handler" ];then
+    case $handler in
+      fzff)
+        [[ -d "$target" ]] && builtin cd "$target" && _fzff "$(pwd)"
+        [[ -f "$target" ]] && builtin cd "${target:a:h}" && _fzff "$(pwd)"
+        tput rmcup
+        zle -R -c
+        zle reset-prompt
+        PROMPT=$(starship prompt --keymap=$KEYMAP --jobs="$(jobs | wc -l)")
+      ;;
+      NONE)
+        tput rmcup
+        export _FZFF_OLDPWD
+        _FZFF_OLDPWD=$(pwd)
+        export PATH=${_OLDPATH}
+        LBUFFER=""
+        [[ ! "${target_line}" =~ ^\.$  ]] && { RBUFFER=" ${target_line}"; } || { RBUFFER=""; }
+        ;;
+      *)
+        tput rmcup
+        export _FZFF_OLDPWD
+        _FZFF_OLDPWD=$(pwd)
+        export PATH=${_OLDPATH}
+        # shellcheck disable=2034,2128
+        BUFFER="${handler:-} ${target_line}"
+        ;;
+    esac
+  else
+    # IF ANY OF THE FZF INSTANCES IS ABORTED
+    # go back to the original path where the initial fzff was invoked and update _FZFF_OLDPWD
+    builtin cd "${_FZFF_OLDPWD}" && export _FZFF_OLDPWD && _FZFF_OLDPWD=$(pwd)
+    export PATH="${_OLDPATH}"
+    tput rmcup
+    zle reset-prompt
+  fi
+}
+
+_OLDPATH="$PATH"
+__load_helpers
+_FZFF_OLDPWD=$(pwd)
+_fzff "${*:-${_FZFF_OLDPWD}}"
+export PATH=${_OLDPATH}
+

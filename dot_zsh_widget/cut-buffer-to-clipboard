@@ -1,0 +1,23 @@
+# vim: set ft=zsh:
+
+function __cut-buffer-to-clipboard-message() {
+  echo ''
+  echo "Copied from cut buffer."
+}
+
+function __cut-buffer-to-clipboard-no-compatible() {
+  echo ''
+  echo "Sorry, sir. This operation is restricted to Darwin only."
+}
+
+if [[ "$(uname)" != "Darwin" ]];then
+  #IGNORE
+  zle -R -c
+  zle -M "$(__cut-buffer-to-clipboard-no-compatible)"
+else
+  local _CUTBUFFER=${CUTBUFFER}
+  pbcopy <<<${_CUTBUFFER}
+  zle -R -c
+  zle -M "$(__cut-buffer-to-clipboard-message)"
+fi
+

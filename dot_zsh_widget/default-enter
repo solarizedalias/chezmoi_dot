@@ -1,0 +1,39 @@
+# vim: set ft=zsh:
+
+local ENTER_WIDGET
+ENTER_WIDGET="${DEFAULT_ACTION_WIDGET:-${$(bindkey '^M')##\"* }}"
+export DEFAULT_ACTION_COUNT
+
+function default-action-or-accept {
+  if [[ -n "$BUFFER" ]]; then
+    builtin zle ${ENTER_WIDGET:-${DEFAULT_ACTION_WIDGET}}
+    return 0
+  fi
+  if [[ "${WIDGET}" != "${LASTWIDGET}" ]]; then
+    :
+    # zle -M "b:${DEFAULT_ACTION_COUNT}"
+    # DEFAULT_ACTION_COUNT=0
+    # zle -M "a:${DEFAULT_ACTION_COUNT}"
+  fi
+  case $((DEFAULT_ACTION_COUNT++)) in
+    0)
+      BUFFER=" ls -A"
+      ;;
+    1)
+      if [[ -d .svn ]]; then
+        BUFFER=" svn status"
+      elif git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        BUFFER=" git status -sb"
+      fi
+      ;;
+    *)
+      :
+      unset DEFAULT_ACTION_COUNT
+      ;;
+  esac
+  builtin zle ${ENTER_WIDGET:-${DEFAULT_ACTION_WIDGET}}
+}
+
+# zle -N default-action-or-accept
+# bindkey '^M' default-action-or-accept
+

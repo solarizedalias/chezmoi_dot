@@ -1,0 +1,13 @@
+
+function complete-tmux-buffer-words::main() {
+  local IN_FZF_TAB
+  if (( ${+functions[_tmux_buffer_words]} < 1 )); then
+    zle -M '_tmux_buffer_words is not loaded'
+    return 0
+  fi
+  IN_FZF_TAB=1 zle complete-word _tmux_buffer_words
+  zle redisplay
+}
+
+zle -N complete-tmux-buffer-words complete-tmux-buffer-words::main
+

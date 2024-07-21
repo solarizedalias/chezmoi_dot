@@ -1,0 +1,78 @@
+# vim: set ft=zsh:
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+(( ${+functions[is-at-least]} )) || autoload -Uz is-at-least
+if ! is-at-least 5.8 ; then
+  return 0
+fi
+
+function @default-action() {
+
+  typeset -g DEFAULT_ACTION_COUNT
+  typeset -ga default_action_functions
+
+  default_action_functions=(
+    default-action::actions::pwd
+    default-action::actions::exa
+    default-action::actions::git-status
+  )
+
+  function default-action::actions::pwd {
+    print -P -- "Logically,  you're at %B%F{green}$(builtin pwd -L)%f%b."
+    print -P -- "Physically, you're at %B%F{blue}$(builtin pwd -P)%f%b."
+
+    local -a adverbs=( 'Technically' 'Automatically' 'Apparently' 'Surely' 'Frequently' 'Psychologically' )
+    local -a sentences=(
+      "you're so dead"
+      "everybody pretends to care until they don't"
+      "you could have a flamethrower, an army of robot ninjas, and a motherfucking dragon on a leash in there, and I'd still kick your ass"
+      "dream life over real life, that's my motto"
+      "you're not a problem. You're a person"
+    )
+    integer ADV SENTENCE
+    (( ADV =  ${RANDOM} % ${#adverbs} + 1 ))
+    (( SENTENCE = ${RANDOM} % ${#sentences} + 1 ))
+
+    print
+    print -P "%F{$(( ${RANDOM} % 255 ))}%B${adverbs[${ADV}]}%b%f, %K{$(( ${RANDOM} % 255 ))}%B${sentences[${SENTENCE}]}%b%k."
+}
+
+  function default-action::actions::exa() {
+    local outp COLS
+    outp=( ${(f)"$(exa *(ND-/om) *(ND-.om) --color=always -ad1F --git-ignore --ignore-glob='*.zwc')"} )
+    outp=( ${(@)outp% (|$'\e'\[<0->(;<0->)#m)->($'\e'\[<0->(;<0->)#m|) *} )
+    outp=( ${(@o)${(@)outp[1,80]}} )
+    print
+    print -ac -- ${(@)outp}
+  }
+
+  function default-action::actions::git-status() {
+    print
+    command git status 2>/dev/null || true
+  }
+
+  function default-action::call() {
+    integer INDEX
+    (( INDEX = ( DEFAULT_ACTION_COUNT % ${#default_action_functions[@]} ) + 1 ))
+    print
+    ${default_action_functions[${INDEX}]}
+  }
+
+  function default-action::main() {
+    if [[  "${CONTEXT}" == start && "${BUFFER}" == (#s)[[:blank:]]#(#e) ]]; then
+      zle -R -c && default-action::call && (( DEFAULT_ACTION_COUNT += 1 ))
+    else
+      (( DEFAULT_ACTION_COUNT = 0 ))
+    fi
+  }
+
+  default-action::main
+
+}
+
+zle -N default-action @default-action
+add-zle-hook-widget zle-line-finish default-action
+

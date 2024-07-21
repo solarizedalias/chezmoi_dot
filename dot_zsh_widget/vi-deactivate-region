@@ -1,0 +1,5 @@
+# vim: set ft=zsh:
+# TODO This depends on _show_keymap which is externally defined (in vi-mode-prompt).
+# You should bundle them all in one place so it will less likely you find trouble on conditions of either of this or that script is missing or not loaded.
+zle deactivate-region && zle reset-prompt && zle -M -- "$(_show_keymap)"
+

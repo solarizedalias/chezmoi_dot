@@ -1,0 +1,87 @@
+#!/usr/bin/env zsh
+
+# shellcheck shell=bash
+# You can create your own preview functions like $(__prev vim)='.+*.+*Vim.+*.+*'
+
+_fmt() {
+  /usr/bin/fmt "$*"
+}
+
+_color_echo() {
+  _echo() {
+    echo "$*" | _fmt -c
+  }
+  _echo_blink() {
+    echo -e "\e[5m$*\e[0;39m"
+  }
+
+  _echo_r() {
+    echo -e "\033[1;31m$(echo "$*" | _fmt -c)\033[0;39m"
+  }
+  _echo_blood() {
+    echo -e "\e[38;5;160m$(echo "$*" | _fmt -c)\e[0;39m"
+  }
+  _echo_superblue() {
+    echo -e "\e[38;5;021m$(echo "$*" | _fmt -c)\e[0;39m"
+  }
+  _echo_b() {
+    echo -e "\033[1;34m$(echo "$*" | _fmt -c)\033[0;39m"
+  }
+  _echo_y() {
+    echo "\033[0;33m$*\033[0;39m"
+  }
+  _echo_g() {
+    echo "\e[32m$(echo "$*" | _fmt -c)\e[0;39m"
+  }
+  _echo_darkside() {
+    echo -e "\e[1;4;3;5;38;5;160m$(echo "$*" | _fmt -c)\e[0;39m"
+  }
+  _echo_blink_green() {
+    echo -e "\e[5;32m$(echo "$*" | _fmt -c)\e[0;39m"
+  }
+  _echo_blink_yellow() {
+    echo "\e[5;33m$*\e[0;39m"
+  }
+}
+_color_echo
+
+function __handler_preview() {
+
+  [ -n "$*" ] && _param=$1 || _param='it'
+  ##################### MAIN #######################
+  case "${_param}" in
+  "fzff") echo '➟➟➟➟➠' ;;
+  "vim"|vim*) _echo ".+*.+* $(vim --version | head -n1 | cut -d ' ' -f1-5) .+*.+*" ;;
+  "code")
+    _echo_y "$(figlet -f big "VisualStudio")"
+    _echo_y "$(figlet -f big "Code $(code -v | head -n1)")"
+    ;;
+  "code-insiders")
+    _echo_blink_yellow "$(figlet -f computer "Visual Studio Code - Insiders")"
+    _echo_blink_yellow "$(figlet -f doom "$(code-insiders -v | head -n1)")"
+    ;;
+  "subl") _echo_blink "$(echo 💚💛🧡💜 $(subl --version) 💜🧡💛💚 | _fmt -c )" ;;
+
+  "bat")
+    _echo_g "🦇🦇🦇 BAT 🦇🦇🦇"
+    _echo_g "$(bat --help | head -n3)"
+    ;;
+
+  "cat")
+    _echo_b "😼🙀😿🐱 CAT🐾 😹😻😽😸"
+    _echo_b "$(cat --version)"
+    ;;
+
+  "cd") echo -e "\e[38;5;50m $(echo "DVD -> 📀 MD -> 💽 and **THIS** is CD -> 💿" | _fmt -c) \e[0;39m" ;;
+
+  "gh-home") _echo "Open the G-hub gh-home: $(gh-home --version)" ;;
+
+  "nh") _echo "npm is awesome\nnpm-home: $(nh --version)" ;;
+  "NONE") _echo "🀇🀇🀇🀈🀉🀊🀋🀌🀍🀎🀏🀏🀏 + ?" ;;
+
+  *) _echo "uh...Do I know \"$1\" ?" ;;
+  esac
+}
+
+__handler_preview "$*"
+

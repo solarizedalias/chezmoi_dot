@@ -1,0 +1,15 @@
+
+# ==========================================================
+# wtf
+# Wed Feb 17 20:45:02 2021
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a words=( ${(z)LBUFFER} )
+
+
