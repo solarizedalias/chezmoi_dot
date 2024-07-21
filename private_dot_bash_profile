@@ -17,5 +17,3 @@ if [ -f ~/.bash_function ]; then
   . ~/.bash_function
 fi
 
-export PATH="$HOME/.cargo/bin:$PATH"
-
