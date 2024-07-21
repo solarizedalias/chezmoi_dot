@@ -1,0 +1,26 @@
+--smart-case
+--follow
+--hidden
+--glob=!.git/*
+--glob=!mackup/*
+--glob=!.git_/*
+--glob=!.zsh_history
+--color=auto
+
+# red blue green cyan magenta yellow white black
+# match:fg:<color> line:bg:yellow
+# match:bg:0,128,255
+# match:bg:0x0,0x80,0xFF
+--colors=match:fg:red
+
+# --type-list
+--type-add=zsh:*zsh*.*sh
+--type-add=zsh:*.zsh*
+--type-add=zsh:*zsh*/**
+--type-add=bash:*.*bash*
+--type-add=bash:*bash*.*sh
+--type-add=vim:*vimrc*
+--type-add=js:*.cjs
+--type-add=js:*.mjs
+--type-add=js:*.node
+
