@@ -1,0 +1,143 @@
+
+(( ZSH_PROFILE_STARTUP_TIME )) && builtin zmodload zsh/zprof
+
+if [[ -o interactive ]]; then
+  if [[ -n ~/.zinit/bin/zmodules/Src/zdharma/zplugin(|2).(bundle|so)(#qND-*) ]]; then
+    module_path+=( ~/.zinit/bin/zmodules/Src )
+
+    # enable zpmod util
+    () {
+      zmodload zdharma/zplugin 2>/dev/null || zmodload zdharma/zplugin2
+    }
+  fi
+fi
+
+export PATH
+export MANPATH
+
+# -U: keep only the first occurrence of each duplicated value
+# ref. http://zsh.sourceforge.net/Doc/Release/Shell-Builtin-Commands.html#index-typeset
+typeset -Uag path fpath manpath mailpath cdpath
+
+{{- if eq .chezmoi.os "darwin" }}
+# ignore /etc/zprofile, /etc/zshrc, /etc/zlogin, and /etc/zlogout
+# ref. http://zsh.sourceforge.net/Doc/Release/Files.html
+# ref. http://zsh.sourceforge.net/Doc/Release/Options.html#index-GLOBALRCS
+unsetopt GLOBAL_RCS
+# copied from /etc/zprofile
+# system-wide environment settings for zsh(1)
+if [[ -x /usr/libexec/path_helper ]]; then
+  eval "$(/usr/libexec/path_helper -s)"
+fi
+{{- end}}
+
+if [[ -r ~/.profile ]]; then
+  . ~/.profile
+fi
+
+typeset -gx DENO_INSTALL
+
+{{- if eq .chezmoi.os "darwin" }}
+# This check should be before $path is tweaked
+if (( ${+commands[brew]} )); then
+  typeset -gx HOMEBREW_PREFIX=/usr/local
+  typeset -gx HOMEBREW_CELLAR=/usr/local/Cellar
+  typeset -gx HOMEBREW_REPOSITORY=/usr/local/Homebrew
+  typeset -gx HOMEBREW_SHELLENV_PREFIX=/usr/local
+  # Workaround that every env var is filtered by /usr/local/bin/brew
+  # Retrieve the value in the script by `MYVAR=${HOMEBREW_MYVAR}`
+  typeset -gx HOMEBREW_COLORTERM="${HOMEBREW_COLORTERM:-${COLORTERM}}"
+  typeset -gx HOMEBREW_TMPDIR="${HOMEBREW_TMPDIR:-${TMPDIR:-/tmp}}"
+fi
+
+path=(
+  ~/bin(ND-/)
+  ~/.local/bin(ND-/)
+
+  ~/relma/bin(ND-/)                             # jiro4989/relma
+  ~/.nimble/bin(ND-/)                           # nim
+  ~/.nodebrew/current/bin(ND-/)                 # Node.js
+  ~/.yarn/v1/bin(ND-/)                          # yarn global
+  ~/.luarocks/bin(ND-/)                         # luarocks
+
+  /usr/local/opt/llvm/bin(ND-/)                 # brewed clang
+  "${DENO_INSTALL::=${HOME}/.deno}/bin"(ND-/)   # deno
+  ~/go/bin(ND-/)                                # Golang
+  ~/.cargo/bin(ND-/)                            # Rust Cargo
+  ~/.rbenv/shims(ND-/)                          # ruby
+  ~/.dotnet/tools(ND-/)                         # dotnet
+
+  /usr/local/bin(ND-/)                          # homebrew
+  /usr/local/sbin(ND-/)                         # homebrew
+  /usr/local/opt/curl/bin(ND-/)                 # brewed curl
+  /usr/local/opt/sqlite/bin(ND-/)               # sqlite3
+  /usr/local/opt/openjdk/bin(ND-/)              # java
+  /usr/local/opt/coreutils/libexec/gnubin(ND-/) # coreutils
+  /usr/local/opt/ed/libexec/gnubin(ND-/)        # ed
+  /usr/local/opt/findutils/libexec/gnubin(ND-/) # findutils
+  /usr/local/opt/gnu-sed/libexec/gnubin(ND-/)   # sed
+  /usr/local/opt/gnu-tar/libexec/gnubin(ND-/)   # tar
+  /usr/local/opt/grep/libexec/gnubin(ND-/)      # grep
+  /usr/local/opt/gnu-time/libexec/gnubin(ND-/)  # time
+  /usr/local/opt/gnu-which/libexec/gnubin(ND-/) # which
+  /usr/local/opt/gnu-units/libexec/gnubin(ND-/) # units
+  /usr/local/opt/make/libexec/gnubin(ND-/)      # make
+  /usr/local/opt/bison/bin(ND-/)                # bison
+
+  "${(@)path}"
+
+  ~/.orbstack/bin(ND-/)
+  ~/Library/Python/2.7/bin(ND-/)                # Python2.7 pip
+  ~/.cabal/bin(ND-/)                            # Cabal (haskel)
+  ~/fakebin(ND-/)
+  ~/shellshoccar/bin(ND-/)
+)
+
+manpath=(
+  # ~/.local/share/man(ND-/)
+  # /usr/local/opt/coreutils/libexec/gnuman(ND-/) # coreutils
+  # /usr/local/opt/ed/libexec/gnuman(ND-/)        # ed
+  # /usr/local/opt/findutils/libexec/gnuman(ND-/) # findutils
+  # /usr/local/opt/gnu-sed/libexec/gnuman(ND-/)   # sed
+  # /usr/local/opt/gnu-tar/libexec/gnuman(ND-/)   # tar
+  # /usr/local/opt/grep/libexec/gnuman(ND-/)      # grep
+  # /usr/local/opt/gnu-time/libexec/gnuman(ND-/)  # time
+  # /usr/local/opt/gnu-which/libexec/gnuman(ND-/) # which
+  # /usr/local/opt/gnu-units/libexec/gnuman(ND-/) # units
+  # /usr/local/opt/make/libexec/gnuman(ND-/)      # make
+  # /usr/local/share/man(ND-/)                    # homebrew
+  # /Library/Developer/CommandLineTools/usr/share/man(ND-/)
+  # /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/share/man(ND-/)
+  # ${(@)manpath}
+  ~/.cache/manpath_compile(ND-/)
+)
+
+{{- end}}
+
+# make sure all the entry so far really exist.
+path=(
+  ${(@)^path}(ND-/)
+)
+
+# TODO move this to .profile
+if (( ${+commands[luarocks]} )); then
+  typeset -gx LUA51_PATH
+  typeset -gx LUA51_CPATH
+  () {
+    local -U -T _LUA51_PATH  lua51_path  ';'
+    local -U -T _LUA51_CPATH lua51_cpath ';'
+    lua51_path=(
+      "${HOME}/.luarocks/share/lua/5.1/?.lua"
+      "${HOME}/.luarocks/share/lua/5.1/?/init.lua"
+    )
+    lua51_cpath=(
+      "${HOME}/.luarocks/lib/lua/5.1/?.so"
+    )
+    # XXX preserving the default path
+    LUA51_PATH="${_LUA51_PATH};;"
+    LUA51_CPATH="${_LUA51_CPATH};;"
+  }
+fi
+
+# export ZSH_HIGHLIGHT_HIGHLIGHTERS_DIR=/usr/local/share/zsh-syntax-highlighting/highlighters
+

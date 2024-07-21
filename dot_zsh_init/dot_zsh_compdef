@@ -1,0 +1,45 @@
+
+
+() {
+  # source <(cod init $$ zsh)
+  # complete -F _todo.sh td
+  # compdef _functions ref
+  # compdef _t t
+  #source $HOME/.completion/*compinit
+
+  # local GIT_CMD='git'
+  # ((${+commands[hub]})) && GIT_CMD='hub'
+  # compdef g=${GIT_CMD}
+  # unset GIT_CMD
+
+  # compdef _gh gh
+  # compdef _ghq ghq
+  # compdef _brew brw
+  # compdef _colorls colorls
+  # compdef _buku buku
+  compdef _man bman
+  compdef _man batman
+  autoload -Uz _aliases_description
+  # compdef _rustup rustup
+  # compdef _rustc rustc
+  # compdef _rustfmt rustfmt
+  # compdef _xpanes xpanes
+  # compdef _xpanes tmux-xpanes
+  # compdef _pueue pueue
+  # compdef _command_names pathof
+  compdef -P _pip 'pip[0-9.]#'
+  compdef _pip pip pip2 pip2.7 pip3.7 pip3.8 pip3 conda_pip
+  compdef _python conda_python3
+
+  # # show the least you can do
+  # # compdef _gnu_generic pueue
+  # compdef _gnu_generic memo
+
+  # # complete -o nospace -C /Users/ykksd/bin/vault vault
+
+  # # This is soooooo sloooooooooooooowwwwwwwwwwwwwwww!!!!!!!!!!!!!!!!!!!!!!!
+  # # source $(dirname $(gem which colorls))/tab_complete.sh
+  # compdef _colorls colorls
+
+}
+

@@ -1,0 +1,533 @@
+
+(( ${+parameters[DROOT]} )) || readonly -H DROOT="${${(%):-%N}:h}"
+
+setopt NO_complete_aliases
+setopt NO_flow_control
+setopt hash_executables_only
+setopt auto_cd
+setopt pushd_silent
+setopt ignore_eof
+setopt rc_quotes
+
+# When you have to track down all those stuff.
+# setopt warn_create_global
+setopt typeset_silent
+# setopt no_short_loops
+
+setopt extended_glob
+setopt globdots
+setopt glob_star_short
+setopt numeric_glob_sort
+setopt brace_ccl
+setopt interactive_comments
+setopt auto_menu
+setopt auto_list
+setopt list_packed
+setopt list_types
+setopt magic_equal_subst
+setopt auto_param_keys
+setopt auto_param_slash
+setopt auto_remove_slash
+setopt correct
+# setopt correct_all
+setopt complete_in_word
+
+# setopt print_eight_bit
+setopt auto_pushd
+setopt pushd_ignore_dups
+setopt rm_star_wait
+
+# default (*?_-.[]~=/&;!#$%^(){}<>)
+export WORDCHARS='*?.~!%'
+
+setopt share_history
+typeset -g +x HISTFILE=~/.zsh_history.d/.zsh_history
+typeset -g +x HISTSIZE=100000  # Loaded in RAM
+typeset -g +x SAVEHIST=100000  # Saved in HISTFILE
+setopt hist_ignore_dups        # No consecutive dups
+setopt hist_ignore_all_dups    # No dups at all
+setopt extended_history
+setopt hist_ignore_space
+setopt hist_verify
+setopt hist_find_no_dups
+setopt hist_lex_words
+setopt hist_reduce_blanks
+setopt hist_expire_dups_first
+setopt hist_subst_pattern
+
+# notify changes in the bg process
+setopt notify
+
+#
+# REGARDING COMPLETIONS
+#
+
+# Genereal
+# select completer
+zstyle    ':completion:*' \
+  completer _prefix _expand _complete _match _approximate _ignored
+zstyle    ':completion:*:prefix:*' \
+  completer _complete _match
+# zstyle    ':completion:*:prefix:*' \
+#   add-space true
+
+zstyle    ':completion:*:default' menu select=2
+
+# zstyle  ':completion:*:default' interactive
+
+zstyle    ':completion:*:default' list-colors ""
+zstyle -e ':completion:correct-word:*' \
+  list-colors 'reply=(
+    "${PREFIX:+=(#bi)(${PREFIX:t})(?)*==34=34}:${(s.:.)LS_COLORS}"
+  )'
+
+zstyle    ':completion:*' auto-description 'specify: %d.'
+# zstyle    ':completion:*:default' list-prompt '%S%M matches%s'
+zstyle    ':completion:*' expand prefix suffix
+
+# Enables smart-case, in-word (e,g. rn -> yarn), matching.
+zstyle    ':completion:*' \
+  matcher-list 'l:|=** r:|=** m:{[:lower:]}={[:upper:]} r:|[-,_./]=** m:[{}]= '
+
+zstyle    ':completion:*:*:-command-:*:commands'  ignored-patterns \
+                   '.(emscripten|flake8|github|dockerignore)' \
+                   '.(shellspec|vscode|_zinit|circleci)' \
+                   '.git(|ignore|modules|attributes)' \
+                   '(#i)(readme|license)(|.txt|.rst)' \
+                   '*.(md|markdown|conf|json|lock|zwc)' \
+                   '(__pycache__|__se__)'
+
+zstyle    ':completion:*:*:-command-:*:functions' prefix-needed true
+zstyle    ':completion:*:*:kill:*:jobs' prefix-needed false
+# zstyle    ':completion:*:*:kill:*:*' tag-order jobs processes process-groups
+zstyle    ':completion:*' list-suffixes true
+zstyle    ':completion:*' list-dirs-first true
+zstyle    ':completion:*' sort false
+
+#
+# COMMAND OPTIONS
+#
+zstyle    ':completion:*:*:' tag-order \
+          '!options' \
+          'options:-single-letter:single\ letter\ options
+           options:-short:short\ options
+           options:-long:long\ options'
+zstyle    ':completion:*:*:*:*:options-single-letter' \
+    ignored-patterns '???*'
+zstyle    ':completion:*:*:*:*:options-long' \
+    ignored-patterns '[-+](|-|[^-]*)'
+zstyle    ':completion:*:*:*:*:options-short' \
+    ignored-patterns '--*' '[-+]?'
+
+zstyle -e ':completion:*'         special-dirs \
+  '[[ ${PREFIX} = (../)#(.|..) ]] && reply=(..)'
+
+# TODO define completions for these parameters.
+zstyle    ':completion:*'         fake-parameters \
+  'DYLD_PRINT_LIBRARIES:integer' \
+  'DYLD_PRINT_LIBRARIES_POST_LAUNCH:integer' \
+  'DYLD_PRINT_APIS:integer' \
+  'DYLD_PRINT_STATISTICS:integer' \
+  'DYLD_PRINT_INITIALIZERS:integer' \
+  'DYLD_PRINT_SEGMENTS:integer' \
+  'DYLD_PRINT_BINDINGS:integer' \
+  'LD_LIBRARY_PATH:scalar' \
+  'DYLD_LIBRARY_PATH:scalar' \
+  'DYLD_FALLBACK_LIBRARY_PATH:scalar'
+
+zstyle    ':completion:*'         show-completer true
+zstyle    ':completion:*'         extra-verbose  true
+zstyle    ':completion:*'         group-name     ''
+zstyle    ':completion::expand:*' glob           true
+zstyle    ':completion::expand:*' substitute     true
+zstyle    ':completion:*'         use-cache      true
+zstyle    ':completion:*'         cache-path     ~/.cache/shell/zsh
+
+zstyle    ':completion:*:(correct|approximate):*' original true
+zstyle -e ':completion:*:(correct|approximate):*' max-errors \
+  'reply=(
+    $(( (${#PREFIX} + ${#SUFFIX}) / 2 > 10 ?
+                                         7 :
+        (${#PREFIX} + ${#SUFFIX}) / 3      ))
+    numeric
+  )'
+
+#completerray index and so on
+zstyle    ':completion:*:*:-subscript-:*' tag-order indexes parameters
+zstyle    ':completion:*' list-separator '   . 〭oO'
+
+() {
+  if [[ ${(t)fg} != association-* ]]; then
+    autoload -Uz colors
+    colors
+  fi
+  # # Have the completion system announce what it is completing.
+  # zstyle    ':completion:*' format '%F{magenta}Completing %d%f'
+  # This shouldn't be colored in favor of fzf-tab...? Not sure.
+  zstyle    ':completion:*:descriptions' format  '[%d]'
+  # zstyle  ':completion:*:descriptions' format  ' %F{yellow}-- %d --%f'
+  zstyle    ':completion:*:warings' format \
+    " -- ${fg[yellow]}no match${fg[default]} --"
+  zstyle    ':completion:*:corrections' format \
+    " ${fg[green]}-- %d (errors: ${fg[red]}%e${fg[green]}) --"
+  zstyle    ':completion:*:messages' format \
+    "${fg[blue]}[ %d ]${fg[default]}"
+}
+
+# In menu-style completion, less style prompt bar at the bottom.
+zstyle    ':completion:*' select-prompt \
+  '%SScrolling active: current selection at %p%s'
+
+#
+# TYPE SPECIFIC
+#
+zstyle    ':completion:*' urls ~/.urls
+
+#
+# COMMAND SPECIFIC
+#
+# zstyle    ':completion:*:sudo:*' command-path \
+#  /usr/local/sbin /usr/local/bin /usr/sbin /usr/bin /sbin /bin
+
+zstyle    ':completion:*' file-patterns \
+  '*(-/):directories %p:globbed-files *:all-files'
+
+# Don't expect much. Many of them are not implemented.
+zstyle    ':completion:*:*:(cd|pushd|chdir):*' complete-options true
+zstyle    ':completion:*:*:(cd|pushd|chdir):*' tag-order \
+  'local-directories:-current:current\ directory
+   local-directories:-normal:local\ directories
+   local-directories:-replacements:replacements
+   *'
+zstyle -e ':completion:*:*:(cd|pushd|chdir):*:local-directories-current' \
+  fake-always 'reply=( ${PWD:t}:current\ directory )'
+zstyle -e ':completion:*:*:(cd|pushd|chdir):*:local-directories-replacements' \
+  fake-always 'reply=( ${(@)^${(s./.)PWD:h}}:replacement )'
+zstyle -e ':completion:*:*:(cd|pushd|chdir):*:local-directories-current' \
+  ignored-patterns 'reply=( "^${PWD:t}" )'
+zstyle -e ':completion:*:*:(cd|pushd|chdir):*:local-directories-replacements' \
+  ignored-patterns 'reply=( "^(${(j.|.)${(s./.)PWD:h}})" )'
+
+zstyle    ':completion:*:*:(bat|(nvim|vim|vi|view)|zca):*:*' \
+  ignored-patterns '*.zwc' '.*.zwc'
+
+# zstyle    ':completion:*:*:((|n)vim|nim|nimble):*' gitignore true
+
+zstyle    ':completion:*:*:autoload:*:*' \
+  ignored-patterns '.(shellspec|vscode|_zinit|circleci|emscripten|flake8|github)' \
+                   '.git(|ignore|modules|attributes)' \
+                   '(#i)(readme|license)(|.md|.txt|.rst)' \
+                   '*.(md|conf|json|lock)'
+
+zstyle -e ':completion:*:*:zcompile:*:*' \
+  ignored-patterns '(( ${words[(I)-t]} )) || reply=( ''*.zwc'' ''.*.zwc'' )'
+
+zstyle    ':completion:*:*:(mdcat|glow):*:*' \
+  file-patterns '*(-/):directories *.md:markdown'
+
+# zstyle    ':completion:*:*:zcpt:*:*' \
+#   file-patterns '*.zwc(.old|):zsh-wordcode' '*(#qND-/):directories'
+
+# zstyle    ':completion:*:*:zcpt:*:*' \
+#   ignored-patterns '^*.zwc(.old)#(#qN-.)'
+
+() {
+
+  local TTT
+  # choosenim (my own _choosenim in .zsh/comps)
+  source ${DROOT}/.env
+  zstyle ':completion::complete:choosenim:*' fetch-remote true
+  zstyle ':completion::complete:choosenim:*' use-auth solarizedalias${TTT:+:}${TTT}
+
+}
+
+zstyle ':completion:*:*:(pathof|pofrpof):*:(parameters|builtins|reserved-words|aliases)' \
+  ignored-patterns '*'
+
+zstyle ':completion:*:*:komp:*:(parameters|reserved-words|aliases)' \
+  ignored-patterns '*'
+
+zstyle ':completion:*:*:docker:*' option-stacking yes
+zstyle ':completion:*:*:docker-*:*' option-stacking yes
+
+#
+# cdr chpwd
+#
+() {
+  if autoload -Uz +X chpwd_recent_dirs cdr; then
+    autoload -Uz add-zsh-hook
+    autoload -Uz chpwd-recent-dirs-file-prune-non-existent
+    add-zsh-hook chpwd chpwd_recent_dirs
+    add-zsh-hook chpwd chpwd-recent-dirs-file-prune-non-existent
+    zstyle ':completion:*:*:cdr:*:*' menu                selection
+    zstyle ':completion:*:*:cdr:*'   recent-dirs-insert  both
+    zstyle ':chpwd:*'                recent-dirs-max     500
+    zstyle ':chpwd:*'                recent-dirs-default true
+    local   RECENT_DIRS_FILE="${XDG_CACHE_HOME:-${HOME}/.cache}/shell/zsh/chpwd-recent-dirs"
+    zstyle ':chpwd:*'                recent-dirs-file    ${RECENT_DIRS_FILE}
+    zstyle ':chpwd:*'                recent-dirs-pushd   true
+    local -a prune_pats=(
+      'pattern:(/(.*/)*((tmp|node_modules|.git)(/.+)+))'
+      'pattern:(^(~|/|'"${HOME}"')$)'
+      'pattern:(^/private/tmp$)'
+      'pattern:(^/dev$)'
+    )
+    zstyle ':chpwd:*'                recent-dirs-prune   "${(@)prune_pats}"
+  fi
+}
+
+# ==================== FZF-Tab ========================
+
+local -a FZF_TAB_COMMAND
+FZF_TAB_COMMAND=(
+  fzf
+  --ansi   # Enable ANSI color support, necessary for showing groups
+  --expect='${continuous_trigger},${print_query}' # For continuous completion
+  '--color=hl:$(( $#headers == 0 ? 108 : 255 ))'
+  --nth=2,3
+  --delimiter='\x00'  # Don't search prefix
+  --layout=reverse --height='${FZF_TMUX_HEIGHT:=75%}'
+  --tiebreak=begin
+  -m
+  --bind=tab:down,btab:up,change:top,ctrl-space:toggle,ctrl-q:toggle-sort
+  --cycle
+  '--query=${query}'   # ${query} will be expanded to query string at runtime.
+  '--header-lines=$#headers' # $#headers will be expanded to lines of headers at runtime
+  --print-query
+)
+
+local -a FZF_TAB_COMMAND_POPUP=(
+    fzf-tmux-popup-s
+    --ansi   # Enable ANSI color support, necessary for showing groups
+    --expect='${continuous_trigger},${print_query}' # For continuous completion and print query
+    '--color=hl:$(( $#headers == 0 ? 108 : 255 ))'
+    --nth=2,3 --delimiter='\x00'  # Don't search prefix
+    --layout=reverse --height='${FZF_TMUX_HEIGHT:=75%}'
+    --tiebreak=begin -m
+      --bind=tab:down,btab:up,change:top,ctrl-space:toggle,ctrl-q:toggle-sort
+      --cycle
+    '--query=${query}'   # ${query} will be expanded to query string at runtime.
+    '--header-lines=$#headers' # $#headers will be expanded to lines of headers at runtime
+    --print-query
+)
+local fzf_tab_preview_init="
+  local -a _fzf_tab_compcap=(\"\${(@f)\"\$(</tmp/fzf-tab/compcap.$$)\"}\")
+  local -a _fzf_tab_groups=(\"\${(@f)\"\$(</tmp/fzf-tab/groups.$$)\"}\")
+  local bs=\$'\2'
+  # get descriptoin
+  local desc=\${\${\"\$(<{f})\"%\$'\0'*}#*\$'\0'}
+  # get ctxt for current completion
+  local -A ctxt=(\"\${(@0)\${_fzf_tab_compcap[(r)\${(b)desc}\$bs*]#*\$bs}}\")
+  # get group
+  local group=\$_fzf_tab_groups[\$ctxt[group]]
+  # get real path if it is file
+  if (( \$+ctxt[isfile] )); then
+    local realpath=\${(Qe)~\${:-\${ctxt[IPREFIX]}\${ctxt[hpre]}}}\${(Q)desc}
+  fi
+  # get original word
+  local word=\$ctxt[word]
+"
+
+if [[ ${TERM_PROGRAM} == iTerm.app ]]; then
+  # Should be loaded even if you don't use it right away
+  autoload -Uz fzf-tmux-popup-s
+  zstyle ':fzf-tab:*' command ${FZF_TAB_COMMAND}
+
+# `-R` is new `/bin/zsh` doesn't have this.
+elif autoload -R -Uz fzf-tmux-popup-s 2>/dev/null \
+    && (( ${+TMUX} )); then
+      zstyle ':fzf-tab:*' command ${FZF_TAB_COMMAND_POPUP}
+      zstyle ':fzf-tab:*' popup-pad 30 40
+else
+  zstyle ':fzf-tab:*' command ${FZF_TAB_COMMAND}
+fi
+alias nopop="zstyle ':fzf-tab:*' command \${FZF_TAB_COMMAND}"
+alias dopop="zstyle ':fzf-tab:*' command \${FZF_TAB_COMMAND_POPUP}"
+
+#((local|named)-directories|directories|directory-stack|globbed-files|all-files)
+# zstyle ':fzf-tab:complete:(ls|bat|file):argument-rest' \
+#   command ${FZF_TAB_TMUX_POPUP_COMMAND}
+zstyle ':fzf-tab:*' print-query 'ctrl-]'
+
+local -a FZF_TAB_GROUP_COLORS
+FZF_TAB_GROUP_COLORS=(
+    $'\033[94m' $'\033[32m' $'\033[33m' $'\033[35m' $'\033[31m' $'\033[38;5;27m' $'\033[36m' \
+    $'\033[38;5;100m' $'\033[38;5;98m' $'\033[91m' $'\033[38;5;80m' $'\033[92m' \
+    $'\033[38;5;214m' $'\033[38;5;165m' $'\033[38;5;124m' $'\033[38;5;120m'
+)
+zstyle ':fzf-tab:*' group-colors ${FZF_TAB_GROUP_COLORS}
+
+local extract="
+  # trim input(what you select)
+  local in=\${\${\"\$(<{f})\"%\$'\0'*}#*\$'\0'}
+  # get ctxt for current completion(some thing before or after the current word)
+  [[ -n \"\${CTXT}\" ]] && local -A ctxt=(\"\${(@ps:\2:)CTXT}\")
+  # real path
+  local realpath=\${ctxt[IPREFIX]}\${ctxt[hpre]}\${in}
+  realpath=\${(Qe)~realpath}
+"
+
+zstyle ':fzf-tab:*' continuous-trigger ';'
+zstyle ':fzf-tab:*' prefix '☛  '
+zstyle ':fzf-tab:*' single-group prefix color header
+
+# possible values: full brief (requires ':completions:*:descriptions' format to be set.)
+zstyle ':fzf-tab:*' show-group full
+
+# zstyle ':fzf-tab:*:kill:*' continuous_trigger ','
+# --bind="ctrl-r:reload(ps ax -o pid,user,comm -w -w)" OK, bad idea.
+zstyle ':fzf-tab:*:kill:argument-rest' extra-opts \
+  --preview=${extract:-${fzf_tab_preview_init}}'
+    grc --colour=on -- ps -p ${in[(w)1]} -o pid,ppid,tty,command -w -w 2>/dev/null
+  ' \
+  --preview-window=down:3:wrap
+
+# give a preview of commandline arguments when completing `kill`
+# zstyle ':completion:*:*:*:*:processes' command \
+#   "ps -u ${USER} -o pid,user,comm -w -w"
+zstyle ':completion:*:*:*:*:processes' command \
+  'ps ax -o pid,user,command -w -w'
+
+zstyle    ':fzf-tab:*:-command-:' extra-opts \
+  --preview=${extract:-${fzf_tab_preview_init}}'
+    batman --color=always ${in[(w)1]:-${word}} 2>/dev/null || :
+  ' \
+  --preview-window=right:70%:hidden
+
+# give a preview of directory by exa when completing cd
+zstyle ':fzf-tab:*:(cd|pushd):' extra-opts \
+  --preview=${extract:-${fzf_tab_preview_init}}'
+    [[ -e "${realpath}" ]] &&
+      preview.zsh dir ${reaplath}
+  '
+
+zstyle ':fzf-tab:*:cdr:' extra-opts \
+  --preview=${extract:-${fzf_tab_preview_init}}'
+    if [[ -e "${realpath}" ]];then
+      preview.zsh dir ${realpath}
+    fi
+  ' +m --no-sort
+
+zstyle ':fzf-tab:*:(mdcat|glow):argument*' extra-opts \
+  --preview=${extract:-${fzf_tab_preview_init}}'
+    [[ -f "${realpath}" && "${realpath}" == *.md ]] &&
+      mdcat "${realpath}"
+  '
+
+zstyle ':fzf-tab:*:zcpt:*' extra-opts \
+  --preview=${extract:-${fzf_tab_preview_init}}'
+    [[ -f "${realpath}" && "${realpath}" == *.zwc(|.old) ]] &&
+      builtin zcompile -t "${realpath}"
+  '
+
+zstyle ':fzf-tab:*:(man|whatis|batman|bman):argument*' extra-opts \
+  +m --preview=${extract:-${fzf_tab_preview_init}}'
+    batman --color=always ${in[(w)1]} 2>/dev/null
+  '
+
+zstyle ':fzf-tab:*:(ssh|ping):argument*' extra-opts \
+  --preview=${extract:-${fzf_tab_preview_init}}' [[ ${in[(w)1]} != -* ]] && dig ${in[(w)1]}'
+
+local COMP_SEP
+zstyle -s ':completion:*' list-separator COMP_SEP
+zstyle ':fzf-tab:*' extra-opts \
+  --preview-window=right:60%:hidden \
+  --preview=${extract}';'${fzf_tab_preview_init}'
+    emulate -R zsh
+    setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+    if [[ -e ${(q+)realpath} ]]; then
+      preview.zsh auto ${realpath:a}
+    elif [[ -e ${PWD}/${realpath} ]]; then
+      preview.zsh auto "${PWD}/${realpath}"
+    elif man --path ${in[(w)1]} &>/dev/null; then
+      batman --color=always ${in[(w)1]}
+    else
+      local NL=$'\''\n'\''
+      print -rl -- "group: ${group}" "word: ${word}" ${(@)${(@)${desc#*'${COMP_SEP}'}//[[:cntrl:]]##/}// /${NL}}
+    fi
+  ' \
+
+
+# ================== ~~~Z+A+W+~~~ =====================
+# ':filter-select:highlight' selected
+# ':filter-select:highlight' matched
+# ':filter-select:highlight' marked
+# ':filter-select:highlight' title
+# ':filter-select:highlight' error
+# ':filter-select' max-lines
+# ':filter-select' rotate-list
+# ':filter-select' case-insensitive
+# ':filter-select' extended-search
+# ':filter-select' hist-find-no-dups
+# ':filter-select' escape-descriptions
+# ':zaw:<source-name>' default <func_name>
+# ':zaw:<source-name>' alt <func_name>
+zstyle ':filter-select:highlight'          title    fg=yellow
+zstyle ':filter-select:highlight'          error    fg=red
+zstyle ':filter-select:highlight'          matched  fg=cyan,standout
+zstyle ':filter-select:highlight'          selected fg=green,standout
+
+# use ${LINES} - 10 for filter-select
+zstyle ':filter-select'                    max-lines -10
+# enable rotation for filter-select
+zstyle ':filter-select'                    rotate-list yes
+# enable case-insensitive search
+zstyle ':filter-select'                    case-insensitive yes
+zstyle ':filter-select'                    extended-search yes
+# ignore duplicates in history source
+zstyle ':filter-select'                    hist-find-no-dups yes
+# display literal newlines, not \n, etc
+zstyle ':filter-select'                    escape-descriptions yes
+zstyle ':zaw:(aliases|commands|functions)' default zaw-callback-append-to-buffer
+zstyle ':zaw:command-output'               default zaw-callback-append-to-buffer
+# set default action for git-files
+zstyle ':zaw:git-files'                    default zaw-callback-append-to-buffer
+# set the alt action for git-files
+zstyle ':zaw:git-files'                    alt zaw-callback-edit-file
+
+
+# extended-search:
+#     If this style set to be true value, the searching bahavior will be
+#     extended as follows:
+
+#     ^ Match the beginning of the line if the word begins with ^
+#     $ Match the end of the line if the word ends with $
+#     ! Match anything except the word following it if the word begins with !
+#     so-called smartcase searching
+
+#     If you want to search these metacharacters, please doubly escape them.
+# Override original func which spoils the buffer.
+zaw-src-command-output () {
+  local ORG_BUFFER=${BUFFER}
+  local BUF
+  local REPLY
+  read-from-minibuffer "command: "
+  BUF=$(${(Q@)${(z)REPLY}})
+  (( $? == 0 )) || return 1
+  : ${(A)candidates::=${(f)buf}} ${(A)cand_descriptions::=${(f)buf}}
+  BUFFER=${ORG_BUFFER}
+  actions=(zaw-callback-append-to-buffer)
+  act_descriptions=("append to buffer")
+}
+
+####### zsh-autosuggestions ########
+typeset -g ZSH_AUTOSUGGEST_STRATEGY=( history completion )
+typeset -ig ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+typeset -g ZSH_AUTOSUGGEST_USE_ASYNC=true
+
+# :::::::::::::::::::::: ZSH-ABBR ::::::::::::::::::::::
+# export ZSH_ABBR_DEFAULT_BINDINGS=false
+# zle -N _zsh_abbr_expand_widget
+# bindkey '^ ' _zsh_abbr_expand_widget
+# zle -N _zsh_abbr_expand_and_accept
+# bindkey '^M' _zsh_abbr_expand_and_accept
+# zle -N _zsh_abbr_expand_and_space
+# bindkey "^ ^ " _zsh_abbr_expand_and_space
+
+####################### pmy ##########################
+######### https://github.com/relastle/pmy ############
+# default (fzf -0 -1)
+export PMY_FUZZY_FINDER_DEFAULT_CMD="fzf -0 -1 --ansi --reverse --height=50%"
+export PMY_TRIGGER_KEY='^]^P' # '^ ' C-<Space> (default)
+

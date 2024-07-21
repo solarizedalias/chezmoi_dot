@@ -1,0 +1,182 @@
+
+# ~~~~~~ FYI ~~~~~~~
+# ^@ - ^<Space>
+# ^I - <Tab>
+# ^J - <Enter> (\n newline)
+# ^M - <Enter> (\r carriage return)
+# ^? - <Delete>
+# ^h - <Backspace>
+# ^: - ^Z (default: undefined-key)
+# ^; - ^[ (default: undefined-key)
+# ^. - ^N (default: down-line-or-history)
+# ^/ - ^0 (default: accepr-line-and-down-history)
+# ^= - ^] (default: undefined-key)
+# ^< - ^\\\\ (default: undefined-key)
+# ^> - ^\^ (default: undefined-key)
+# ^, - ^L (default: clear-screen)
+# ^+ - ^K (default: kill-line)
+
+####### INIT ########
+# The best editor is vim *AND* emacs
+bindkey -d && bindkey -e
+
+#
+# Fallbacks if anything breaks
+#
+function _fallback-key() {
+  bindkey -d
+  bindkey -M .safe
+  zle -M "You're safe. Now go."
+}
+zle -N _fallback-key
+bindkey '^]^D' _fallback-key
+
+#
+# COMPLETIONS ~> !@%&$
+#
+bindkey '^I' complete-word
+bindkey '^[^[' expand-word
+
+# OVERRIDE
+bindkey '^D' delete-char
+
+####### widgets ######
+autoload -Uz edit-command-line &&
+  zle -N edit-command-line &&
+  bindkey '^X^E' edit-command-line
+bindkey '^]^A' expand-word
+bindkey '^]^@' autosuggest-toggle
+bindkey '^]^F' fzff
+bindkey '^]^[' ghq-fzf
+bindkey '^]^B' zbrowse
+bindkey '^]^M' zzcomplete
+bindkey '^W'   vi-backward-kill-word
+bindkey '^U'   backward-kill-line
+
+autoload -Uz complete-tmux-buffer-words &&
+  complete-tmux-buffer-words &&
+  bindkey '^]^G' complete-tmux-buffer-words
+
+bindkey '^O'   yank-pop
+autoload -Uz killring-fzf && killring-fzf && bindkey '^O' killring-fzf
+
+bindkey '^[^F' forward-word
+bindkey '^[^B' backward-word
+
+bindkey '^]^K' push-line
+bindkey '^]^L' get-line
+
+bindkey '^^' redo
+
+# add-zle-hook-widget line-init vi-cmd-mode
+
+#
+# HISTORY ~> !!
+#
+autoload -Uz history-search-end
+zle -N history-beginning-search-backward-end history-search-end
+zle -N history-beginning-search-forward-end  history-search-end
+bindkey '^[^p' history-beginning-search-backward-end
+bindkey '^[^n' history-beginning-search-forward-end
+
+
+function toggle-history-scope::main() {
+  zle set-local-history
+  zle -M -- "$(_show_keymap)"
+}
+zle -N toggle-history-scope toggle-history-scope::main
+bindkey '^]^O' toggle-history-scope
+
+bindkey '^]^R' history-search-multi-word
+bindkey '^P'   up-line-or-search
+bindkey '^N'   down-line-or-search
+bindkey '^S'   undefined-key
+
+# not the builtin widget
+# found this on stack overflow
+# take look at .zsh autoload dir
+autoload -Uz expand-aliases &&
+  zle -N expand-aliases &&
+  bindkey '^Xa' expand-aliases
+
+bindkey '^X^X' vi-cmd-mode
+bindkey '^]^]' vi-cmd-mode
+
+bindkey '^X^A' exchange-point-and-mark
+bindkey '^Z' vi-easy-motion
+bindkey -M vicmd ' ' vi-easy-motion
+autoload -Uz smart-insert-last-word
+zle -N insert-last-word smart-insert-last-word
+zstyle :insert-last-word match '*([A-Za-z0-9\-\_/\\]?|?[A-Za-z0-9\-\_/\\])*'
+
+autoload -Uz cut-buffer-to-clipboard &&
+  zle -N cut-buffer-to-clipboard &&
+  bindkey '^X^P' cut-buffer-to-clipboard
+autoload -Uz vi-visual &&
+  zle -N vi-visual &&
+  bindkey '^X^v' vi-visual
+
+bindkey  -M vicmd 'v' vi-visual
+
+autoload -Uz vi-deactivate-region &&
+  zle -N vi-deactivate-region &&
+  bindkey -M visual '^[' vi-deactivate-region
+
+autoload -Uz help-hanger &&
+  zle -N help-hanger &&
+  bindkey '^]^H' help-hanger
+
+# bindkey '^ ' _zsh_abbr_expand_widget
+# bindkey '^M' _zsh_abbr_expand_and_accept
+# bindkey '^ ^ ' _zsh_abbr_expand_and_space
+
+# Since PMY_TRIGGER_KEY exists, this line is unnecessary
+# bindkey '^]^p' pmy-widget
+# bindkey '^I' fzf-tab-complete
+
+# :::::::::::::::::: .+* NINJA .+* :::::::::::::::::::::
+bindkey -M vicmd '^I' fzf-tab-complete
+
+() {
+
+  local m c
+  # https://qiita.com/ToruIwashita/items/eaefada1346e97d09fdb
+  # vim text object
+  # select-bracketed
+  autoload -Uz select-bracketed
+  zle -N select-bracketed
+  for m in visual viopp; do
+    for c in {a,i}${(s..)^:-'()[]{}<>bB'}; do
+      bindkey -M $m $c select-bracketed
+    done
+  done
+
+  # select-quoted
+  autoload -Uz select-quoted
+  zle -N select-quoted
+  for m in visual viopp; do
+    for c in {a,i}{\',\",\`}; do
+      bindkey -M $m $c select-quoted
+    done
+  done
+
+}
+
+# vim surround
+autoload -Uz surround
+zle -N delete-surround surround
+zle -N change-surround surround
+zle -N add-surround surround
+bindkey -a cs change-surround
+bindkey -a ds delete-surround
+bindkey -a ys add-surround
+bindkey -M visual S add-surround
+
+# Only for VSCode Terminal (Work around for key collisions)
+if [[ "$TERM_PROGRAM" == vscode ]];then
+  bindkey '^]e' edit-command-line
+  bindkey '^]a' expand-aliases
+  bindkey '^]x' vi-cmd-mode
+  bindkey '^]z' vi-easy-motion
+fi
+

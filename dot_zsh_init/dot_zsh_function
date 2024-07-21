@@ -1,0 +1,152 @@
+() {
+  emulate -LR zsh
+  setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+  setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+  builtin trap '(( ${+functions[autoload]} )) && builtin unset -f autoload &>/dev/null' EXIT
+  builtin trap '(( ${+functions[autoload]} )) && builtin unset -f autoload &>/dev/null; return 1' 1 2 3 15
+
+  function autoload() { builtin autoload $@ }
+
+  () {
+    typeset -agU zsh_directory_name_functions
+    local -a d_series=( ~/.zsh/d_series/*~*.zwc(ND-.:t) )
+    zsh_directory_name_functions+=( ${(@)d_series} )
+    local F
+    for F in ${(@)d_series}; do
+      if autoload -R -Uz ${F}; then
+        continue
+      else
+        zcompile-digest -fv ~/.zsh/d_series
+        autoload -Uz -R ${F}
+      fi
+    done
+  }
+
+  autoload -Uz add-zsh-hook
+  autoload -Uz add-zle-hook-widget
+  autoload -Uz is-at-least
+  autoload -Uz colors && colors
+  autoload -Uz zutils && zutils
+
+  #
+  # COMPLETIONS
+  #
+
+  # Use carefully.
+  autoload -Uz fallback-to-_gnu_generic
+  autoload -Uz whichcomp
+  autoload -Uz uncompdef
+  # styles must be set for each command
+  autoload -Uz __path_files_gitignore && __path_files_gitignore
+
+  autoload -Uz dollar           && dollar
+  autoload -Uz ref
+  autoload -Uz ahsoka
+  autoload -Uz typeof
+  autoload -Uz pathof           && alias pof='noglob pathof'
+  autoload -Uz pofrpof          && alias prof='noglob pofrpof' && alias pofr='noglob pofrpof'
+  autoload -Uz absolutepathof   && alias apof='absolutepathof'
+  autoload -Uz realpathof       && alias rpof='realpathof'
+  autoload -Uz komp
+  autoload -Uz cdump
+  autoload -Uz zca
+  autoload -Uz zcpt
+  autoload -Uz zrecompile_fpath && alias zrcfp='zrecompile_fpath'
+  autoload -Uz load-zf_
+  autoload -Uz feat
+  autoload -Uz zmv              && alias rename='noglob zmv -W'
+  autoload -Uz zargs            && alias zag='zargs -i {} -e::'
+  autoload -Uz zxargs           && alias zx='zxargs'
+  autoload -Uz ask
+  autoload -Uz nf
+  autoload -Uz word
+  autoload -Uz match            && alias match='noglob match'
+  autoload -Uz charcode         && alias charcode='noglob charcode'
+  autoload -Uz edocrahc         && alias edhocrahc='noglob edocrahc'
+  autoload -Uz blah
+  autoload -Uz peat
+  autoload -Uz chomp
+  autoload -Uz readbin
+  autoload -Uz writebin
+  autoload -Uz vin
+  autoload -Uz assoc
+  autoload -Uz versions         && alias versions='noglob versions' && alias vers='noglob versions'
+  autoload -Uz differ
+  if autoload -Uz tmuxutils && tmuxutils; then
+    alias ptp='tmuxutils::pipetopane'
+    alias pnot='tmuxutils::note'
+  fi
+  autoload -Uz COMPLOG
+  autoload -Uz jstr
+  autoload -Uz nimeval
+
+  # wrapper around `/usr/bin/tail` and `gtail`
+  autoload -Uz tail
+  # `cat`
+  autoload -Uz rat
+  # `sleep`
+  autoload -Uz zleep
+
+  autoload -Uz __loadings
+  # autoload -Uz unhasher
+  # autoload -Uz xxxx
+
+  autoload -Uz faster
+  autoload -Uz showopts
+
+  # ================= add-zle-hook-widget ===================
+  autoload -Uz vi-mode-prompt
+  autoload -Uz clear-messages && clear-messages
+
+  # ================ add-zsh-hook'ed funcs ==================
+  autoload -Uz history-ignore && history-ignore
+
+  autoload -Uz showcolors
+  autoload -Uz showcolors3
+  autoload -Uz colorawk
+  autoload -Uz color_echo && color_echo
+
+  autoload -Uz g
+  autoload -Uz groot
+  autoload -Uz glog
+
+  autoload -Uz bravehist
+  autoload -Uz bravebookmark
+
+  autoload -Uz init:ex && init:ex
+
+  autoload -Uz cpul
+  autoload -Uz sweep
+
+  # autoload -Uz brw
+
+  autoload -Uz doc
+
+  autoload -Uz fgi
+  autoload -Uz fzff
+  autoload -Uz curlgists
+  autoload -Uz gistbat
+
+  autoload -Uz vck
+  autoload -Uz vrg
+  autoload -Uz sckv
+  autoload -Uz rgf
+  autoload -Uz rgfv
+  autoload -Uz rgvr
+  autoload -Uz vk
+
+  # autoload -Uz revoltify
+
+  autoload -Uz pep
+  autoload -Uz reext
+
+  autoload -Uz bman
+
+  autoload -Uz kix
+
+  autoload -Uz showcolor255
+  autoload -Uz hr
+  autoload -Uz default-action && default-action
+
+}

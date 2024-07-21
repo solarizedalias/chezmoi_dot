@@ -1,0 +1,35 @@
+####
+
+() {
+
+  emulate -LR zsh
+  setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+  setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+  # Supress warning
+  typeset -g STARSHIP_START_TIME
+  export STARSHIP_CONFIG
+  STARSHIP_CONFIG=~/dotfiles/starship.0.45.x.toml
+  () {
+    local CACHE="${HOME}/dotfiles/.zsh_init_cache.d/starship-init-zsh.zsh"
+    if [[ -r ${CACHE} ]]; then
+      . ${CACHE}
+    else
+      eval "$(starship init zsh)"
+    fi
+  }
+
+  # tab multiplexer configuration: https://github.com/austinjones/tab-rs/
+  () {
+    typeset -g HIST
+    local -a tab_init_sources=(
+      ~/.tab/completion/zsh-history.zsh(ND-.r)
+    )
+    local FILE
+    for FILE in ${(@)tab_init_sources}; do
+      . "${FILE}"
+    done
+  }
+  # end tab configuration
+}
+

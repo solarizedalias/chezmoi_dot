@@ -1,0 +1,154 @@
+
+function zsh_alias() {
+  emulate -LR zsh
+  setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+  setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+  #
+  # startup
+  #
+  alias xa='bindkey "^Xa" expand-aliases'
+  alias x_='bindkey "^Xa" _expand_alias'
+  alias xxx='xa && alias xxx=x && x'
+  alias xxxx='xa && alnum_async && pefp && pept && rehash && alias xxxx=x && x'
+
+  #
+  # essentials for my Z life
+  #
+
+  # so that unset Hash[foo] does not fail
+  alias unset='noglob unset'
+  alias unf='noglob unset -f'
+  alias curl='noglob curl'
+  alias wget='noglob wget'
+  alias z='cdr'
+  alias zf='noglob command zf'
+  alias zff='noglob command zff'
+
+  # When tty is broken
+  alias e1='exec >/dev/tty'
+  alias e2='exec 2>/dev/tty'
+  alias e12='exec >/dev/tty; exec 2>/dev/tty'
+
+  alias p='print -r --'
+  alias lr='print -rl -- '
+  # stands for prune empty fpath
+  alias pefp='fpath=(${(@)^fpath}(N-/F,-.e:'\''[[ "${REPLY}" == *.zwc ]]'\'':))'
+  # exterminate non-exsistent dirs
+  alias pept='path=(${(@)^path}(N-/))'
+  alias rh='rehash'
+  alias zcp='zcompile'
+  alias zcpd='zcompile-digest'
+  alias fpathd='fpath=(${${(@)^fpath}%%(.zwc)#})'
+  alias fpd='fpath=(${${(@)^fpath}%%(.zwc)#})'
+  alias fpathz='fpath=(${^${(@)^fpath}%%(.zwc)#}.zwc(ND-.))'
+  alias fpz='fpath=(${^${(@)^fpath}%%(.zwc)#}.zwc(ND-.))'
+  alias cnosort='zstyle '\'':completion:*'\'' sort false'
+  alias csort='zstyle '\'':completion:*'\'' sort true'
+  alias cinit='compinit'
+  alias cdef='compdef'
+  alias gnugen='compdef _gnu_generic'
+  alias caud='compaudit'
+  alias whc='whichcomp'
+  alias zstyle='noglob zstyle'
+  alias zst='zstyle'
+  alias zsta='zstyle -L | sort'
+  alias faster10='hyperfine "exec -l $SHELL"' # benchmark zsh login
+  alias buils='eval '\''__i__='\''{1..${#builtins}}'\''; print -r -- ${(r:25:)${(@)${(k)builtins}[__i__]}} ${(@)${(v)builtins}[__i__]};'\'' > >(sort | h '\''\bdefined\b'\'' '\''\bundefined\b'\'' '\''[^\s]+'\''); unset __i__'
+  alias opts='eval  '\''__i__='\''{1..${#options}}'\'';  print -r -- ${(r:25:)${(@)${(k)options}[__i__]}}  ${(@)${(v)options}[__i__]};'\''  > >(sort | h '\''\bon\b'\'' '\''\boff\b'\'' '\''[^\s]+'\''); unset __i__'
+
+  # **************
+  # precommand
+  # **************
+  alias noglob='noglob '
+  alias alias='noglob builtin alias'
+  alias whence='noglob builtin whence'
+  alias zmodload='noglob builtin zmodload'
+
+  alias al='autoload -Uz'
+  alias ax='autoload +X'
+  alias alx='autoload +X -Uz'
+  alias alr='autoload -R'
+  alias d='tab -z &>/dev/null || exit'
+  alias wh='noglob whence -va'
+  alias whe='noglob whence -afw -x2'
+  alias zeus='zpmod source-study -l | sort -k1n | tac'
+  alias zius='zinit times | sort -k1n | tac'
+  alias zinit='fpd && zinit'
+  alias zini='fpd && zinit'
+  alias zcnm='source ~/dotfiles/.zcompile_no_mercy.zsh'
+  alias which-command='whence -va'
+  alias path='print -rl -- ${(@)path}'
+  alias pt='print -rl -- ${(@)path}'
+  alias fp='print -rl -- ${(@)fpath}'
+  alias abbrevpath='print -rl -- ${(@)${(@)${(@D)path}/(#m)*/${MATCH:h:W./.s@(#b)(*)@${match[1][1]}@}/${MATCH:t}}:gs@#//@/@}'
+  alias zcdt='zargs -e:: -i {} *(.*sh|zinit|zpm|[z]#(profile|login)|abbreviations)*~*(.git*|.zwc|.zsh_history|bash_only|.toml|.md|.env|.DS_Store|.vim|ackrc|.shellspec)*(-.ND:A) :: zcompile -Uz {}'
+  local LL="ls -ld --sort=time"
+  (( ${+commands[eza]} )) && LL="eza -aldghF --git --group-directories-first --sort=modified --"
+  alias zcdc="${LL} *(.*sh|zinit|zpm|[z]#(profile|login)|abbreviations)*~*(.git*|.zwc|.zsh_history|bash_only|.toml|.md|.DS_Store|.vim*|ackrc|.shellspec|tmux.conf)*(-.ND) *.zwc(ND-.)"
+  alias zccc='setopt extendedglob;print -z *(.*sh|zinit|zpm|zprofile|zlogin|abbreviations)*~*(.git*|.zwc|.zsh_history|bash_only*|.toml|.md|.DS_Store|.vim*|ackrc|.shellspec|tmux.conf)*(-.NDP:zcompile -Uz:^P:\;:)'
+
+  alias cody='print -rl -- ${(ko)commands}'
+  alias rex='print -rl -- ${(ko)functions}'
+  alias fives='print -rl -- ${(f)"$(bindkey)"//\"/} | sk -m'
+  local JESSE
+  JESSE="echo \$(typeset -m \"u_*\" | sed \"s/'//g\" | sort | fzf --reverse --height=50% -m -d=\"=\" --nth=1 --preview \"echo {}\" | cut -d \"=\" -f2)"
+  alias jesse=${JESSE}
+
+  alias showcolors2='(for key in "${(ok@)c[(I)^raw_*]}";do echo "${c[${key}]} ${key} ${c[reset]}";done)'
+
+  # Overwrides
+  alias cb='chomp | clipboard'
+
+  # *************
+  # V
+  # *************
+  local VI
+  if (( ${+commands[nvim]} )); then
+    VI='nvim'
+  elif (( ${+commands[vim]} )); then
+    VI='vim'
+  else
+    VI='vi'
+  fi
+  alias zsha="${VI} ~/.zsh_alias"
+  alias viz="${VI} ~/.zshrc"
+  alias zrc="${VI} ~/.zshrc"
+  alias zprofile="${VI} ~/.zprofile"
+  alias zenv="${VI} ~/.zshenv"
+  alias sza='source ~/.zsh_alias;zsh_alias'
+  alias szrc='source ~/.zshrc'
+  alias szp='source ~/.zprofile'
+  alias sznv='source ~/.zshenv'
+
+  # alias brew='brw'
+  alias bh='bravehist'
+  alias bb='bravebookmark'
+  alias peep2='ghq list | fzf --ansi --reverse --preview "fd -e=md --ignore-case --max-depth=2 --full-path --absolute-path readme "$(ghq root)/{}" -x unbuffer glow \{\} --width=80"'
+  alias peep='ghq list | fzf --preview "bat --color=always --style=header,grid --line-range :80 $(ghq root)/{}/README.*"'
+
+  alias howmanypythons='whence -ma '\''python([0-9](.|))#'\'
+
+  # TODO move this to .bash_alias
+  # lua / luajit
+  local LUAJIT
+  local -a lj=(
+    /usr/local/opt/luajit-openresty/bin/luajit(N-*)
+    /usr/local/bin/luajit(N-*)
+  )
+  LUAJIT=${lj[1]}
+  alias luajit='LUA_PATH=${LUA51_PATH:?} LUA_CPATH=${LUA51_CPATH:?} rlwrap '"${LUAJIT}"''
+
+  # tmuxutils::pipetopane
+  alias pf='ptp faketty'
+  alias pfb='ptp faketty beef'
+
+
+  # YouTube
+  alias yt='noglob yt'
+  alias yt360='noglob yt360'
+  alias yt480='noglob yt480'
+  alias yt720='noglob yt720'
+  alias ytd='noglob yt-dlp'
+}
+

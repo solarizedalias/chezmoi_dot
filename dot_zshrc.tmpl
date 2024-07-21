@@ -1,0 +1,154 @@
+# Created by newuser for 5.8
+
+{{- if .chezmoi.os "darwin" }}
+# (~/.zshrc 冒頭)
+# in ~/.zshenv, executed `unsetopt GLOBAL_RCS` and ignored /etc/zshrc
+[[ -r /etc/zshrc ]] && . /etc/zshrc
+
+{{- end }}
+
+# ***********************************************
+#         fpath fpath fpath fpath fpath
+#         (Orders are rearranged by fpx)
+# ***********************************************
+if [[ -x /usr/local/opt/zsh/bin/zsh ]]; then
+  fpath=(
+    /usr/local/opt/zsh/share/zsh/functions(N-/)
+    ${(@)fpath}
+  )
+fi
+
+fpath=(
+  ~/.zsh/comp/outofsync(N-/)
+  ~/.zsh/comp(N-/)
+  ~/.zsh/d_series(N-/)
+  ~/.zsh(N-/)
+  ~/.zsh/override(N-/)
+  ~/.zsh_hooks(N-/)
+  ~/.zsh_widget(N-/)
+  ~/.local/share/zsh/functions(N-/)
+  ${(@)fpath}
+)
+
+autoload -Uz add-zsh-hook
+autoload -Uz add-zle-hook-widget
+autoload -Uz is-at-least
+
+() {
+  if is-at-least 5.8 2>/dev/null; then
+    local -a fpath_zwc=( ${(@)^fpath}.zwc(N-.) )
+    (( ${#fpath} == ${#fpath_zwc} )) && fpath=( ${(@)fpath_zwc} )
+  else
+    fpath=( ${(@)^fpath%%(.zwc)}(ND-/) )
+  fi
+
+  if [[ -z ${TAB} ]]; then
+    typeset -gx ATTACHED_TTY="${TTY}"
+    typeset -gx ATTACHED_TERM_PROGRAM="${TERM_PROGRAM:-${TERM}}"
+  fi
+}
+
+autoload -Uz compinit && compinit -C
+
+# Unless it is a login shell, skip everything below.
+if [[ ! -o login ]];then
+  return
+fi
+
+{{ if eq .chezmoi.os "MBP2017SA" }}
+
+typeset -A ZINIT
+ZINIT[ZCOMPDUMP_PATH]="${HOME}/.zcompdump"
+### Added by Zinit's installer
+if [[ ! -f ${HOME}/.zinit/bin/zinit.zsh ]]; then
+  print -P "%F{33}▓▒░ %F{220}Installing DHARMA Initiative Plugin Manager (zdharma/zinit)…%f"
+  command mkdir -p "${HOME}/.zinit" && command chmod g-rwX "${HOME}/.zinit"
+  command git clone https://github.com/solarizedalias/zinit "${HOME}/.zinit/bin" && \
+  print -P "%F{33}▓▒░ %F{34}Installation successful.%f%b" || \
+  print -P "%F{160}▓▒░ The clone has failed.%f%b"
+fi
+
+source "${HOME}/.zinit/bin/zinit.zsh"
+autoload -Uz _zinit
+(( ${+_comps} )) && _comps[zinit]=_zinit
+
+# Load a few important annexes, without Turbo
+# (this is currently required for annexes)
+#
+# TODO(solarizedalias): Ok, these are also need to be porked
+zinit light-mode for \
+zinit-zsh/z-a-patch-dl \
+zinit-zsh/z-a-as-monitor \
+zinit-zsh/z-a-submods \
+zinit-zsh/z-a-bin-gem-node
+
+### End of Zinit's installer chunk
+
+{{ end }}
+
+autoload -Uz bashcompinit && bashcompinit
+
+# Zinit Plugs
+
+{{ if eq .chezmoi.os "MBP2017SA" }}
+source ~/dotfiles/.zinit_plugin
+{{ end }}
+
+{{ if eq .chezmoi.os "MBP2017SA" }}
+builtin pushd -q "${DROOT:-${HOME}/dotfiles}"
+
+. ./.bash_alias
+. ./.zsh_alias
+. ./.bash_function
+. ./.zsh_function
+. ./.zsh_configs
+. ./.zsh_loadings
+. ./.zsh_bindkey
+setalias
+zsh_alias
+
+# ! return to where I was
+builtin popd -q
+
+{{ else }}
+
+source ~/.bash_alias
+source ~/.zsh_init/.zsh_alias
+source ~/.bash_function
+source ~/.zsh_init/.zsh_function
+source ~/.zsh_init/.zsh_configs
+source ~/.zsh_init/.zsh_loadings
+source ~/.zsh_init/.zsh_bindkey
+setalias
+zsh_alias
+
+{{ end }}
+
+#
+# PROMPT
+#
+builtin trap 'builtin jobs &>/dev/null; starship_precmd' CHLD
+() {
+  autoload -Uz vi-mode-prompt && vi-mode-prompt
+  PS2='🔜 %_ %F{cyan}❯❯%f '
+  PS3='🎮 %0_ %F{magenta}❯❯%f '
+  PS4='+%N:%i> '
+  SPROMPT='zsh: correct %F{red}%R%f to %F{green}%r%f [nyae]? '
+  if ! (( ${+commands[starship]} )); then
+    # ! fallback prompt when Starship Prompt is not available.
+    # setopt promptsubst
+    PS1='%F{yellow}%!%f %* %F{red}%c%f%# ❯❯ '
+  fi
+}
+
+########################## Helpers ############################
+# To prevent an unnecessary line appearing with clear command
+# clear_ps1 is defined in .zsh/
+add-zsh-hook precmd precmd_add_line
+autoload -Uz clear_ps1_newline
+alias xx='clear_ps1_newline'
+alias x='clear_ps1_newline'
+
+# This is needed to avoid luamake's install script writing to this file.
+# luamake
+

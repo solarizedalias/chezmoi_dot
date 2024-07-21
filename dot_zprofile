@@ -1,0 +1,6 @@
+# too bad shellcheck is not compatible for zsh
+# shellcheck shell=sh
+# shellcheck source=/dev/null
+
+path=(~/zbin(N-/) ${(@)path})
+
