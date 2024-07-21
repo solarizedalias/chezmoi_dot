@@ -1,0 +1,200 @@
+
+[core]
+  ignorecase = false
+  editor = $EDITOR
+  pager = delta --dark --pager=less
+
+[init]
+  defaultBranch = main
+
+[pager]
+  blame = delta --pager=less
+
+#
+# URL
+#
+
+{{- if eq .chezmoi.os "darwin" }}
+
+[url "git@github.com:"]
+  insteadOf = git://github.com/
+  insteadOf = https://github.com/
+  ; pushInsteadOf = git://github.com/
+  pushInsteadOf = https://github.com/
+
+; [url "git://github.com/"]
+;   insteadOf = https://github.com/
+  ; insteadOf = git@github.com:
+
+; [url "git@github.com:solarizedalias/"]
+;   insteadOf = https://github.com/solarizedalias/
+;   insteadOf = git://github.com/solarizedalias/
+
+[credential]
+  helper = osxkeychain
+
+[ghq]
+  root = /Users/ykksd/solarizedalias
+[gist]
+  home = /Users/ykksd/solarizedalias/gists
+
+{{- end}}
+
+[filter "lfs"]
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f
+  process = git-lfs filter-process
+  required = true
+
+[color]
+  diff = auto
+  status = auto
+  branch = auto
+  ui = auto
+
+# USER
+[user]
+  name = solarizedalias
+  email = 60473183+solarizedalias@users.noreply.github.com
+[github]
+  user = solarizedalias
+
+[push]
+  default = simple
+[pull]
+  ff = only
+
+# DIFF / MERGE
+[diff]
+  tool = nvimdiff
+  colorMoved = default
+[merge]
+  conflictStyle = diff3
+  tool = nvimdiff
+[difftool "nvimdiff"]
+  cmd = "nvim -R -d -c \"wincmd l\" -d \"$LOCAL\" \"$REMOTE\""
+[mergetool "nvimdiff"]
+  cmd = "nvim -d -c \"4wincmd w | wincmd J\" \"$LOCAL\" \"$BASE\" \"$REMOTE\"  \"$MERGED\""
+
+[interactive]
+  diffFilter = delta --color-only
+
+[delta]
+  syntax-theme = Monokai Extended Bright
+  features = decorations
+  whirespace-error-style = 22 reverse
+  line-numbers = true
+  side-by-side = false
+  # < ^ > : left center right align respectively nm(old) np(new)
+  # line-numbers-left-format = "{nm:^4}⋮" # default
+  line-numbers-left-format = "{nm:>5}│"
+  line-numbers-right-format = "{np:>5}│"
+
+[delta "decorations"]
+  commit-decoration-style = bold yellow box ul
+  file-style = bold yellow ul
+  file-decoration-style = none
+
+[alias]
+  # some are taken from https://qiita.com/yukiarrr/items/9c21d97f6c8ac31de157
+  por     = status --porcelain --branch
+  aliases = !git-alias
+  al      = !git-alias
+  as      = !git-alias
+  # ughh `hub alias -s` is a terrible naming.
+  alias   = !git-alias
+  cf      = config
+  cfe     = config --edit
+  cfg     = config --global
+  cfge    = config --global --edit
+  b       = branch
+  cl      = clone
+  cle     = clean -xdf -e .env
+  sw      = switch
+  ma      = "!if [ -n \"$(git rev-parse --symbolic --branches='main*')\" ]; then git switch main; else git switch master; fi "
+  dev     = switch develop
+  co      = checkout
+  d       = diff
+  a       = add
+  aa      = add .
+  c       = commit
+  cm      = commit -m
+  amend   = commit --amend
+  am      = commit --amend
+  get     = !git-get
+  p       = push
+  pq      = "!git push -q &"
+  po      = push -u origin
+  pl      = pull --recurse-submodules=on-demand
+  f       = fetch
+  h0day   = show HEAD@{0.day.ago}
+  h1day   = show HEAD@{1.day.ago}
+
+  # go back to last commit and staged things go back to tree
+  unstage = reset --mixed HEAD
+
+  # cancel the reset and get everything back again
+  # if something is not right use git reflog
+  redo     = reset --hard ORIG_HEAD
+
+  sm       = submodule
+  sh       = stash
+  st       = status
+  stap     = "stash pop"
+
+  az       = !git dz | xargs git add --
+  uz       = !git dz | xargs git reset --
+  logc     = log --oneline --decorate --graph --all
+
+  logg     = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+
+  logp     = log -p
+
+  news     = diff ORIG_HEAD HEAD
+  readme   = log -p -- README.md
+  clog     = log -p -- CHANGELOG.md
+  # gh
+  i        = "!f() { if [ $# -eq 0 ]; then gh issue status; else gh issue \"$@\"; fi; }; f"
+  # hub
+  ii       = !hub issue
+
+   # use gh pr (git pr is taken by hub)
+  prr      = !gh pr
+  prs      = !gh pr status
+  preate   = "!pr() { gh pr create \"$@\" ; }; pr"
+  prcd     = "!gh pr create -B develop --repo \"$(git config --global --get user.name)/$(basename -s .git $( git config --local --get remote.origin.url))\" "
+
+  prcm     = "!gh pr create -B \"$( if [ -n \"$(git rev-parse --symbolic --branches='main*')\" ]; then printf main; else printf master ; fi)\" --repo \"$( git config --global --get user.name)/$( basename -s .git $(git config --local --get remote.origin.url ))\""
+
+  prlo     = !gh pr list --state open
+  prla     = !gh pr list --state all
+  prlc     = !gh pr list --state closed
+  prlm     = !gh pr list --state merged
+  prm      = !gh pr merge
+
+  prmn     = "!gh pr merge --repo \"$(git config --global --get user.name)/$(basename -s .git $(git config --local --get remote.origin.url))\" $(gh pr list --state open -L1 2>/dev/null | awk '{print $1}')"
+
+  prv      = "!gh pr view "
+
+  prvn     = "!gh pr view --repo \"$(git config --global --get user.name)/$(basename -s .git $(git config --local --get remote.origin.url))\" $(gh pr list --state open -L1 2>/dev/null | awk '{print $1}')"
+
+  prd      = "!prd() { gh pr diff $1 | delta; }; prd"
+  prdn     = "!gh pr diff --repo \"$(git config --global --get user.name)/$(basename -s .git $(git config --local --get remote.origin.url))\" $(gh pr list --state open -L1 2>/dev/null | awk '{print $1}') | delta"
+
+  ic       = "!gh issue create --repo \"$(git config --global --get user.name)/$(basename -s .git $(git config --local --get remote.origin.url))\" "
+
+  ilo      = !gh issue list --state open
+  ilc      = !gh issue list --state closed
+  ila      = !gh issue list --state all
+  iv       = !gh issue view
+  cr       = !gh repo create
+  crr      = "!gh repo create --source=\"${PWD}\" --private --description='' \"${PWD##*/}\""
+  repo     = !gh repo
+  view     = !gh repo view
+  web      = !gh repo view --web
+  run      = !gh run
+  workflow = !gh workflow
+
+  origin   = !gh-browser origin
+  upstream = !gh-browser upstream
+
