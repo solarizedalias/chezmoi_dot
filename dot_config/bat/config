@@ -1,0 +1,25 @@
+# Theme
+--theme="Monokai Extended Bright"
+
+# --style="numbers,changes"
+
+--map-syntax=".*bash*:Bourne Again Shell (bash)"
+
+--map-syntax=".*zinit*:Bourne Again Shell (bash)"
+
+--map-syntax=".*zsh*:Bourne Again Shell (bash)"
+
+--map-syntax=".pure_prompt:Bourne Again Shell (bash)"
+
+--map-syntax=".*zpm*:Bourne Again Shell (bash)"
+
+--map-syntax="**/.zsh/**:Bourne Again Shell (bash)"
+
+--map-syntax="**/.zsh*/*:Bourne Again Shell (bash)"
+
+--map-syntax="**/zsh/*:Bourne Again Shell (bash)"
+
+--map-syntax="**/.zinit/**/_*:Bourne Again Shell (bash)"
+
+--map-syntax="*.nimble:Nim"
+
