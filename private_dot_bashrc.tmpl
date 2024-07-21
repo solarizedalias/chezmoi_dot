@@ -1,12 +1,5 @@
 # shellcheck source=/dev/null
 # shellcheck shell=bash
-# vim:ft=bash
-:
-
-# export PATH="$PATH:/Users/ykksd/.nodebrew/current/bin"
-
-# replacing /Users/ykksd/miniconda3/bin:/ in PATH with ""
-# alias brew="env PATH=${PATH/\/Users\/ykksd\/miniconda3\/bin:/} brew"
 
 # If not running interactively, don't do anything
 # ref. https://www.gnu.org/software/bash/manual/html_node/Is-this-Shell-Interactive_003f.html
@@ -19,9 +12,10 @@ setalias
 source ~/.bash_function
 source ~/.bash_only_function
 
-PROMPT_COMMAND='add_line'
+[[ -s "$HOME/bin/.git-prompt.sh" ]] && source ~/bin/.git-prompt.sh
+[[ -s "$HOME/bin/.git-completion" ]] && source ~/bin/.git-completion.bash
 
-# HSTR configuration - add this to ~/.bashrc
+PROMPT_COMMAND='add_line'
 
 shopt -s histappend             # append new history items to .bash_history
 export HISTCONTROL=ignorespace  # leading space hides commands from history
