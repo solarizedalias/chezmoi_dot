@@ -10,11 +10,10 @@
 [pager]
   blame = delta --pager=less
 
+{{- if eq .chezmoi.os "darwin" }}
 #
 # URL
 #
-
-{{- if eq .chezmoi.os "darwin" }}
 
 [url "git@github.com:"]
   insteadOf = git://github.com/
@@ -24,7 +23,7 @@
 
 ; [url "git://github.com/"]
 ;   insteadOf = https://github.com/
-  ; insteadOf = git@github.com:
+;   insteadOf = git@github.com:
 
 ; [url "git@github.com:solarizedalias/"]
 ;   insteadOf = https://github.com/solarizedalias/
@@ -41,19 +40,19 @@
 {{ else if eq .chezmoi.os "linux" }}
 
 [credential "https://github.com"]
-	helper = 
+	helper =
 	helper = !/usr/bin/gh auth git-credential
 [credential "https://gist.github.com"]
-	helper = 
+	helper =
 	helper = !/usr/bin/gh auth git-credential
 
 {{- end}}
 
-[filter "lfs"]
-  clean = git-lfs clean -- %f
-  smudge = git-lfs smudge -- %f
-  process = git-lfs filter-process
-  required = true
+# [filter "lfs"]
+#   clean = git-lfs clean -- %f
+#   smudge = git-lfs smudge -- %f
+#   process = git-lfs filter-process
+#   required = true
 
 [color]
   diff = auto
@@ -107,11 +106,7 @@
 [alias]
   # some are taken from https://qiita.com/yukiarrr/items/9c21d97f6c8ac31de157
   por     = status --porcelain --branch
-  aliases = !git-alias
-  al      = !git-alias
-  as      = !git-alias
-  # ughh `hub alias -s` is a terrible naming.
-  alias   = !git-alias
+
   cf      = config
   cfe     = config --edit
   cfg     = config --global
@@ -164,10 +159,8 @@
   clog     = log -p -- CHANGELOG.md
   # gh
   i        = "!f() { if [ $# -eq 0 ]; then gh issue status; else gh issue \"$@\"; fi; }; f"
-  # hub
-  ii       = !hub issue
 
-   # use gh pr (git pr is taken by hub)
+  pr       = !gh pr
   prr      = !gh pr
   prs      = !gh pr status
   preate   = "!pr() { gh pr create \"$@\" ; }; pr"
