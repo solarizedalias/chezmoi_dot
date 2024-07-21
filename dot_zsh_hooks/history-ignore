@@ -1,0 +1,17 @@
+# vim: set ft=zsh:
+
+function addhistory::main() {
+  emulate -L zsh
+  setopt extendedglob
+  HISTORY_IGNORE=${HISTORY_IGNORE:-(#s)(x##|clear|cl|g|(rh|rehash)|rm (-([a-zA-Z]#f[a-zA-Z]#)|--force) *|ll|exal|pwd|pus|pul)(#e)}
+  local IGNORE_PATTERN
+  IGNORE_PATTERN="${HISTORY_IGNORE:-x*}"
+  local historyline="${1#([0-9]##:[0-9];)}"
+  # print -rn "${historyline}" >&2
+  # print -r "${IGNORE_PATTERN}" >&2
+  [[ "${historyline}" != ${~IGNORE_PATTERN} ]]
+  return $?
+}
+
+add-zsh-hook zshaddhistory addhistory::main
+

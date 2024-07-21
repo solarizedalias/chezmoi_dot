@@ -1,0 +1,13 @@
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+function zle-clear-messages() {
+  zle -R -c
+}
+
+(( ${+functions[add-zle-hook-widget]} )) || autoload -Uz add-zle-hook-widget
+# zle -N zle-clear-messages zle-clear-messages
+add-zle-hook-widget zle-line-finish zle-clear-messages
+

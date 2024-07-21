@@ -1,0 +1,25 @@
+# vim: set ft=zsh:
+
+# ==========================================================
+# chpwd_recent_dirs_file_prune_non_existent
+# Mon Jun 15 22:16:25 2020
+#
+# This file does not register hook directly.
+# This file is autoload'ed and then add-zsh-hook'ed by .loadings.zsh in favor of
+# all the chpwd configs.
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber NO_append_create
+
+local FILE
+local -a items
+if zstyle -s :chpwd: recent-dirs-file FILE; then
+  items=(
+    ${(@Q)^${(f)"$(<"${FILE}")"}}(#qND-/)
+  )
+  print -rl -- ${(@qqqq)items} >| "${FILE}"
+fi
+

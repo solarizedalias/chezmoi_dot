@@ -1,0 +1,72 @@
+# vim: set ft=zsh:
+# WORK IN PROGRESS
+# preexec:
+#   Executed just after a command has been read and is about to be executed.
+#   If the history mechanism is active
+#   (regardless of whether the line was discarded from the history buffer),
+#   the string that the user typed is passed as the first argument,
+#   otherwise it is an empty string.
+#   The actual command that will be executed (including expanded aliases)
+#   is passed in two different forms:
+#     the second argument is a single-line,
+#     size-limited version of the command
+#     (with things like function bodies elided);
+#     the third argument contains the full text that is being executed.
+
+function __force_insensitive_commands__() {
+    _FORCE_INSENSITIVE=(cut find fd)
+    _FORCE_SENSITIVE=(git yarn npm ls rm cp mv)
+}
+
+
+
+function __force__() {
+  if [[ ${3} =~ "^.* --?force[-| ].*$" ]] || [[ ${3} =~ "^.* -[a-zA-Z]*f[a-zA-Z].*$" ]]; then
+    # I need a holocron to keep which command was strong with the force
+    # and hook its end status
+    __I_FOUND_THE_JEDI__=$(echo $3|grep#####GREPFORCE)
+    __I_USED_DARK_SIDE__=1
+  else
+    :
+  fi
+}
+# zle -N accept-line __force__
+
+function __is_turned__() {
+  # Technically, this means only means if the last command was successful,
+  # so it can be different from the one with the force
+  # like when using pipe or `cmd1 --force;cmd2`
+  # if you want the exact command with the force,
+  # you will need to dig in the history or $PIPESTATUS, I guess..??
+  # Is there any convenient bultin variable which contains
+  # all of the status codes? Like in a hash array or something.
+  # Aghh, i think i found something
+  # $history[$(($HISTCMD-1))]
+  #
+  # # aaa で始まる要素だけを集める
+  # arr3=(aaa bbb1 ccc aaa1 bbb2 aaa33)
+  # echo ${(M)arr3:#aaa*} #=> aaa aaa1 aaa33
+  # aaa で始まる要素だけを取り除く
+  # echo ${arr3:#aaa*} #=> bbb1 ccc bbb2
+  #
+  #
+  #
+  #
+  #
+  #
+  #
+
+  local __IS_EVERYTHING__GOING_AS_PLANED__="$?"
+  if [ "$__I_USED_DARK_SIDE__" -eq 1 ] && [ "$__IS_EVERYTHING__GOING_AS_PLANED__" == 0 ];then
+    echo_darkside 'UNLIMITED POWER!!!' >&2
+    unset __I_USED_DARK_SIDE__
+    unset __IS_EVERYTHING__GOING_AS_PLANED__
+  elif [ "$__I_USED_DARK_SIDE__" -eq 1 ] && [ "$__IS_EVERYTHING__GOING_AS_PLANED__" != 0 ];then
+    echo_darkside 'You have failed, Inquisitor.' >&2
+    unset  __I_USED_DARK_SIDE__
+    unset __IS_EVERYTHING__GOING_AS_PLANED__
+  else
+    :
+  fi
+}
+
