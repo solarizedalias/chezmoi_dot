@@ -1,0 +1,5 @@
+# vim: set ft=sh:
+# shellcheck shell=bash
+alias sb='source ~/.bashrc'
+alias sp='source ~/.bash_profile'
+alias brew='brew_temporal_path_fix brew'

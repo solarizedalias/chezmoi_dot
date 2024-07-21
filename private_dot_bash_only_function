@@ -1,0 +1,103 @@
+# vim: set ft=bash:
+# shellcheck shell=bash
+
+# TODO This does not work for zsh I have no idea why not
+# echo ${!${char}*}
+function allvar() {
+  for char in {A..Z}; do
+    vars=("$(eval echo \$\{\!${char}*\})")
+    echo "${char}: (${#vars[*]}) ${vars[*]}"
+  done
+  for char in {a..z}; do
+    vars=("$(eval echo \$\{\!${char}*\})")
+    echo "${char}: (${#vars[*]}) ${vars[*]}"
+  done
+  unset char
+  unset vars
+}
+
+function prev_() {
+  line=$(history 1 | awk 'NR==1' | tr -cd 'a-zA-Z')
+  echo "${line}"
+  # ${var/abc/XXX}
+}
+# add an empty line for every call of prompt command
+function add_line() {
+  if [[ -z "${PS1_NEWLINE_LOGIN}" ]]; then
+    PS1_NEWLINE_LOGIN=true
+  elif [[ $(prev_) = 'clear' ]]; then
+    :
+  elif [[ $(prev_) = 'cl' ]]; then
+    :
+  elif [[ $(prev_) = 'cx' ]]; then
+    :
+    # echo 'clear!'
+  else
+    printf '\n'
+    # echo 'not clear!'
+  fi
+}
+
+function colorawk() {
+awk 'BEGIN{ s="/\\/\\/\\/\\/\\"; s=s s s s s s s s; for (colnum = 0; colnum<77; colnum++) { r = 255-(colnum*255/76); g = (colnum*510/76); b = (colnum*255/76); if (g>255) g = 510-g;printf "\033[48;2;%d;%d;%dm", r,g,b;printf "\033[38;2;%d;%d;%dm", 255-r,255-g,255-b;printf "%s\033[0m", substr(s,colnum+1,1); }; printf "\n";}'
+}
+
+function echo_r() {
+  echo -e "\033[1;31m$*\033[0;39m"
+  return 0
+}
+function echo_blood() {
+  echo -e "\e[38;5;160m$*\e[0;39m"
+}
+function echo_superblue() {
+  echo -e "\e[38;5;021m$*\e[0;39m"
+}
+function echo_b() {
+  echo -e "\033[1;34m$*\033[0;39m"
+  return 0
+}
+function echo_y() {
+  echo -e "\033[0;33m$*\033[0;39m"
+  return 0
+}
+function echo_g() {
+  echo -e "\033[0;32m$*\033[0;39m"
+  return 0
+}
+function cpul() {
+  local processname
+  local limitperc
+  read -r -p 'process name? > ' processname
+  read -r -p 'percentage? > ' limitperc
+  echo 'Press control + c to exit'
+  pgrep -o "$processname" | (
+    read -r peeaidee
+    cpulimit -i -z -l "$limitperc" --pid="$peeaidee"
+  )
+}
+function sweep() {
+  local original
+  original=$(pwd)
+  echo
+  if [ ! $# -eq 1 ]; then
+    echo "Plz specify one (and only one) directory!"
+  else
+    # && instead of ; to make sure the directory is available
+    # (if the path was invalid, cd throws error and the following commands do not execute)
+    cd "$1" && exa -axF --git &&
+      {
+        local sweepornot
+        echo -e "\n↑↑↑↑↑↑Sure you wanna sweep everything above?↑↑↑↑↑↑"
+        read -r -p "[Y/n] >> " sweepornot
+        case "$sweepornot" in
+        [Yy]) (
+          trash ./*
+          trash .*
+        ) && echo -e '\n---------#*+.Swept.+*#---------' ;;
+        [Nn]) echo -e '\nCoward' ;;
+        *) echo -e '\nwut?' ;;
+        esac
+      }
+    cd "$original" || return
+  fi
+}

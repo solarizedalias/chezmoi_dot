@@ -1,0 +1,290 @@
+# shellcheck shell=bash
+# shellcheck source=/dev/null
+# shellcheck disable=SC2139,SC2154
+# vim: set filetype=sh:
+
+# export PATH="$PATH:/Users/ykksd/.nodebrew/current/bin"
+
+setalias() {
+  alias tc='touch'
+  alias md='mkdir -p'
+
+  alias sspc='shellspec'
+  alias schk='shellcheck'
+
+  alias dlt='delta -s'
+
+  alias JA='LANG=ja_JP.UTF-8'
+  alias US='LANG=en_US.UTF-8'
+  alias op='open'
+  alias opa='open -a'
+
+  alias jxa='osascript -l JavaScript'
+  alias rp='realpath --canonicalize-existing'
+  alias b2="${HOME}/b2"
+  alias pfs='printf "%s\n"'
+  alias pfss='printf "%s %s\n"'
+  alias stripansi='sed "s/\x1b\[[0-9;]*m//g"'
+  alias c='grc'
+  # alias wrl='while read -r line;do'
+
+  alias tig='TERM=xterm-256color tig'
+  alias gg='gitui'
+  alias tiga='tig --all'
+  alias sq3=sqlite3
+
+  # *******
+  # DOCKER 
+  # *******
+  alias dk='docker'
+  alias drun='docker run'
+  alias dr='docker run'
+  alias drit='docker run -it'
+  alias drmit='docker run --rm -it'
+  alias drm='docker rm'
+  alias dps='docker ps'
+  alias dpa='docker ps -a'
+  alias dstop='docker stop'
+  alias dst='docker stop'
+  alias dkill='docker kill'
+  alias dkl='docker kill'
+  alias dbuild='docker build'
+  alias dims='docker images'
+
+  #
+  # tmux
+  #
+  alias tm='tmux'
+  alias tml='tmux ls'
+  alias tma='tmux attach'
+  alias tmd='tmux detach'
+
+  alias tsp='tmux split-window -dI'
+
+  if [ "${TERM_PROGRAM}" = 'iTerm.app' ]; then
+    alias psol='echo '\''\0x1b]1337;SetProfile=solarizedalias\0x07'\'''
+    alias bcur='it2setcolor curbg 8294ff'
+  fi
+  alias Ti='TERM=xterm-256color; TERM_PROGRAM=iTerm.app'
+  alias Ta='TERM=alacritty; unset TERM_PROGRAM'
+  alias Tt='TERM=tmux18-256color; TERM_PROGRAM=tmux'
+
+  alias ptr='pstree'
+  alias ptg='pstree -g 3'
+  alias pts='pstree -s'
+  alias ptgs='pstree -g 3 -s'
+
+  #
+  # Nim
+  #
+  alias n='nim'
+  alias ns='nim --hints:off'
+  alias ni='nim -r --hints:off c -'
+  alias nims='nim --hints:off'
+  alias ne='nim e --hints:off'
+  alias nck='nim check'
+  alias nrun='nim c --run -d:debug'
+  alias ndrun='nim c --run -d:danger -d:release'
+  alias ndev='nim c -d:debug'
+  alias nrel='nim c -d:release'
+  alias nden='nim c -d:danger -d:release'
+  alias nr='nim r'
+  alias ndr='nim r -d:danger'
+
+  alias Gcc='CC=gcc-11'
+  alias Clang='CC=clang-13'
+  alias ncenv='nim c --cc:env'
+  alias nrenv='nim c --cc:env --run'
+  alias nclang='CC=clang-11 nim c --cc:env'
+  alias ngcc='CC=gcc-10 nim c --cc:env'
+
+  alias nb='nimble'
+  alias nbb='nimble build'
+  alias nbit='nimble init'
+  alias nbig='nimble init --git'
+  alias nbi='nimble install'
+  alias nbl='nimble list'
+  alias nbli='nimble list --installed'
+
+  alias ng='nimgrep'
+  alias cn='choosenim'
+
+
+  alias ldd='otool -L'
+  alias otl='otool -l'
+  alias ott='otool -t'
+
+  #
+  # Python
+  #
+  alias py3='python3'
+
+  #
+  # pueue
+  #
+  alias pd='pueued --daemonize'
+  alias pdsd='pueue shutdown'
+  alias pdst='pueue start'
+  alias pue='pueue'
+  alias pu='pueue'
+  alias puh='pueue help'
+  alias pus='pueue status'
+  alias pug='pueue group'
+  alias puga='pueue group --add'
+  alias pugr='pueue group --remove'
+  alias pugra='pueue group | cut -d " " -f2 | xargs -I {} pueue group --remove {}'
+  alias pul='pueue log'
+  alias pua='pueue add -- '
+  alias pusn='pueue send'
+  alias pust='pueue stash'
+  alias pusw='pueue switch'
+  alias puee='pueue edit'
+  alias pued='pueue edit'
+  alias puc='pueue clean'
+  alias pucl='pueue clean'
+  # alias pusw='pueue show'
+  alias pufw='pueue follow'
+  alias pupr='pueue parallel'
+  alias pups='pueue pause'
+
+  alias bye='tab -z &>/dev/null || exit'
+  alias q='exit'
+
+  alias gp='ghostplay'
+  alias tunes='vim -c "Tunes" -c "q"'
+
+  alias cbat='bat --paging never'
+  alias bl='bat --pager=less'
+
+  #
+  # .+* V .+*
+  #
+  VI='vim'
+  if type nvim >/dev/null 2>&1;then
+    VI='nvim'
+  fi
+  alias ovimrc='vim ~/.vimrc'
+  alias vimrc='nvim ~/.config/nvim/init.vim'
+  alias nv='nvim'
+  alias vr='nvim -R'
+  alias ovr='vim -R'
+  alias dein="${VI} ~/.dein/dein.toml"
+
+  alias gistf='gist -r $(gist -l | fzf --ansi --reverse --height=50% | sed "s/^.*\///g" | sed "s/ .*$//g")'
+  alias mat='memo cat | mdcat -'
+  alias mdc='mdcat'
+
+  alias ffmt='/usr/bin/fmt'
+
+  # :::::::::::::::::: Homebrew ::::::::::::::::::::
+  alias b='brew'
+  alias bu='brew update'
+  alias bug='brew upgrade'
+
+  alias tuir='BROWSER=w3m TERM=xterm-256color tuir'
+
+  alias which='command -v'
+  alias fddsstore="fd -H -I '^\.DS_Store$' -tf"
+  alias rmdsstore="fd -H -I '^\.DS_Store$' -tf -X rm"
+  alias finddsstore="find . -name '^\.DS_Store$' -type f -ls"
+  alias dldsstore="find . -name '^\.DS_Store$' -type f -ls -delete"
+
+  alias td='todo.sh'
+  alias tdv="${VI} ~/todo/todo.txt"
+
+  alias exaa='eza -algF --git --group-directories-first'
+  alias exaad='eza -aldgF --git --group-directories-first'
+  alias exal='eza -algF --group-directories-first --git --git-ignore --ignore-glob="*.zwc"'
+  alias l='eza -algF --group-directories-first --git --git-ignore --ignore-glob="*.zwc"'
+  # OVERWRITE
+  alias la='eza -algF --group-directories-first --git'
+  alias lad='eza -algdF --group-directories-first --git --git-ignore --ignore-glob="*.zwc"'
+  alias exad='eza -algdF --group-directories-first --git --git-ignore --ignore-glob="*.zwc"'
+  alias exat='eza -alF --group-directories-first --git-ignore --ignore-glob="*.zwc|*.git" --tree'
+  alias k='eza -alF --group-directories-first --git-ignore --ignore-glob="*.zwc|*.git" --tree'
+  alias ka='eza -alF --group-directories-first --tree'
+  alias kag='eza -alF --group-directories-first --tree --ignore-glob=.git'
+  alias exaj='eza -alghF --group-directories-first --git --git-ignore --ignore-glob="*.zwc" | parse-columns | jq .'
+
+  alias lsdl='lsd -Al --human-readable --color=auto --ignore-glob="*.zwc" --group-dirs=first'
+
+  alias dunc='ncdu --color dark'
+
+  alias sol='cd ~/solarizedalias'
+  # bashrc bash_profile profile
+  alias basha="${VI} ~/.bash_alias"
+  alias sbasha='source ~/.bash_alias; setalias'
+  alias vib="${VI} ~/.bashrc"
+  alias bashrc="${VI} ~/.bashrc"
+  alias bashprofile="${VI} ~/.bash_profile"
+
+  # ============ git/github ===========
+  alias lg='lazygit'
+  # github stats
+  alias ghcals='ghcal -u solarizedalias'
+
+  alias cb='clipboard'
+  # yarn
+  alias ya='yarn add'
+  alias yad='yarn add --dev'
+  alias yf='yarn --force'
+  alias yc='yarn check'
+  alias yl='yarn list'
+  alias ylp='yarn list --pattern'
+  alias yg='yarn global'
+  alias yga='yarn global add'
+  alias yw='yarn why'
+  alias yv='yarn versions'
+  alias deps="jq -r '.dependencies   |keys|.[]' package.json"
+  alias devs="jq -r '.devDependencies|keys|.[]' package.json"
+  alias updatedep="jq -r '.dependencies   |keys|.[]' package.json | xargs yarn add"
+  alias updatedev="jq -r '.devDependencies|keys|.[]' package.json | xargs yarn add --dev"
+  alias yll="yarn list --json | jq '.data|.trees|.[]|.name' -r | sort"
+
+  # npm
+  alias ngl='npm -g ls --depth=0'
+
+  alias path='printf "%s\n" ${PATH} | tr ":" "\n"'
+
+  # keybind to activate maccy clipboard e.g.control+command+c
+  alias maccy-key='defaults write org.p0deje.Maccy hotKey'
+  # historysize for clipboard default is 200
+  alias maccy-size='defaults write org.p0deje.Maccy historySize'
+  # toggle visibility in menu bar defalts to true
+  alias maccy-bar='defaults write org.p0deje.Maccy showInStatusBar'
+  # whether to paste on select or put in clipboard buffer defaults to false
+  alias maccy-onego='defaults write org.p0deje.Maccy pasteByDefault'
+  # whether to activate fuzzy search boolean
+  alias maccy-fzy='defaults write org.p0deje.Maccy fuzzySearch'
+  #You can tell Maccy to ignore all copied items
+  # This is useful if you have some workflow for copying sensitive data
+  # defaults to false
+  alias maccy-ignore='defaults write org.p0deje.Maccy ignoreEvents'
+  alias maccyoff='defaults write org.p0deje.Maccy ignoreEvents 1'
+  alias maccyon='defaults write org.p0deje.Maccy ignoreEvents 0'
+
+  alias cl='clear'
+  alias xx='clear; printf "\033[3J"'
+  alias x='clear; printf "\033[3J"'
+
+  # shellcheck disable=2142
+  alias rel='clear; printf "\033[3J"; exec -l "${SHELL}"'
+  alias sudo='sudo '
+  alias nohup='nohup '
+  alias noalias='unalias -a'
+  if command -v builtin >/dev/null 2>&1; then
+    alias alias='builtin alias'
+  else
+    alias alias="'"'alias'"'"
+  fi
+
+  ################# FUN ####################
+  alias Karen='say -v Karen'
+
+  alias mlg='streamlink https://abema.tv/now-on-air/mahjong 480p -p mpv'
+  alias mlg2='streamlink https://abema.tv/now-on-air/mahjong-live 480p -p mpv'
+  alias tehai='yt480 https://www.youtube.com/@tehaitube/live'
+
+  unset VI
+}
+
