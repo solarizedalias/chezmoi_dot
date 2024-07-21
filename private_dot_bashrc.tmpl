@@ -3,6 +3,8 @@
 
 {{- if eq (get .chezmoi.osRelease "name") "Ubuntu" }}
 source ~/ubuntu.bashrc
+# TODO: move to .profile or any other common rcs (for other shells)
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 {{- end}}
 
 # If not running interactively, don't do anything
