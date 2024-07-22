@@ -1,0 +1,348 @@
+# Don't print a new line at the start of the prompt
+add_newline               = false
+format                    = """\
+    $directory\
+    $git_branch\
+    $git_commit\
+    $git_state\
+    $git_status\
+    $hg_branch\
+    $docker_context\
+    $package\
+
+    $c\
+    $cmake\
+    $deno\
+    $dotnet\
+    $elixir\
+    $elm\
+    $erlang\
+    $golang\
+    $java\
+    $julia\
+    $lua\
+    $nim\
+    $nodejs\
+    $ocaml\
+    $php\
+    $purescript\
+    $python\
+    $ruby\
+    $rust\
+    $terraform\
+    $nix_shell\
+    $zig\
+    $memory_usage\
+    $aws\
+    $crystal\
+    $cmd_duration\
+
+    $line_break\
+
+    $status\
+    $battery\
+    ${custom.tab}\
+    $username\
+    $hostname\
+    $kubernetes\
+    $conda\
+    $jobs\
+    $time\
+    $character\
+"""
+
+command_timeout           = 2000
+
+[aws]
+symbol                    = " "
+
+[battery]
+format                    = "[$symbol$percentage]($style) "
+full_symbol               = "󰂅 "
+charging_symbol           = "󰂄⇡"
+discharging_symbol        = "󰂃⇣"
+unknown_symbol            = "󰁽 "
+empty_symbol              = "󰂎 "
+
+[[battery.display]]
+threshold                 = 99
+style                     = "bold red"
+
+[c]
+format                    = "[$symbol($name $version)]($style) "
+version_format            = "v${raw}"
+style                     = "149 bold"
+symbol                    = " "
+disabled                  = false
+detect_extensions         = [ "c", "h", ]
+detect_files              = [
+  'compile_commands.json',
+  'compile_flags.txt',
+]
+detect_folders            = []
+commands                  = [
+    [ "cc", "--version", ],
+    [ "gcc", "--version", ],
+    [ "clang", "--version", ],
+]
+
+# Replace the "❯" symbol in the prompt with "➜"
+# The name of the module we are configuring is "character"
+[character]
+format                    = "$symbol "
+success_symbol            = "[❯❯](bold green)"
+error_symbol              = "[❯❯](bold red)"
+vicmd_symbol              = "[❮❮](bold blue)"
+
+[cmake]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[cmd_duration]
+format = "[$duration]($style) "
+
+[conda]
+format                    = "[$symbol$environment]($style) "
+disabled                  = false
+symbol                    = " "
+style                     = "dimmed 121"
+
+[crystal]
+format                    = "[$symbol$version]($style) "
+symbol                    = "󰙴 "
+
+[dart]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[deno]
+format = "[$symbol($version )]($style)"
+version_format = "v${raw}"
+symbol = "🦕 "
+style = "green bold"
+disabled = false
+detect_extensions = []
+detect_files = [
+    "deno.json",
+    "deno.jsonc",
+    "mod.ts",
+    "deps.ts",
+    "mod.js",
+    "deps.js",
+]
+detect_folders = []
+
+[directory]
+# read_only and read_only_style isn't respected. (always shows default)
+read_only                 = ""
+read_only_style           = "bold yellow"
+truncate_to_repo          = true
+truncation_length         = 1
+truncation_symbol         = "…/"
+fish_style_pwd_dir_length = 1
+format                    = "[$path]($style) ([${read_only} ]($read_only_style))"
+
+[docker_context]
+symbol                    = " "
+
+[dotnet]
+symbol                    = " "
+format                    = "\\[$symbol v$version ($tfm)\\] "
+
+[elixir]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[elm]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[env_var.LINENO]
+# variable = "SHELL"
+variable                  = "LINENO"
+default                   = ""
+format                    = "[$env_value ]($style) "
+style                     = "bold purple"
+disabled                  = true
+
+[erlang]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[gcloud]
+symbol                    = " "
+
+[git_commit]
+format                    = "[\\($hash\\)]($style) "
+only_detached             = false
+tag_disabled              = false
+tag_symbol                = " "
+
+[git_state]
+disabled                  = false
+
+[git_status]
+format                    = "[(\\[$all_status$ahead_behind\\] )]($style)"
+ahead                     = "⇡${count}"
+diverged                  = "⇕⇡${ahead_count}⇣${behind_count}"
+behind                    = "⇣${count}"
+style                     = "red bold"
+ignore_submodules         = true
+
+[git_branch]
+symbol                    = " "
+style                     = "5 bold"
+format                    = "on [$symbol$branch]($style) "
+
+[golang]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[helm]
+format                    = "[$symbol$version]($style) "
+disabled                  = false
+
+[hostname]
+format                    = "[$hostname in ]($style)"
+
+[hg_branch]
+symbol                    = " "
+
+# [haskell]
+# format                    = "[$symbol$version]($style) "
+# symbol                    = " "
+
+[java]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[julia]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[kubernetes]
+format                    = "[$symbol$context( \\($namespace\\)) in ]($style)"
+disabled                  = false
+
+[lua]
+format                    = "[$symbol](yellow)[$version]($style) "
+version_format            = "v${raw}"
+symbol                    = " "
+style                     = "bold blue"
+lua_binary                = "lua"
+disabled                  = false
+detect_extensions         = ["lua"]
+detect_files              = [".lua-version"]
+detect_folders            = ["lua"]
+
+[memory_usage]
+disabled                  = true
+format                    = "$symbol [${ram}( | ${swap})]($style) "
+# show_percentage           = true
+# show_swap                 = true
+threshold                 = 50
+symbol                    = "󰍛"
+# separator                 = "/"
+style                     = "bold dimmed white"
+
+[nim]
+format                    = "[$symbol$version]($style) "
+symbol                    = "󰆥 "
+
+[nix_shell]
+disabled                  = false
+
+[nodejs]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[ocaml]
+disabled                  = false
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[package]
+format                    = "[$symbol$version]($style) "
+display_private           = true
+symbol                    = "󰏗 "
+
+[perl]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[php]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[python]
+format                    = "[${symbol}${pyenv_prefix}${version}( \\($virtualenv\\))]($style) "
+symbol                    = " "
+style                     = "bold 81"
+python_binary             = "python3"
+
+[purescript]
+disabled                  = false
+
+[ruby]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[rust]
+format                    = "[$symbol$version]($style) "
+symbol                    = " "
+
+[shlvl]
+disabled                  = true
+
+[singularity]
+format                    = "[$symbol\\[$env\\]]($style) "
+
+[status]
+disabled                  = true
+format                    = "[$symbol$status]($style) "
+symbol                    = ""
+style                     = "bold yellow"
+
+[swift]
+format                    = "[$symbol$version]($style) "
+symbol                    = "󰛥 "
+style                     = "bold 202"
+
+[terraform]
+format                    = "[$symbol$version]($style) "
+symbol                    = "󰐼 "
+
+# Don't move this entry. Duplicate key errors happens (bug?)
+[time]
+format                    = "[$time]($style) "
+disabled                  = false
+time_format               = "%T"
+style                     = "white"
+
+[username]
+format                    = "[$user in ]($style)"
+show_always               = false
+
+[zig]
+format                    = "[$symbol$version]($style) "
+disabled                  = false
+
+[custom.npv]
+shell                     = ["/usr/local/bin/zsh"]
+command                   = """
+  nimble_package_version
+"""
+style                     = "bold fg:220"
+format                    = "[$symbol($output )]($style)"
+symbol                    = "󰓻"
+when                      = "nimble dump"
+
+[custom.tab]
+format                    = "[$output ]($style)"
+shell                     = ["/usr/local/bin/zsh"]
+command                   = """
+  print -r -- ${${(f)"$( tab --starship )"}#tab }
+"""
+when                      = "tab --starship"
+style                     = "bold yellow"
+
