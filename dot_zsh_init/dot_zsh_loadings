@@ -2,6 +2,9 @@
 
 () {
 
+  local CACHE="${HOME}/dotfiles/.zsh_init_cache.d/starship-init-zsh.zsh"
+  [[ -r "${CACHE}" ]] || setopt prompt_subst
+
   emulate -LR zsh
   setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
   setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
@@ -11,11 +14,9 @@
   export STARSHIP_CONFIG
   STARSHIP_CONFIG=~/starship.toml
   () {
-    local CACHE="${HOME}/dotfiles/.zsh_init_cache.d/starship-init-zsh.zsh"
     if [[ -r ${CACHE} ]]; then
       . ${CACHE}
     else
-      setopt prompt_subst
       eval "$(starship init zsh)"
     fi
   }
