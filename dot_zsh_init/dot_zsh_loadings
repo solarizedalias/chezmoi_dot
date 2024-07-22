@@ -15,6 +15,7 @@
     if [[ -r ${CACHE} ]]; then
       . ${CACHE}
     else
+      setopt prompt_subst
       eval "$(starship init zsh)"
     fi
   }
