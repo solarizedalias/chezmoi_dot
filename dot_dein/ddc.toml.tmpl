@@ -343,7 +343,7 @@ hook_post_source = '''
   call ddc#custom#patch_global('sourceParams', #{
         \   path: #{
         \     cmd: [
-        \       'fd',
+        \       {{ .fd | squote }},
         \       '--relative-path',
         \       '--hidden',
         \       '--max-depth=5',
