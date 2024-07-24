@@ -1,0 +1,88 @@
+#compdef bat
+setopt localoptions NO_shwordsplit
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd glob_dots
+
+local context curcontext=${curcontext} state line expl ret=1
+typeset -A opt_args val_args
+
+local -a match mbegin mend
+local -a languages
+languages=(
+  ${(@Q)${(@z)${(f)"$(
+    bat --list-languages 2>/dev/null
+  )"}/(#b)([^:]##):(*)/${:-${(@)^${(s.,.q+)${match[2]}}}:${(q+)match[1]}}}}
+)
+
+local -a themes
+themes=(
+  ${(@)${(f)"$(bat --list-themes 2>/dev/null)"}[1,-3]}
+)
+
+local -a optspecs=(
+  '(-A --show-all)'{-A,--show-all}'[show non-printable characters like space, tab or newline]'
+  '--color[specify when to use colored output]:when:(auto never always)'
+  '--decorations[specify when to use the decorations that have been specified via --style]:when:(auto never always)'
+  '(-d --diff)'{-d,--diff}'[only show lines that have been added/removed/modified]'
+  '--diff-context[include specified lines of context around added/removed/modified lines when using `--diff`]:number of lines to include: '
+  '(-f --force-colorization)'{-f,--force-colorization}'[alias for --decorations=always --color=always]'
+  '(--file-name)'--file-name'[specify the name to display for a file]:<name>...:_files'
+  '(-H --highlight-line)'{-H,--highlight-line}'[highlight the N-th line with a different background color]:line number: '
+  '--italic-text[specify when to use ANSI sequences for italic text in the output]:when:(always never)'
+  '(-l --language)'{-l,--language}"[explicitly set the language for syntax highlighting]:language:{
+    _describe 'languages' languages
+  }"
+  '(- *)--list-languages[display a list of supported languages for syntax highlighting]'
+  '(- : *)--list-themes[display a list of supported themes for syntax highlighting]'
+  '(-m --map-syntax)'{-m,--map-syntax}'[map a file extension or file name to an existing syntax]:<glob\:syntax>: '
+  '(-n --number)'{-n,--number}'[only show line numbers, no other decorations (an alias for --style=numbers)]'
+  '(-P --paging)--paging[specify when to use the pager]:when:(auto never always)'
+  '(--paging -P)-P[alias for --paging=never]'
+  '--pager=[specify the pager to be used (overrids $PAGER and $BAT_PAGER)]:pager:_command_names'
+  '(-p --plain)'{-p,--plain}'[only show plain style, no decorations (an alias for --style=plain)]'
+  '(-r --line-range)'{-r,--line-range}'[only print the specified range of lines for each file]:<START>\:<END>: '
+  '--style[configure which elements to display in addition to the file contents]:style:{
+    _values -s , "style" auto full plain changes header grid numbers snip
+  }'
+  '--tab[set the tab width to spaces (specify 0 to pass tabs through directly)]:tab width: '
+  '--terminal-width[explicitly set the width of the terminal instead of determining it automatically]:terminal width: '
+  '--theme[set the theme for syntax highlighting]:theme:{_describe themes themes}'
+  '(-u --unbuffered)'{-u,--unbuffered}'[exists for POSIX-compliance reasons]'
+  '--wrap[specify the text-wrapping mode]:mode:(auto never character)'
+  '--diagnostic[show diagnostic information for bug reports]'
+  '(- : *)'{-h,--help}'[print this help message]'
+  '(- : *)'{-V,--version}'[show version information]'
+)
+
+_arguments -C -S \
+  ${(@)optspecs} \
+  '1:commands-or-files:{
+    _alternative "command:commands:((
+      cache\:modify\ the\ syntax-definition\ and\ theme\ cache
+    ))" "files:file:_files"
+  }' \
+  '*:: :->args' && ret=0
+
+case ${state} in
+  (args)
+    case ${words[1]} in
+      (cache)
+        optspecs=(
+          '(-b --build -c --clear
+          )'{-b,--build}'[initialize (or update) the syntax/theme cache by loading from the source directory]'
+          '(-b --build -c --clear)'{-c,--clear}'[remove the cached syntax definitions and themes]'
+          '--source[use a different directory to load syntaxes and themes from]:dir:_directories'
+          '--target[use a different directory to store the cached syntax and theme set]:dir:_directories'
+          '--blank[create completely new syntax and theme sets (instead of appending to the default sets)]'
+          '(- : *)'{-h,--help}'[prints help information]'
+        )
+        _arguments -S ${(@)optspecs} && ret=0
+      ;;
+      (*)
+        _files && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

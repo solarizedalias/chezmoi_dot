@@ -1,0 +1,34 @@
+#compdef git-brws
+
+# ==========================================================
+# _git_brws
+# Sun May  9 22:11:04 2021
+# based on git-brws version v0.11.12
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '(-r --repo)'{-r,--repo}'[specify repo (repo, user/repo, host/user/repo)]:repo: '
+  '(-b --branch)'{-b,--branch}'[specify branch]:branch: '
+  '(-u --url)'{-u,--url}'[output URL to stdout instead of opening with a browser]'
+  '(-p --pr)'{-p,--pr}'[open pull request page]'
+  '(-w --website)'{-w,--website}'[open website page instead of repository page]'
+  '(-B --blame)'{-B,--blame}'[open blame page]:file:_files'
+  '(-c --current-branch)'{-c,--current-branch}'[open the current branch instead of default]'
+  '(-h --help)'{-h,--help}'[print this help]'
+  '(-v --version)'{-v,--version}'[show version]'
+)
+
+_arguments ${(@)optspecs} '1:arg: ' && ret=0
+
+return ret
+

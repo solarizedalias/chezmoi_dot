@@ -1,0 +1,67 @@
+#compdef testament
+
+# ==========================================================
+# _testament
+# Tue Sep 22 12:38:34 2020
+# based on testament version ?
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args val_args
+
+local -a testament_commands=(
+  {p,pat,pattern}':run all the tests matching the given pattern'
+  'all:run all tests'
+  {c,cat,category}':run all the tests of a certain category'
+  {r,run}':run single test file'
+  'html:generate testresults.html from the database'
+  'stats:generate statistics about test cases'
+)
+
+function __testament_nim_executable() {
+  local -aU inpath=( ${(@)^path}/nim(ND-*) ) intyped=( ${${(M)PREFIX:#*/}:-${PWD}/}nim(ND-*) )
+  _alternative \
+    'nim-executables:in PATH:{_describe "nim executable in PATH" inpath -f }' \
+    'nim-executables:abs/rel path:{ _describe "abs/rel path to the executable" intyped -S "" -f }' \
+    'directories:directory:{_path_files -/}'
+}
+
+_arguments -S -C \
+  '--print[also print results to the console]' \
+  '--simulate[see what tests would be run but don'\''t run them for (debugging)]' \
+  '--failing[only show failing/ignored tests]' \
+  '--targets\:-[run tests for specified targets (default\: all)]:target:( c c++ js objc )' \
+  '--nim\:-[use a particular nim executable (default\: $PATH/nim)]:nim executable:{ __testament_nim_executable }' \
+  '--directory\:-[change to directory dir before reading the tests or doing anything else]:dir:{_path_files -/}' \
+  '--colors\:-[turn messages coloring on\off]:switch:( on off )' \
+  '--backendLogging\:-[disable or enable backend logging (default\: on)]:switch:( on off )' \
+  '--megatest\:-[enable or disable megatest (default\: on)]:switch:( on off )' \
+  '--skipFrom\:-[read tests to skip from `file`]:file:{_path_files}' \
+  '1: :{_describe command testament_commands}' \
+  '*:: :->command_arg' && ret=0
+
+case ${state} in
+  (command_arg)
+    case ${words[1]} in
+      (p|pat|pattern)
+        _message "glob pattern"
+      ;;
+      (all|html|stats)
+        _message "No more arguments"
+      ;;
+      (c|cat|category)
+        _message "category"
+      ;;
+      (r|run)
+        _files -g "*.nim"
+      ;;
+    esac
+  ;;
+esac
+

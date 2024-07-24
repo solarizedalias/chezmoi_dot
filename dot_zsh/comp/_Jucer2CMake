@@ -1,0 +1,34 @@
+#compdef Jucer2CMake
+
+# ==========================================================
+# _Jucer2CMake
+# Wed Jul  7 08:36:34 2021
+# based on Jucer2CMake version 43e9f04
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a subcommands=(
+  juce6:'JUCE 6''s CMake support'
+  reprojucer:'FRUT''s Reprojucer'
+)
+
+local -a optspecs=(
+  '(-h --help)'{-h,--help}'[show help message and exit]'
+  '--juce-modules[specify the location of global juce modules]:dir:_files -/'
+)
+
+_arguments \
+  ${(@)optspecs} \
+  '1:command:{ _describe command subcommands }' \
+  '2:jucer file:_files -g "*.jucer"' \
+  '3:FRUT Reprojucer.cmake:_files -g "*.cmake"' && ret=0
+

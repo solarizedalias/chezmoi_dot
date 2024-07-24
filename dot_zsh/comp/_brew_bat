@@ -1,0 +1,35 @@
+#compdef brew-bat
+
+# ==========================================================
+# _brew_bat
+# Mon Nov 30 20:20:27 2020
+# based on brew-bat version -
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+local var
+
+local _CCRXT='curcontext=${curcontext%:*:*}'
+
+local -a optspecs=(
+  '(-h --help)'{-h,--help}'[print help]'
+  '(-v --version)'{-v,--version}'[print version]'
+  '--color=[specify when to use colored output]:when:(auto never always)'
+  '(-c --truecolor --true-color)'{-c,--truecolor,--true-color}'[force set COLORTERM="truecolor"]'
+  '(--cask --casks)'{--cask,--casks}'[treat named argument as cask]:cask:__brew_all_casks'
+)
+
+_arguments \
+  ${(@)optspecs} \
+  '1::formula:__brew_formulae' && ret=0
+
+return ret
+

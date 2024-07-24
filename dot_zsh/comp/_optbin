@@ -1,0 +1,42 @@
+#compdef optbin
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _optbin
+# Tue Jan  5 14:32:58 2021
+# based on optbin version
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local optpath=( /usr/local/opt(ND-/) )
+(( ${#optpath} > 0 )) || return 1
+local -aU execs=(
+  ${(@)^optpath}/*/libexec/gnubin/*(ND-*:t)
+  ${(@)^optpath}/*/bin/*(ND-*:t)
+)
+execs=( ${(@o)execs} )
+
+if (( CURRENT == 2 )); then
+  _describe -t command command execs && ret=0
+elif (( CURRENT > 2 )); then
+  () {
+    setopt localoptions NO_shwordsplit
+    setopt NO_warn_create_global extended_glob glob_dots
+    shift words
+    (( CURRENT-- ))
+    _normal #-p ${service}
+  }
+fi
+
+return ret
+

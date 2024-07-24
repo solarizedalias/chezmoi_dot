@@ -1,0 +1,36 @@
+#compdef ghkw
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _ghkw
+# Sat Oct 24 15:08:21 2020
+# based on ghkw version 0.2.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+_arguments \
+  '--in=[specify `in`]:in:( file readme )' \
+  '--language=[specify language]:language: ' \
+  '--fork=[include forks or search only forks]:fork:(true only)' \
+  '--size=[specify size]:size: ' \
+  '--path=[specify path]:path: ' \
+  '--filename=[specify filename]:filename: ' \
+  '--extension=[specify extension]:extension: ' \
+  '--user=[specify user]:user: ' \
+  '--repo=[specify repo]:repo: ' \
+  '(-d --debug)'{-d,--debug}'[enable debug mode]' \
+  '(-f --format)'{-f,--format}'[specify output format (default json)]:format:( markdown json )' \
+  '(-h --help)'{-h,--help}'[print help and exit]' \
+  '(-v --version)'{-v,--version}'[print version]' \
+  '*:query: ' && ret=0
+

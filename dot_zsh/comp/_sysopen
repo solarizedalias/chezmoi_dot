@@ -1,0 +1,47 @@
+#compdef sysopen
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _sysopen
+# Tue Dec 22 06:28:16 2020
+# based on zsh 5.8.0.2-dev
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a \
+  modes=( {0..7}{0..7}{0..7} ) \
+  sysopts=(
+    'creat'{,e}':create file if it does not exist'
+    'excl:create file, error if it already exists'
+    'noatime:suppress updating of the file atime'
+    'nofollow:fail if file is a symbolic link'
+    'sync:request that writes wait until data has been physically written'
+    'trunc'{,ate}':truncate file to size 0'
+  )
+
+local -a optspecs=(
+  '(-r -w)-a[open for reading]'
+  '(-w -a)-w[open for writing]'
+  '(-a -w)-r[open for reading]'
+  '-m+[specify the initial permission]:mode:{ _describe "mode in octal" modes }'
+  '-o+[specify system specific options]:options:{ _describe "options" sysopts -qS , }'
+  '-u+[specify fd (0-9 or var name)]:fd:{
+    _wanted fd expl fd compadd -- {0..9}
+    _wanted parameters expl parameter compadd -- "${(k@)parameters[(R)*~*(readonly|special)*]}"
+  }'
+)
+
+_arguments -S -s \
+  ${(@)optspecs} \
+  '1:file:_files' && ret=0
+

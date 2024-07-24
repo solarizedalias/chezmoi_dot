@@ -1,0 +1,6 @@
+
+_arguments \
+  '(-a --about)'{-a,--about}'[about]:file:{ _path_files }' \
+  '(-i --important)'{-i,--important}'[important]:thing:( 1 2 3 )' \
+  '*::args:{ _message "${(kvj: :)opt_args}" }' && ret=0
+

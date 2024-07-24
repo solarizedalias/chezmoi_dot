@@ -1,0 +1,48 @@
+#compdef git-gone
+
+# ==========================================================
+# _git_gone
+# Wed Oct 14 18:14:35 2020
+# based on git-gone version 0.3.7
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+local -A opt_args val_args
+
+local -a match mbegin mend
+
+local -a subcommands=(
+  "list:list gone branches (default)"
+  "prune:prune gone branches"
+  "help:print help message for git-gone or its subcommands"
+)
+
+_arguments -C \
+  '(-f --fetch)'{-f,--fetch}'[fetch and prunes all remotes first]' \
+  '(-v --verbose)'{-v,--verbose}'[print detailed progress when fetching]' \
+  '(-h --help)'{-h,--help}'[print help information]' \
+  '(-V --version)'{-V,--version}'[print version information]' \
+  ':subcommands:{ _describe "commands" subcommands }' \
+  '*:: :->cmd_args' && ret=0
+
+case ${state} in
+  (cmd_args)
+    case ${words[1]} in
+      (help)
+        subcommands=(
+          ${(@)subcommands//(#b)(*[^\\]):([^:]*)/${match[1]}:print help for subcommand ${match[1]}}
+        )
+        _describe "subcommands to print help for" subcommands && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

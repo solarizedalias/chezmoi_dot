@@ -1,0 +1,496 @@
+#compdef pueue
+
+# ==========================================================
+# _pueue
+# based on version pueue v2.0.0
+# 2020-12-14 10:50:56
+# Last updated: 2022-02-19
+# AUTHROR: solarizedalias
+# ==========================================================
+
+#
+# Not Implemented
+#
+  # timespec for -d,--delay
+    # possible formats for --delay.
+    # 2020-04-01T18:30:00   // RFC 3339 timestamp
+    # 2020-4-1 18:2:30      // Optional leading zeros
+    # 2020-4-1 5:30pm       // Informal am/pm time
+    # 2020-4-1 5pm          // Optional minutes and seconds
+    # April 1 2020 18:30:00 // English months
+    # 1 Apr 8:30pm          // Implies current year
+    # 4/1                   // American form date
+    # wednesday 10:30pm     // The closest wednesday in the future at 22:30
+    # wednesday             // The closest wednesday in the future
+    # 4 months              // 4 months from today at 00:00:00
+    # 1 week                // 1 week at the current time
+    # 1days                 // 1 day from today at the current time
+    # 1d 03:00              // The closest 3:00 after 1 day (24 hours)
+    # 3h                    // 3 hours from now
+    # 3600s                 // 3600 seconds from now
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt function_arg_zero
+
+local LOGF="DEBUG_${0}"
+function "DEBUG_${0}"() {
+  setopt localoptions NO_shwordsplit
+  setopt NO_clobber NO_append_create NO_sh_word_split
+  setopt function_arg_zero rc_quotes
+
+  local LOG=${TMPPREFIX}/${0}-$$.${(%):-'%D{%F-%H%M%S}'}.log
+
+  if (( ${${(M)${(P)LOGF}:#<->}:-0} )); then
+    eval \
+    'function '$0'() {
+        local LOG='${LOG}'
+        (
+          umask 0077
+          zmodload zsh/files
+          mkdir -p '${LOG:h}'
+          print -rl -- \
+            ${(%):-''%D{%F-%H%M%S}''}" ${line:-${(j: :)words}}: "${(@)^argv} \
+          >>| '${LOG}'
+        )
+    }'
+  else
+    function "$0"() { : }
+    LOGF=':'
+  fi
+  $0 $@
+}
+
+local MATCH MBEGIN MEND
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+#
+# Subcommands
+#
+local -a subcommands
+subcommands=(
+  'add:Enqueue a task for execution'
+  'clean:Remove all finished tasks from the list (also clears logs)'
+  'completions:Generates shell completion files. This can be ignored during normal operations'
+  'edit:Edit the command or path of a stashed or queued task.This edits the command of the task by default.'
+  'enqueue:Enqueue stashed tasks. They''ll be handled normally afterwards'
+  'follow:Follow the output of a currently running task. This command works like `tail -f`'
+  'format-status:Accept a list or map of JSON pueue tasks via stdin and display it just like "status".'
+  'group:Manage groups. Without any flags, this will simply display all known groups'
+  'help:Prints this message or the help of the given subcommand(s)'
+  'kill:Kill specific running tasks or various groups of tasks'
+  'log:Display the log output of finished tasks'
+  'parallel:Set the amount of allowed parallel tasks'
+  'pause:Pause either running tasks or specific groups of tasks. Without any parameters, pauses the default queue and all it''s tasks.'
+  'remove:Remove tasks from the list. Running or paused tasks need to be killed first'
+  'reset:Kill all running tasks, remove all tasks and reset max_task_id'
+  'restart:Restart task(s). Identical tasks will be created and instantly queued (unless specified otherwise)'
+  'send:Send something to a task. Useful for sending confirmations (''y\\n'')'
+  'shutdown:Remotely shut down the daemon. Should only be used if the daemon isn''t started by a service manager)'
+  'start:Resume operation of specific tasks or groups of tasks. Without any parameters, resumes the default queue and all it''s tasks.'
+  'stash:Stashed tasks won''t be automatically started. Either `enqueue` them, to be normally handled or explicitly `start` them'
+  'status:Display the current status of all tasks'
+  'switch:Switches the queue position of two commands. Only works on queued and stashed commands'
+  'wait:Wait until tasks are finished'
+)
+__pueue_commands() {
+  _describe 'commands' subcommands
+}
+
+#
+# Tasks
+#
+
+# Helper which sets ${KIND}_tasks array
+function __pueue_extract_status() {
+  setopt localoptions NO_shwordsplit
+  setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+  setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+  ${LOGF} "$0: ENTER"
+  local REF
+
+  local -A Labels=(
+    [running]='Running' [queued]='Queued' [killed]='Killed'
+    [success]='Success' [failed]='Failed' [stashed]='Stashed'
+  )
+  local MATCH MBEGIN MEND
+  local -a all_lines
+  all_lines=(
+    ${(@)^${(@M)${(f)"$(
+      pueue status 2>/dev/null
+    )"}:#[[:blank:]]#[0-9]##*}/(#m)(*)/${${(s: :)MATCH}[1]}\:${${(s: :)MATCH}[2,-1]}}
+  )
+
+  ${LOGF} "all_lines: "
+  ${LOGF} "    "${(@)^all_lines} ''
+
+  local P
+  for P in $@; do
+    local PAT
+    if (( ${+Labels[${P}]} )); then
+      PAT="*${Labels[${P}]}*"
+      ${LOGF} '${Lables[${P}]}: '${Labels[${P}]}
+    else
+      P='all'
+      PAT='*'
+    fi
+    local -a tmp=(
+      ${(@M)all_lines:#${~PAT}}
+    )
+    : ${(PA)${:-${P}_tasks}::=${(@)tmp}}
+
+    ${LOGF} "P: ${P}"
+    ${LOGF} '    all_tasks:'     '        '${(@)^all_tasks}
+    ${LOGF} '    running_tasks:' '        '${(@)^running_tasks}
+    ${LOGF} '    queued_tasks:'  '        '${(@)^queued_tasks}
+    ${LOGF} '    killed_tasks:'  '        '${(@)^killed_tasks}
+    ${LOGF} '    success_tasks:' '        '${(@)^success_tasks}
+    ${LOGF} '    failed_tasks:'  '        '${(@)^failed_tasks}
+    ${LOGF} '    stashed_tasks:' '        '${(@)^stashed_tasks}
+    ${LOGF} ''
+  done
+
+}
+
+function __pueue_compl_tasks() {
+  local TAG
+  local -a all_labels=( all running queued killed success failed stashed )
+  local -a wanted
+
+  builtin set -- ${(z)${(Q@)argv}}
+  while (( $# )); do
+    if (( ${all_labels[(I)$1]} )); then
+      wanted+=( "${1}" )
+      local -a -- ${1}_tasks
+      ${LOGF} "TYPE: ${1}_tasks: ${(tP)${:-${1}_tasks}}"
+    else
+      ${LOGF} "GARBAGE: $1"
+    fi
+    shift
+  done
+
+  ${LOGF} "WANTED: ${(j: :)wanted}"
+
+  __pueue_extract_status ${(@)wanted}
+  local MATCH MBEGIN MEND
+  local -a altspecs=(
+    ${(@)wanted/(#m)*/"${MATCH}_tasks:${MATCH}_task:{
+      _describe '${MATCH} tasks' ${MATCH}_tasks
+    }"}
+  )
+
+  ${LOGF} "CALL: _alternative \\
+          ${(pj: \\\n              :)altspecs}"
+
+  _alternative ${(@)altspecs} && ret=0
+  return ret
+
+}
+
+#
+# Top level arguments
+#
+
+local -a optspecs_base=(
+  '(-h --help)'{-h,--help}'[Prints help information]'
+)
+local -a optspecs=(
+  ${(@)optspecs_base}
+  '(-c --config)'{-c,--config}'[Path to a specific pueue config file]:config:_files'
+  '(
+-p --profile)'{-p,--profile}'[The name of the profile that should be loaded from your config file]:profile: '
+  '(-V --version)'{-V,--version}'[Prints version information]'
+  '(-v -vv -vvv --verbose)'{-v,-vv,-vvv,--verbose}'[Verbose mode (-v, -vv, -vvv)]'
+  '(-p --port)'{-p+,--port=}'[The port for the daemon. Overwrites the port in the config file]:port number: '
+)
+
+_arguments -S -C ${(@)optspecs} \
+  '1: :__pueue_commands' \
+  '*:: :->command_args' && ret=0
+
+# Subcommand args
+case ${state} in
+  (command_args)
+    case ${words[1]} in
+      (add)
+        # TODO Newly added aliasing feature might be completed.
+        # However, it requires to find and read user's config file. (~/.config/pueue_aliases.yml?)
+        # It would make things more complicated.
+        optspecs=(
+          ${(@)optspecs_base}
+          '(-a --after
+)'{-a+,--after=}'[Start the task once all specified tasks have successfully finished.]:all tasks:{
+            __pueue_compl_tasks all }'
+          '(-d --delay)'{-d+,--delay=}'[Delays enqueueing the task until <delay> elapses.]:timespec: '
+          '(-e --escape)'{-e,--escape}'[Escape any special shell characters]'
+          '(-g --group
+)'{-g+,--group=}'[Assign the task to a group. Groups kind of act as separate queues.]:groups:->groups'
+          '(-i --immediate)'{-i,--immediate}'[Start the task immediately]'
+          '(-l --label)'{-l+,--label=}'[Add some information for yourself]:label: '
+          '(-p --print-task-id)'{-p,--print-task-id}'[Only return the task id instead of a text.]'
+          '(-s --stashed)'{-s,--stashed}'[Create the task in stashed state.]'
+          '(
+-w --working-directory)'{-w+,--working-directory=}'[Specify current working directory]:path:{_path_files -/}'
+        )
+
+        _arguments -S -C \
+          ${(@)optspecs} \
+          '1:"The command that should be added":_path_commands' \
+          '*:: :{
+            if [[ ${words[1]} == -- ]]; then
+              shift words
+              (( CURRENT -- ))
+            fi
+            emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch _ ${words[1]:t}"
+          }' &&
+        ret=0
+      ;;
+
+      (clean)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '(-g --group)'{-g+,--group=}'[Only clean tasks of a specific group]: :->groups' \
+          '(-s --successful-only)'{-s,--successful-only}'[Only clean tasks that finished successfully]' \
+          '*::"Hit enter to remove all finished tasks from the list."' &&
+        ret=0
+      ;;
+
+      (completions)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          ':shell:(bash fish powershell elvish zsh)' \
+          ':output dir:{_path_files -/}' &&
+        ret=0
+      ;;
+
+      (edit)
+        _arguments -S \
+          '(-p --path)'{-p+,--path=}'[Edit the path of the task]:path:{_path_files -/}' \
+          ${(@)optspecs_base} \
+          '1:stashed or queued task:{ __pueue_compl_tasks stashed queued }' &&
+        ret=0
+      ;;
+
+      (enqueue)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '(-d --delay
+)'{-d+,--delay=}'[Delay enqueuing the tasks until <delay> elapses.]:timespec: ' \
+          '*:stashed task:{__pueue_compl_tasks stashed}' &&
+        ret=0
+      ;;
+
+      (follow)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '(-l --lines)'{-l,--lines}'[Only print the last X lines of the output before following]:lines: ' \
+          '1:running tasks:{__pueue_compl_tasks running}' && ret=0
+      ;;
+
+      (format-status)
+        _arguments \
+          '(-g --group
+)'{-g+,--group=}'[Only show tasks of a specific group]:groups:->groups' && ret=0
+      ;;
+
+      (kill)
+        optspecs=(
+          ${(@)optspecs_base}
+          '(-a --all)'{-a,--all}'[Kill ALL running tasks. This also pauses everything]'
+          '(-c --children)'{-c,--children}'[Send the SIGTERM signal to all children as well.]'
+          '(-g,--group)'{-g+,--group=}'[Kill all running in a group. Pauses the group]:groups:->group'
+          # TODO: complete signal names? or signal numbers?
+          '(-s --signal)'{-s,--signal}'[Send a UNIX signal instead of simply killing the process]:signal: '
+        )
+        _arguments -S ${(@)optspecs} \
+          '1:running task:__pueue_compl_tasks running' && ret=0
+      ;;
+
+      (group)
+        local -a group_cmds=(
+            add:"Add a group by name"
+            remove:"Remove a group by name and move its tasks to the default group"
+            help:"Print help message"
+        )
+        _arguments -S -C \
+          ${(@)optspecs_base} \
+          '1:command:{ _describe command group_cmds }' \
+          '*:: :->group_arg' && ret=0
+        case ${state} in
+          (group_arg)
+            case ${words[1]} in
+              (add)
+                _arguments \
+                  ${(@)optspecs_base} \
+                  '(
+-p --paralell)'{-p,--parallel=}'[Set the amount of parallel tasks this group can have]:int: ' \
+                  '1:group name: ' && ret=0
+              ;;
+              (remove)
+                _arguments \
+                  ${(@)optspecs_base} '1: :->groups' && ret=0
+              ;;
+              (help)
+                _describe command group_cmds && ret=0
+              ;;
+            esac
+          ;;
+        esac
+      ;;
+
+      (help)
+        _arguments -S \
+          '1: :__pueue_commands' && ret=0
+      ;;
+
+      (log)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '(-f --full)'{-f,--full}'[Show the whole output.]' \
+          '(-j --json)'{-j,--json}'[Print the current state as json. Includes EVERYTHING]' \
+          '(-l --lines)'{-l+,--lines=}"[Only print the last X lines of each task's output]:lines: " \
+          '*: :{ __pueue_compl_tasks running killed success failed }' && ret=0
+      ;;
+
+      (pause)
+        optspecs=(
+          ${(@)optspecs_base}
+          '(-a --all)'{-a,--all}'[Pause everything \(Default queue and all groups\)!]'
+          '(-c --children)'{-c,--children}'[Also pause direct child processes of a tasks main process.]'
+          '(-w --wait
+)'{-w,--wait}'[Don''t pause already running tasks and let them finish by themselves.]'
+          '(-g --group)'{-g,--group}'[Pause a specific group]:group:->groups'
+        )
+
+        _arguments -S -C \
+          ${(@)optspecs} \
+          '*:running tasks:{_alternative "running_tasks:running tasks:__pueue_compl_tasks running"}' &&
+        ret=0
+      ;;
+
+      (parallel)
+        _arguments -C -S \
+          ${(@)optspecs_base} \
+          '(-g --group)'{-g+,--group=}'[Specify the amount of parallel tasks for a group]:groups:->groups' \
+          '1:amount of parallel tasks (number): ' && ret=0
+      ;;
+
+      (remove)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '*:tasks not running:{ __pueue_compl_tasks stashed killed success failed }' && ret=0
+      ;;
+
+      (reset)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '(-c --children)'{-c,--children}'[Send the SIGTERM signal to all children as well]' \
+          '(-f --force)'{-f,--force}"[Don't ask for any confirmation]" \
+          '*:Hit enter to kill all running tasks, remove all tasks and reset max_task_id: ' && ret=0
+      ;;
+
+      (restart)
+        _arguments -S -C \
+          ${(@)optspecs_base} \
+          '(-a --all-failed)'{-a,--all-failed}'[Restart all failed tasks across all groups]' \
+          '(-e --edit)'{-e,--edit}'[Edit the command of the task before restarting]' \
+          '(
+-g --failed-in-group)'{-g,--failed-in-group}'[Restart failed tasks of a specific group]: :->groups' \
+          '(-i --in-place)'{-i,--in-place}'[Restart the task by reusing the already existing tasks]' \
+          '(-k --start-immediately)'{-s,--start-immediately}'[Immediately start the task(s)]' \
+          '--not-in-place[Restart the task by creating a new identical tasks]' \
+          '(-p --edit-path)'{-p,--path}'[Edit the path of the task before restarting]' \
+          '(-s --stashed)'{-s,--stashed}'[Create the task in stashed state.]' \
+          '*:finished tasks:{ __pueue_compl_tasks killed success failed }' && ret=0
+      ;;
+
+      (send)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '1:running task:{__pueue_compl_tasks running}' \
+          '2:the input that should be sent to the process: ' &&
+        ret=0
+      ;;
+
+      (shutdown)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '*:hit Enter to remotely shut down the daemon: ' &&
+        ret=0
+      ;;
+
+      (start)
+        _arguments -S -C \
+          ${(@)optspecs_base} \
+          '(-a --all)'{-a,--all}'[Start a everything (Default queue and all groups)!]' \
+          '(-c --children)'{-c,--children}'[Also resume direct child processes of your paused tasks.]' \
+          '(-g --group
+)'{-g+,--group=}'[Start a specific group and all paused tasks in it]:groups:->groups' \
+          '*:task ids:{ __pueue_compl_tasks stashed queued }' && ret=0
+      ;;
+
+      (stash)
+        _arguments -S -C \
+          ${(@)optspecs_base} \
+          '1:queued tasks:{ __pueue_compl_tasks queued }' &&
+        ret=0
+      ;;
+
+      (status)
+        _arguments -S -C \
+          ${(@)optspecs_base} \
+          '(-j --json)'{-j,--json}'[Print the current state as json to stdout]' \
+          '(-g --group)'{-g+,--group=}'[Only show tasks of a specific group]:groups:->groups' &&
+        ret=0
+      ;;
+
+      (switch)
+        _arguments -S \
+          ${(@)optspecs_base} \
+          '1:stashed or queued task:{ __pueue_compl_tasks stashed queued }' \
+          '2:stashed or queued task:{ __pueue_compl_tasks stashed queued }' &&
+        ret=0
+      ;;
+      (wait)
+        _arguments -S -C \
+          ${(@)optspecs_base} \
+          '(-a --all)'{-a,--all}'[wait for all tasks across all groups and the default queue]' \
+          '(-g --group)'{-g,--group=}'[wait for all tasks in a specified group]:groups:->groups' \
+          '(-q --quiet)'{-q,--quiet}'[supress log output]' \
+          '*:task ids:{ __pueue_compl_tasks all }' && ret=0
+      ;;
+
+    esac
+  ;;
+
+esac
+
+case ${state} in
+  (groups)
+
+    local -a match mbegin mend
+    local -a g_lines
+    g_lines=( ${(f)"$(pueue group)"} )
+    # XXX: as of v2.0.0, some escape sequences are not suppressed
+    g_lines=( ${(@)g_lines//$'\e['(<0->[;]#)##m/} )
+    local -a groups=( ${(@)g_lines/(#b)Group \"(*)\"*/${match}} )
+
+    local -a running_groups paused_groups
+    local -a reply
+    running_groups=( ${(@M)g_lines:#*: running} )
+    running_groups=( ${(@)running_groups/(#b)Group \"(*)\"*/${match}} )
+    paused_groups=( ${(@M)g_lines:#*: paused} )
+    paused_groups=( ${(@)paused_groups/(#b)Group \"(*)\"*/${match}} )
+    _alternative \
+      'running group:running_group:compadd -a running_groups' \
+      'paused group:paused_group:compadd -a paused_groups' &&
+    ret=0
+  ;;
+esac
+
+return ret
+

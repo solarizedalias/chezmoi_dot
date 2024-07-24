@@ -1,0 +1,88 @@
+#compdef jc
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _jc
+# Fri Jun 26 16:09:57 2020
+# based on jc version
+# AUTHOR: solarizedalias
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob typeset_silent no_short_loops rc_quotes no_auto_pushd
+# warn_create_global (You can't prevent other comp funcs polluting globals as we use _dispatch.)
+
+local context curcontext=$curcontext state line expl state_descr ret=1
+local -A opt_args
+
+local -a help_text
+# pick interesting lines from `jc --help`.
+help_text=(
+  ${(@M)${(f)"$(jc --help 2>&1 || true)"}:#(#s)[[:blank:]]#(-[^-]|--[^-]##)*}
+)
+# remove leading/trailing blanks
+help_text=(
+  ${(@)^${(@)^help_text##[[:blank:]]##}%%[[:blank:]]##}
+)
+
+# separate parsers and options
+local parsers_lines options_lines
+parsers_lines=(
+  ${(@M)help_text:#*parser*}
+)
+options_lines=(
+  ${(@)help_text:#*parser*}
+)
+
+local parser option
+local -A parsers_hash options_hash
+for parser in ${(@)parsers_lines};do
+  parsers_hash+=( "${parser%%[[:blank:]]*}" "${parser##[-[:alnum:]]##[[:blank:]]#}" )
+done
+for option in ${(@)options_lines};do
+  options_hash+=( "${option%%[[:blank:]]*}" "${option##[-[:alnum:]]##[[:blank:]]#}" )
+done
+
+local pkey okey
+local -a jc_parsers jc_options
+for pkey in ${(k)parsers_hash[@]};do
+  # complete only one of the parsers
+  jc_parsers+=( "'(${(k)parsers_hash})${pkey}[${parsers_hash[${pkey}]}]'" )
+done
+for okey in ${(k)options_hash[@]};do
+  jc_options+=( "'${okey}[${options_hash[${okey}]}]'" )
+done
+
+# extract command names which can be used for magic syntax.
+local -a magics command_name
+# all of the command names
+command_name=(
+ ${(k)commands[@]}
+)
+# intersection of parsers and commands.
+magics=(
+  ${(@)${(k)^parsers_hash[@]//((#s)[-](#c1,2)|-[^-]##(#e))/}:*command_name}
+)
+
+# You must unquote optspec to pass to _arguments.
+integer NORMARG
+_arguments -n -C -S -A ${(@Q)jc_options} ${(@Q)jc_parsers} \
+  '1: :->command' \
+  '*:: :->command_arg' && ret=0
+
+# First normal arg (not options) is completed from the array `magic`.
+case ${state} in
+  (command)
+    _describe 'commands for magic syntax' magics && ret=0
+  ;;
+
+  # complete the rest of args as if it were for the command to be parsed by jc, not jc itself.
+  # e.g, `jc -p ls <tab>` completes the same way as `ls <tab>`.
+  (command_arg)
+    _dispatch "${words[(w)1]}" "${words[(w)1]}" -default- && ret=0
+  ;;
+esac
+
+return ${ret}
+

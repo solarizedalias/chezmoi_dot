@@ -1,0 +1,134 @@
+#compdef -first-
+
+# ==========================================================
+# _first
+# Sat Aug 15 12:12:35 2020
+# based on first version 0.0.1
+# AUTHOR: solarizedalias
+# The very first thing called.
+# Add a few modifications for more accurate determination of
+# the contexts. (Do not fail on closing parts on the rhs `)}]`).
+# ==========================================================
+
+
+# TODO
+# [ ] Set _compskip=default somewhere appropriate (to prevent _default being dispatched.)
+#    'e.g., ${(<TAB>)} -> completing glob flags, qualifiers is so wrong!'
+#
+# [ ] Handle the case when inside double quotes.
+#     This might break the code relying on OrigSet so we need to be careful.
+#
+# [ ] Complete different set of parameters depending on flags.
+#     e.g., associative arrays for ${(k)NAME}.
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+declare -A opt_args
+
+# Store the original values because we are going to mess around these parameters.
+local -A OrigSet
+OrigSet[ISUFFIX]=${ISUFFIX}
+OrigSet[SUFFIX]=${SUFFIX}
+OrigSet[PREFIX]=${PREFIX}
+OrigSet[IPREFIX]=${IPREFIX}
+
+# **********************************************************
+#                    GLOB QUALIFIERS/FLAGS
+# **********************************************************
+if [[ ${PREFIX} == *(${(~j:|:)patchars})*~^*\([^\)]# ]]; then
+  compstate[to_end]=''
+fi
+
+# ***********************************************************
+#                  PARAMETER EXPANSION FLAG
+# ***********************************************************
+if [[ ${PREFIX} == *'${('[^\)]# ]]; then
+  compstate[to_end]=''
+  compset -S '\)*'
+  _tags flags
+  while _tags; do
+    if _requested flags; then
+      _dispatch -brace-parameter- -brace-parameter- && ret=0
+    fi
+  done
+  return ret
+fi
+
+# **********************************************************
+#                       BRACE PARAMETER
+# **********************************************************
+if [[ ${IPREFIX}${PREFIX} == *'${'[^\}]# ]]; then
+  compstate[to_end]=''
+
+  compset -P '*[\)+=\#\~]'
+  # This should **NOT** be '*[^[:IDENT:]]'
+  compset -P '[^[:IDENT:]]#'
+
+  # End of ${var<||>} or ${var<||>[*]}
+  # Do **NOT** escape closing braces if you are not putting them in `[]`.
+  if compset -S '[\}\[]*' || [[ -z ${SUFFIX} ]]; then
+    # XXX work around for '} ' is inserted (by what?) when undesirable.
+    #     it's not parfect.
+    if [[ ${LBUFFER[-1]} == [[:IDENT:]] ]]; then
+      ISUFFIX=''
+      compstate[to_end]=''
+    fi
+    _dispatch -brace-parameter- -brace-parameter- && ret=0
+  fi
+fi
+
+# **********************************************************
+#                         Subscript
+# **********************************************************
+# foo[<||>] ${foo[<||>]} ${foo[expr/key][<||>]} ...
+if [[ ${IPREFIX}${PREFIX} == *[[:IDENT:]\]]\[[^\]]# ]]; then
+
+  if compset -S '\]*' || [[ -z ${SUFFIX} ]]; then
+    compstate[to_end]=''
+
+    # Kind of a hack.
+
+    local PARAMNAME
+    # Restore the original state.
+    IPREFIX="${OrigSet[IPREFIX]}"
+    PREFIX="${OrigSet[PREFIX]}"
+    # Get the name of the parameter.
+    PARAMNAME="${${PREFIX%\[(\([^\)]\)|)}##*[^[:IDENT:]]}"
+    # Fallback to the extracted param name if unset.
+    compstate[parameter]="${compstate[parameter]:-${PARAMNAME}}"
+    # And then push everything up to `[` out of PREFIX.
+    compset -P '*\['
+
+    # At this point, the state should be like,
+    #   IPREFIX `${(FLAG)NAME[`
+    #   PREFIX  ``
+    #   SUFFIX  ``
+    #   ISUFFIX `]}`
+    # meaning that there is nothing which would be taken into account by completions
+    # when _subscript is invoked.
+
+  fi
+
+  _dispatch -subscript- -subscript- && ret=0
+fi
+
+
+# **********************************************************
+#                       Named Directory
+# **********************************************************
+if [[ ${IPREFIX}${PREFIX} == *'~['[^\]]# ]]; then
+  compstate[to_end]=''
+  compset -P '*\['
+  if compset -S '\]*' || [[ -z ${SUFFIX} ]]; then
+    _dynamic_directory_name && ret=0
+  fi
+fi
+
+# _message "ipre:'${IPREFIX}' pre:'${PREFIX}' suf:'${SUFFIX}' isuf:'${ISUFFIX}'"
+
+return ret
+

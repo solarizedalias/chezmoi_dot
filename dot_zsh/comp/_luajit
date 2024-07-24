@@ -1,0 +1,41 @@
+#compdef luajit
+
+# ==========================================================
+# _luajit
+# Mon Nov 22 01:37:37 2021
+# based on luajit version 2.1.0-beta3
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+# TODO: handling of `-`, `--`
+
+setopt localoptions       NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  "-e[execute string 'chunk']:chunk: "
+  "-l[require library 'name']:name: "
+
+  # TODO: see the output of `luajit -b`
+  "-b[save or list bytecode]:...: "
+
+  "-j[perform LuaJIT control command]:cmd: "
+  "-O-[control LuaJIT optimizations]:opt: "
+  "-i[enter interactive mode after executing 'script']"
+  "-v[show version information]"
+  "-E[ignore environment variables]"
+)
+
+_arguments \
+  ${(@)optspecs} \
+  '1:script:_files -g"*.lua"' \
+  '*:args:_default' && ret=0
+
+return ret
+

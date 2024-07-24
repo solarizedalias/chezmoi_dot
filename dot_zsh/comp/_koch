@@ -1,0 +1,88 @@
+#compdef koch
+
+# ==========================================================
+# _koch
+# Mon Jan  4 13:32:25 2021
+# based on koch version nim 1.5.1
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a root_optspecs=(
+  '(: * -)'{-h,--help}'[show help and quit]'
+  '--latest[bundle the installers with bleeding edge versions of external components]'
+  '--stable[bundle the installers with stable versions of external components (default)]'
+  '--nim\:-[use specified path for nim binary]:nim binary:{
+    compset -P "*\:"
+    _files -g"*(ND-*)"
+  }'
+  '--localdocs\:-[only build local documentations]::path:_files'
+)
+
+local -a regular_commands=(
+  'boot:bootstraps with given command line options'
+  'distrohelper:helper for distro packagers'
+  'tools:build Nim related tools'
+  'toolsNoExternal:build Nim related tools excpept external tools'
+  'nimble:build Nimble tool'
+  'fusion:clone fusion into the working tree'
+)
+
+local -a coredev_commands=(
+  'runCI:run CI, e.g. from travis'
+  'docs:generate the full documentation'
+  'csource -d\:danger:build the C sources for installation'
+  'pdf:build the PDF documentation'
+  'zip:build the installation zip package'
+  'zx:build the installation tar.xz package'
+  'testinstall:test tar.xz package (Unix only)'
+  'installdeps:install external dependency to dist/'
+  'tests:run the specified test or the testsuite'
+  'temp:create a temporary compiler for testing'
+  'pushcsource:push generated Csources to its repo'
+)
+
+local -a boot_optspecs=(
+  '-d\:release[produce a release version of the compiler]'
+  '-d\:nimUseLinenoise[use the linenoise library for interactive mode `nim secret`]'
+  '-d\:leanCompiler[produce a compiler without JS codegen or documentation generator for less RAM on bootstrapping]'
+)
+
+_arguments -S -C \
+  ${(@)root_optspecs} \
+  '1:command:{
+    _alternative \
+      "commands:command:{ _describe command regular_commands }" \
+      "core-dev:core dev command:{ _describe \"core dev command\" coredev_commands -Q }" && ret=0
+  }' \
+  '*:: :->args' && ret=0
+
+case ${state} in
+  (args)
+    case ${words[1]} in
+      (boot)
+        _arguments \
+          ${(@)boot_optspecs} && ret=0
+      ;;
+      (distrohelper)
+        _tags bindir
+        while _tags; do
+          if _requested bindir; then
+            _files -/ && ret=0
+          fi
+        done
+      ;;
+      (tests)
+        _message 'specify a test category or run the suite' && ret=0
+      ;;
+    esac
+  ;;
+esac

@@ -1,0 +1,123 @@
+#compdef mask
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _mask
+# Wed Jul  8 18:32:40 2020
+# based on mask version 0.8.0
+# AUTHOR: solarizedalias
+# compdef for mask
+# ==========================================================
+
+
+setopt localoptions NO_shwordsplit
+setopt typeset_silent no_short_loops no_auto_pushd      #warn_create_global
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args
+
+local -a reply
+local REPLY
+
+# TODO
+# Implement more full-fledged `maskfile parser` which can,
+# [ ] Parse every subcommand and its subsequent options.
+
+function __mask_subcommands() {
+  local MASKFILE=${1:-maskfile.md}
+  local -a subcommands
+  subcommands=( ${(@)^${(@M)${(f)"$(< ${MASKFILE} || true 2>/dev/null)"}:#(#s)\#\#*}/(#s)(\#)##[[:space:]]#} )
+  subcommands=( ${(@)${(@)^subcommands//\([^\(\)]##\)/}%%[[:blank:]]} )
+  compadd -Q -X "[tasks found in ${MASKFILE:a}]" ${(@)subcommands}
+}
+
+# case state->task_args-> _arguments $(__mask_find_options_for_one_task words[@] && echo $reply)
+# TODO We shoud test it.
+function __mask_find_options_for_one_task() {
+  local RET=1
+  local MASKFILE COMMAND
+  case $1 in
+    (*maskfile.md)
+      MASKFILE=${1}
+      shift && COMMAND="${*:-${words[@]}}"
+    ;;
+    (*)
+      MASKFILE="$(builtin pwd)/maskfile.md"
+      COMMAND="${words[@]}"
+    ;;
+  esac
+  [[ -r "${MASKFILE}" ]] || return 2
+
+  local -a lines
+  local BL='[[:blank:]]#'
+  local -a match mbegin mend
+  lines=( ${(f)"$(< "${MASKFILE}")"} )
+  local i START END
+
+  function __mask::find-subcommands() {
+    [[ ${1} == (#s)(\#)#${~BL}${~2}${~BL}((\([[:alnum:]]##\))##${~BL})#(#e) ]]
+  }
+
+  for ((i = 1;i <= ${#lines[@]}; i++ )); do
+    __mask::find-subcommands ${lines[$i]} ${COMMAND} && {
+      START=$i
+      break
+  }
+  done
+  i=0
+  for ((i = ${START}; i <= ${#lines[@]}; i++)); do
+    __mask::find-subcommands ${lines[$i]} '[[:alnum:]]##' && {
+      END=$i
+      break
+    }
+  done
+  i=0
+
+  local OPT TYPE DESC
+  local OPT_TABLE_START=0
+  for ((i = ${START} + 1; i <= ${END} - 1 ; i++)); do
+    [[ ${lines[$i]}  == (#s)${~BL}\*${~BL}[[:alnum:]]##${~BL}(#e) ]] && {
+      OPT_TABLE_START=$i
+      break
+    }
+  done
+  i=0
+
+  for ((i = ${OPT_TABLE_START} + 1; i <= ${END} - 1; i++)); do
+    [[ -n ${OPT} && -n ${TYPE} && -n ${DESC} ]] && break
+    [[ ${lines[$i]} == (#s)${~BL}\*${~BL}flags:${~BL}(#b)(-[[:alnum:]]|--[^[:blank:]]##)*(#e) ]] && {
+      OPT=${match[@]}
+    }
+    [[ ${lines[$i]} == (#s)${~BL}\*${~BL}type:${~BL}(#b)([[:alnum:]]##)${~BL}*(#e) ]] && {
+      TYPE=${match[@]}
+    }
+    [[ ${lines[$i]} == (#s)${~BL}\*${~BL}desc:${~BL}(#b)([^[:blank:]]*)(#e) ]] && {
+      DESC=${match[@]}
+    }
+  done
+
+  (( ${+reply} )) || typeset -ga reply
+  reply=( "${OPT}[${DESC:gs@\:@\\:}]:${TYPE}" )
+  return ${RET}
+
+}
+
+_arguments -C \
+    '(-h --help)'{-h,--help}'[Prints help information]' \
+    '(: * -)'{-V,--version}'[Prints version information]' \
+    '--maskfile[Path to a different maskfile you want to use]:maskfile:_files -g "maskfile.md"' \
+    '1:: :{__mask_subcommands}' \
+    '*:: :->task_args' && ret=0
+
+# Unstable
+# _arguments -- \
+#   '*Path to*:maskfile:_files -g "maskfile.md"' && ret=0
+
+case ${state} in
+  (task_args)
+    _describe "\${#words} is ${#words}" words
+  ;;
+esac
+

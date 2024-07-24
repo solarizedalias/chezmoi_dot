@@ -1,0 +1,95 @@
+#compdef git-filter-repo
+#description Rewrite repository history
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# completion for git-filter-repo
+# Fri Jun 26 11:51:09 2020
+# based on git-filter-repo version
+# AUTHOR: solarizedalias
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+local context curcontext=$curcontext state line expl state_descr ret=1
+declare -A opt_args
+
+local -a analyze filter_path rename_path path_shortcuts content_edit rename_refs filter_commit_msg \
+  filter_names_emails parent_rewite generic_callback location misc
+
+analyze=(
+  '--analyze[Analyze repository history and create a report.]'
+)
+filter_path=(
+  --invert-paths'[Invert the selection of files from the specified --path-{match,glob,regex} options.]'
+  {--path-match,--path}'[Exact paths (files or directories) to include in filtered history.]:files:_path_files'
+    --path-glob'[Glob of paths to include in filtered history. ]:glob'
+    --path-regex'[Regex of paths to include in filtered history.]:regex'
+   #Incompatible with --path-rename, and incompatible with matching against directory names.
+  --use-base-name'[Match on file base name instead of full path from the top of the repo.]'
+)
+rename_path=(
+  {--path-rename,--path-rename-match}'[Path to rename; if filename or directory matches <old_name> rename to <new_name>.]:name'
+)
+path_shortcuts=(
+  --paths-from-file'[Specify several path filtering and renaming directives from a file.]:file:_path_files'
+  --subdirectory-filter'[Only look at history that touches the given subdirectory and treat that directory as the project root. Equivalent to using --path <directory>/ --path-rename <directory>/\:]'
+  --to-subdirectory-filter'[Treat the project root as instead being under <directory>. Equivalent to using --path-rename \:<directory>/]:dir:_directories'
+)
+content_edit=(
+  --replace-text'[A file with expressions that will be replaced. regex\: and glob\: prefixes are supported.]:file:_path_files'
+  --strip-blobs-bigger-than'[Strip blobs (files) bigger than specified size (e.g. 5M, 2G, etc)]:size'
+  --strip-blobs-with-ids'[Read git object ids from each line of the given file, and strip all of them from history]:blob_id_filename'
+)
+# TODO delimiter : _combination might be useful
+rename_refs=(
+  --tag-rename'[Rename tags starting with <old> to start with <new>.]:<old>\:<new>'
+)
+filter_commit_msg=(
+  --preserve-commit-hashes'[Turn off updating commit hashes in commit messages.]'
+  --preserve-commit-encoding'[Do not reencode commit messages into UTF-8.]'
+)
+filter_names_emails=(
+  --mailmap'[Use specified mailmap file when rewriting author, committer, and tagger names and emails.]'
+  --use-mailmap'[Same as\: --mailmap .mailmap]'
+)
+parent_rewite=(
+    --replace-refs'[Specifies what do do with replace refs afterward.]:replace_ref_strategy:(delete-no-add delete-and-add update-no-add update-or-add update-and-add)'
+  --prune-empty'[Whether to prune empty commits.(Defaults auto).]:when:(always auto never)'
+  --prune-degenerate'[Specifies when to prune degenerate merge commits (Defaults auto).]:when:(always auto never)'
+  --no-ff'[Do not prune parents of another parent. Modifies how --prune-degenerate behaves.]'
+)
+generic_callback=(
+  --filename-callback'[Python code body for processing filenames]:function_body'
+  --message-callback'[Python code body for processing messages (both commit messages and tag messages)]:function_body'
+  --name-callback'[Python code body for processing names of people]:function_body'
+  --email-callback'[Python code body for processing emails addresses]:function_body'
+  --refname-callback'[Python code body for processing refnames]:function_body'
+  --blob-callback'[Python code body for processing blob objects]:function_body'
+  --commit-callback'[Python code body for processing commit objects]:function_body'
+  --tag-callback'[Python code body for processing tag objects]:function_body'
+  --reset-callback'[Python code body for processing reset objects]:function_body'
+  )
+location=(
+  --source'[Git repository to read from]:source'
+  --target'[Git repository to overwrite with filtered history]:target'
+)
+misc=(
+  '(--help -h)'{--help,-h}'[Show a help message and exit.]'
+  '(--force -f)'{--force,-f}'[Rewrite history even if the current repo does not look like a fresh clone.]'
+  --partial'[Do a partial history rewrite, resulting in the mixture of old and new history.]'
+  --refs'[Limit history rewriting to the specified refs.]:refs'
+  --dry-run'[Run git fast-export and filter its output, and save both the original and the filtered version for comparison.]'
+  --debug'[Print additional information about operations being performed and commands being run.]'
+  --stdin'[Instead of running git fast-export and filtering its output, filter the fast-export stream from stdin.]'
+  --quiet'[Pass --quiet to other git commands called.]'
+)
+
+_arguments -S \
+  ${(@)analyze} ${(@)filter_path} ${(@)rename_path} ${(@)path_shortcuts} ${(@)content_edit} ${(@)rename_refs} ${(@)filter_commit_msg} \
+  ${(@)filter_names_emails} ${(@)parent_rewite} ${(@)generic_callback} ${(@)location} ${(@)misc} && ret=0
+
+return ${ret}
+

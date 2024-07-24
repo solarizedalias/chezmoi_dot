@@ -1,0 +1,83 @@
+#compdef spotify
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _spotify
+# Mon Oct  5 19:51:36 2020
+# based on spotify version 2.1
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+local -A opt_args val_args
+
+local -a share=(
+  "share url:Displays the current song\'s Spotify URL and copies it to the clipboard."
+  "share uri:Displays the current song\'s Spotify URI and copies it to the clipboard."
+)
+
+local -a subcommands=(
+  "play:Resumes playback (no args) or Finds a song to play by name."
+  "play album:Finds an album by name and plays it."
+  "play artist:Finds an artist by name and plays it."
+  "play list:Finds a playlist by name and plays it."
+  "play uri:Play songs from specific uri."
+
+  "next:Skips to the next song in a playlist."
+  "prev:Returns to the previous song in a playlist."
+  "replay:Replays the current track from the beginning."
+
+  "pos:Jumps to a time (in secs) in the current song."
+
+  "pause:Pauses (or resumes) Spotify playback."
+  "stop:Stops playback."
+  "quit:Stops playback and quits Spotify."
+
+  "vol:Sets the volume to an amount between 0 and 100."
+  "vol up:Increases the volume by 10%."
+  "vol down:Decreases the volume by 10%."
+  "vol show:Shows the current Spotify volume."
+
+  "status:Shows the current player status."
+  "status artist:Shows the currently playing artist."
+  "status album:Shows the currently playing album."
+  "status track:Shows the currently playing track."
+
+  "share:Displays the current song\'s Spotify URL and URI."
+  ${(@)share}
+
+  "toggle shuffle:Toggles shuffle playback mode."
+  "toggle repeat:Toggles repeat playback mode."
+)
+
+_arguments -S -C \
+  '1:command:{_describe commands subcommands -Q}' \
+  '*: :->cmd_args' && ret=0
+
+case ${state} in
+  (cmd_args)
+    case ${words[2]} in
+      (play)
+        _message 'song name' && ret=0
+      ;;
+      (pos)
+        _message 'time in seconds or "up/down"' && ret=0
+      ;;
+      (vol)
+        _message 'intger 0 to 100' && ret=0
+      ;;
+      (share)
+        _describe 'share' share && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

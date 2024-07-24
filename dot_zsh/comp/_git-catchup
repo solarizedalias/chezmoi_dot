@@ -1,0 +1,25 @@
+#compdef git-catchup
+
+# ==========================================================
+# _git_catchup
+# Fri Dec 24 00:12:10 2021
+# based on git-catchup
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+_arguments \
+  '(-u --upstream
+    )'{-u,--upstream}'=[specify <upstream>]:upstream:{__git_branch_names || true}' \
+  '*:branch:{__git_branch_names || true}' && ret=0
+
+return ret
+

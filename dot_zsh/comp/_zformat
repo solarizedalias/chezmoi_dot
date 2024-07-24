@@ -1,0 +1,37 @@
+#compdef zformat
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _zformat
+# Sat Oct 31 20:44:17 2020
+# based on zsh version 5.8.0.2-dev
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+_arguments \
+  - mandatory \
+    '1:form:((
+      -f\:"specify parameter name to store the result (in the form of \"zformat -f param spec...\")"
+      -a\:"specify array name to store the result (in the form of \"zformat -a array sep spec...\")"
+    ))' \
+  - format \
+    '-f[]:parameter name to store the result:_parameters' \
+    ':format string: ' \
+    '*::spec (char\:string): ' \
+  - array \
+    '-a[]:array name to store the result:_arrays' \
+    ':separator string: ' \
+    '*::spec (left\:right): ' && ret=0
+
+return ret
+

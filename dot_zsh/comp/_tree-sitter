@@ -1,0 +1,126 @@
+#compdef tree-sitter
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _tree_sitter
+# Thu Oct  8 23:29:58 2020
+# based on tree-sitter version 0.17.1
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a subcommands=(
+  "build-wasm:Compile a parser to WASM"
+  "dump-languages:Print info about all known language parsers"
+  "generate:Generate a parser"
+  "help:Prints this message or the help of the given subcommand(s)"
+  "highlight:Highlight a file"
+  "init-config:Generate a default config file"
+  "parse:Parse files"
+  "query:Search files using a syntax tree query"
+  "tags"
+  "test:Run a parser\'s tests"
+  "web-ui:Test a parser interactively in the browser"
+)
+
+local -a ts_optspecs=(
+  '(-h --help)'{-h,--help}'[Prints help information]'
+  '(-V --version)'{-V,--version}'[Prints version information]'
+  '(-d --debug)'{-d,--debug}'[ ]'
+  '(-D --debug-graph)'{-D,--debug-graph}'[ ]'
+  '(-t --time)'{-t,--time}'[ ]'
+  '(-q --quiet)'{-q,--quiet}'[ ]'
+  '--paths[ ]:paths-file: '
+  '--scope[ ]:scope: '
+)
+
+local -a ts_hv=(
+  ${(@M)ts_optspecs:#*(-h|--help)[=-+]#\[*}
+  ${(@M)ts_optspecs:#*(-V|--version)[=-+]#\[*}
+)
+
+_arguments -S -C \
+  ${(@)ts_hv} \
+  '1:command:{_describe command subcommands}' \
+  '*:: :->cmd_args' && ret=0
+
+case ${state} in
+  (cmd_args)
+    case ${words[1]} in
+      (build-wasm)
+        _arguments \
+          ${(@)ts_hv} \
+          '--docker[Run emscripten via docker even if it is installed locally]' \
+          '*:path:{_path_files}' && ret=0
+      ;;
+      (dump-language)
+        _arguments ${(@)ts_hv} && ret=0
+      ;;
+      (generate)
+        _arguments \
+          ${(@)ts_hv} \
+          '--log[ ]' \
+          '--no-minimize[ ]' \
+          '--prev-abi[ ]' \
+          '--report-states-for-rule[ ]:rule-name: ' \
+          '*:grammar-path:{_path_files}' && ret=0
+      ;;
+      (help)
+        _arguments \
+          '1: :{ _describe "subcommand to print help for" subcommands }' && ret=0
+      ;;
+      (highlight)
+
+        ## XXX Beware! `-h` is not an alias to `--help` here!
+        _arguments \
+          ${(@M)ts_optspecs:#(--help|(-V|--version)|(-t|--time))[=-+]#\[*} \
+          '-q[ ]' \
+          '(-h --html)'{-h,--html}'[ ]' \
+          '*:file:{_path_files}' && ret=0
+      ;;
+      (parse)
+        _arguments \
+          ${(@)ts_optspecs} \
+          '--cancel[  ]' \
+          '(-s --stat)'{-s,--stat}'[ ]' \
+          '(-e --edit)'{-e,--edit}'[ ]:edits: ' \
+          '--timeout[ ]:timeout: ' \
+          '*:file:{_path_files}' && ret=0
+      ;;
+      (query)
+        _arguments \
+          ${(@M)ts_optspecs:#((-h|--help)|(-V|--version)|--paths|--scope)[=-+]#\[*} \
+          '(-c --captures)'{-c,--captures}'[ ]' \
+          '--byte-range[The range of byte offsets in which the query will be executed]:byte-range: ' \
+          '*:query-path or paths:{_path_files}' && ret=0
+      ;;
+      (test)
+        _arguments \
+          ${(@M)ts_optspecs:#((-h|--help)|(-V|--version)|(-d|--debug)|(-D|--debug-graph))[=-+]#\[*} \
+          '(-f --filter)'{-f,--filter}'[ ]:filter: ' && ret=0
+      ;;
+      (web-ui)
+        _arguments \
+          ${(@M)ts_optspecs:#*((-h|--help)|(-V|--version))[=-+]#\[*} \
+          ${(@)${(@M)ts_optspecs:#*(-q|--quiet)[=-+]#\[*}//\[*\]/\[open in default browser\]} && ret=0
+      ;;
+      (tags)
+        _arguments \
+          ${(@M)ts_optspecs:#*((-h|--help)|(-V|--version)|(-q|--quiet)|--paths|--scope)[=-+]#]\[*} \
+          '*:file:{_path_files}' && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

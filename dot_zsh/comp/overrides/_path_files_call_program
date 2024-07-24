@@ -1,0 +1,36 @@
+#autoload
+
+# ==========================================================
+# _path_files_call_program
+# Fri Sep 11 13:28:34 2020
+# based on autoload version 0.0.0
+# AUTHOR: solarizedalias
+# Override builtin `_path_files` to add some extra features
+# (respecting `.gitignore` etc,.)
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args
+
+functions -c _path_files _path_files_original
+
+local -a program
+if zstyle -a ":completion:${curcontext}" command program; then
+  local -a matches
+
+  # This ignores `$@`, since it's apparently impossible to know the appropriate way to pass `$@`
+  # And this blocks until _call_program ends.
+  # Be mindful what command to call, in what kind of situations
+  matches=( ${(f)"$( _call_program files ${(@)program} )"} )
+  _describe "files[${program[1]}]" matches
+else
+  _path_files_original $@
+fi
+
+
+
+

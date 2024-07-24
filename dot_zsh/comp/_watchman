@@ -1,0 +1,159 @@
+#compdef watchman
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _watchman
+# Sun Jul 26 11:37:14 2020
+# based on watchman version 4.9.0
+# AUTHOR: solarizedalias
+# compdef for watchman (https://github.com/facebook/watchman).
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args
+
+local -a opts=(
+  '(-h --help)'{-h,--help}'[Show this help]'
+  '--inetd[Spawning from an inetd style supervisor]'
+  '(-v --version)'{-v,--version}'[Show version number]'
+  '(-U --sockname)'{-U,--sockname}'[Specify alternate sockname]:path:{_path_files}'
+  '(-o --logfile)'{-o,--logfile}'[Specify path to logfile]:path:{_path_files}'
+  '--log-level[set the log level (0 = off, default is 1, verbose = 2)]:log level:((0\:off 1\:default 2\:verbose))'
+  '--pidfile[Specify path to pidfile]:path:{_path_files}'
+  '(-p --persistent)'{-p,--persistent}'[Persist and wait for further responses]'
+  '(-n --no-save-state)'{-n,--no-save-state}'[Don''t save state between invocations]'
+  '--statefile[Specify path to file to hold watch and trigger state]:path:{_path_files}'
+  '(-j --json-command)'{-j,--json-command}'[Instead of parsing CLI arguments, take a single json object from stdin]'
+  '--output-encoding[CLI output encoding. json (default) or bser]:encoding:((json\: bser\:default))'
+  '--server-encoding[CLI<->server encoding. bser (default) or json]:encoding:((json\: bser\:default))'
+  '(-f --foreground)'{-f,--foreground}'[Run the service in the foreground]'
+  '--no-pretty[Don''t pretty print JSON]'
+  '--no-spawn[Don''t try to start the service if it is not available]'
+  '--no-local[When no-spawn is enabled, don''t try to handle request in client mode if service is unavailable]'
+)
+
+local -a subcommands=(
+  'clock:Returns the current clock value for a watched root.'
+  'find:Finds all files that match the optional list of patterns under the specified dir. If no patterns were specified, all files are returned.'
+  'flush-subscriptions:Flushes buffered updates to subscriptions associated with the current session.'
+  'get-config:Returns the .watchmanconfig for the root. Returns an empty configuration field if there is none.'
+  'get-pid:Gets pid info.'
+  'get-sockname:Reveals the correct socket path.'
+  'list-capabilities:Returns the full list of supported capabilities offered by the watchman server.'
+  'log:Generates a log line in the watchman log.'
+  'log-level:Changes the log level of your connection to the watchman service.'
+  'query:Executes a query against the specified root.'
+  'shutdown-server:Exits watchman service with a normal status code.'
+  'since:Finds all files that were modified since the specified clockspec that match the optional list of patterns.'
+  'state-enter:Causes a watch to be marked as being in a particular named state.'
+  'state-leave:Causes a watch to no longer be marked as being in a particular named state.'
+  'subscribe:Subscribes to changes against a specified root and requests that they be sent to the client via its connection.'
+  'trigger:The trigger command will create or replace a trigger.'
+  'trigger-del:Deletes a named trigger from the list of registered triggers.'
+  'trigger-list:Returns the set of registered triggers associated with a root directory.'
+  'unsubscribe:Cancels a named subscription against the specified root.'
+  'version:Tells you the version and build information for the currently running watchman service'
+  'watch:(Depricated) Requests that the specified dir is watched for changes.'
+  'watch-del:Removes a watch and any associated triggers.'
+  'watch-del-all:Removes all watches and associated triggers.'
+  'watch-list:Returns a list of watched dirs.'
+  'watch-project:Requests that the project containing the requested dir is watched for changes.'
+  'debug-ageout:'
+  'debug-contenthash:'
+  'debug-drop-privs:'
+  'debug-fsevents-inject-drop:'
+  'debug-get-subscriptions:'
+  'debug-poison:'
+  'debug-recrawl:'
+  'debug-set-subscriptions-paused:'
+  'debug-show-cursors:'
+)
+
+_arguments -S -C \
+  ${(@)opts} \
+  '1:commands:{_describe "commands" subcommands}' \
+  '*:: :->command_args' && ret=0
+
+case ${state} in
+  (command_args)
+    case ${words[1]} in
+      (clock)
+        _arguments -S \
+          ':rootpath:{_directories}' && ret=0
+      ;;
+      (find)
+        _arguments -S \
+          ':rootpath:{_directories}' \
+          ':patterns' && ret=0
+      ;;
+      (flush-subscriptions)
+        _arguments -S \
+          ':rootpath:' \
+          ':sync_timeout' \
+          '*:subscriotions' && ret=0
+      ;;
+      (get-config|get-pid|get-sockname|list-capabilities|shutdown-server|version|watch-del-all|watch-list)
+        _message "No more arguments"
+      ;;
+      (log)
+        _arguments -S \
+          ':log level' \
+          '*:string:' && ret=0
+      ;;
+      (log-devel)
+        _arguments -S \
+          ':log level:((debug\:"recieve all log events" error\:"recieve only important log events" off\:"receive no log events"))' && ret=0
+      ;;
+
+      # TODO
+      (query)
+        _arguments -S \
+          ':rootpath:{_directories}' \
+          ':query' && ret=0
+      ;;
+      (since)
+        _arguments -S \
+          ':rootpath:{_directories}' \
+          ':clockspec' \
+          ':patterns' && ret=0
+      ;;
+      (state-enter|state-leave)
+        _arguments -S \
+          ':rootpath:{_directories}' \
+          ':state' && ret=0
+      ;;
+
+      # TODO
+      (subscribe|unsubscribe)
+        _arguments -S \
+          ':rootpath:{_directories}' \
+          ':subscription name' && ret=0
+      ;;
+      (trigger)
+        _arguments -S \
+          ':rootpath:{_directories}' \
+          ':trigger obj' && ret=0
+      ;;
+      (trigger-del)
+        _arguments -S \
+          ':rootpath:{_directories}' \
+          ':trigger name' && ret=0
+      ;;
+      (trigger-list)
+        _arguments -S \
+          ':rootpath:{_directories}' && ret=0
+      ;;
+      (watch|watch-del|watch-project)
+        _arguments -S \
+          ':rootpath:{_directories}' && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ${ret}
+

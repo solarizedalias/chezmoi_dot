@@ -1,0 +1,70 @@
+#compdef rlwrap
+
+# ==========================================================
+# _rlwrap
+# Sun Apr 16 06:48:46 2023
+# based on rlwrap version
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '(-a --always-readline)'{-a,--always-readline=}'[]:password prompt: '
+
+  # TODO: '!' as an optional argument
+  '(-A ansi-colour-aware)'{-A,--ansi-colour-aware}'[]'
+
+  '(-b --break-chars)'{-b,--break-chars=}'[]:chars: '
+  '(-c --complete-filenames)'{-c,--complete-filenames}'[]'
+  '(-C --command-name)'{-C,--command-name=}'[]:name or arg index: '
+  '(-D --history-no-dupes)'{-D,--history-no-dupes=}'[]:number: '
+  '(-e --extra-char-after-completion)'{-e,--extra-char-after-completion=}'[]:char: '
+
+  # FIXME can be given multiple times
+  '*'{-f,--file=}'[]:file:_files'
+
+  '(-g --forget-matching)'{-g,--forget-matching=}'[]:regexp: '
+  '(-h --help)'{-h,--help}'[]'
+  '(-H --history-filename)'{-H,--history-filename=}'[]:file:_files'
+  '(-i --case-insensitive)'{-i,--case-insensitive}'[]'
+  '(-I --pass-sigint-as-sigterm)'{-I,--pass-sigint-as-sigterm}'[]'
+  '(-l --logfile)'{-l,--logfile=}'[]:file:_files'
+  '(-m --multi-line)'{-m,--multi-line}'[]:newline_substitute: '
+  '(-M --multi-line-ext)'{-M,--multi-line-ext=}'[]:.ext: '
+  '(-n --no-warnings)'{-n,--no-warnings}'[]'
+  '(-N --no-children)'{-N,--no-children}'[]'
+  '(-o --one-shot)'{-o,--one-shot}'[]'
+  '(-O --only-cook)'{-O,--only-cook=}'[]'
+  '(-p --prompt-colour)'{-p,--prompt-colour=}'[]:colour: '
+  '(-P --pre-given)'{-P,--pre-given=}'[]:text: '
+  '(-q --quote-characters)'{-q,--quote-characters=}'[]:list_of_characters: '
+  '(-r --remember)'{-r,--remember}'[]'
+  '(-R --renice)'{-R,--renice}'[]'
+  '(-s --histsize)'{-s,--histsize=}'[]:number: '
+  '(-S --substitute-prompt)'{-S,--substitute-prompt=}'[]:prompt: '
+  '(-t --set-term-name)'{-t,--set-term-name=}'[]:name: '
+  '(-U --mirror-arguments)'{-U,--mirror-arguments}'[]'
+  '(-v --version)'{-v,--version}'[]'
+  '(-w --wait-before-prompt)'{-w,--wait-before-prompt=}'[]:timeout: '
+  '(-W --polling)'{-W,--polling}'[]'
+
+  # XXX: we might be able to complete `filters`
+  '(-z --filter)'{-z,--filter=}'[]:some_filter: '
+)
+
+_arguments \
+  ${(@)optspecs} \
+  '1:command:_path_commands' \
+  '*:: :{
+    emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch ${words[1]:t} ${words[1]:t}"
+  }' && ret=0
+
+# vim: set ft=zsh:

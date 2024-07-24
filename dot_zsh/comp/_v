@@ -1,0 +1,48 @@
+#compdef v
+
+# ==========================================================
+# _v
+# Mon Mar 15 18:22:50 2021
+# based on v version v0.2.2
+# AUTHOR: solarizedalias
+# Completion for `v` (vlang/v)
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a subcommands
+local -a tmp
+tmp=( ${(f)"$(v help)"} )
+
+local PAT='(#s)(#b)[[:blank:]]##([a-z][[:graph:]]#)( \[*\])#[[:blank:]]##(*)'
+local -a match mbegin mend
+integer i STAR=0
+for i in {1..${#tmp}}; do
+  local LINE=${tmp[i]}
+  if (( STAR )); then
+    if [[ ${LINE} == ${~PAT} ]]; then
+      subcommands+=( ${match[1]}:${match[3]//:/\\:} )
+    fi
+  else
+    [[ ${LINE} == '*'* ]] && STAR=1
+  fi
+done
+
+local -a optspecs=(
+  '(-h --help)'{-h,--help}'[show help]'
+  '(-v --version)'{-v,--version}'[show version]'
+)
+
+_arguments \
+  ${(@)optspecs} \
+  ':command:{ _describe -t command "subcommand" subcommands }' &&
+ret=0
+
+return ret
+

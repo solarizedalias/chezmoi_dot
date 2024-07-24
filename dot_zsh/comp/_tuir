@@ -1,0 +1,39 @@
+#compdef tuir
+
+# ==========================================================
+# _tuir
+# Wed Nov  4 23:06:02 2020
+# based on tuir version 1.29.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+_arguments \
+  '(-h --help)'{-h,--help}'[show help message and exit]' \
+  '-s[Name of the subreddit that will be loaded on start]:SUBREDDIT: ' \
+  '--log[Log HTTP requests to the given file]:FILE: ' \
+  '--config[Load configuration settings from the given file]:FILE:{_path_files}' \
+  '--ascii[Enable ascii-only mode]' \
+  '--monochrome[Disable color]' \
+  '--theme[Color theme to use, see --list-themes for valid options]:FILE:{_path_files}' \
+  '--list-themes[List all of the available color themes]' \
+  '--non-persistent[Forget the authenticated user when the program exits]' \
+  '--no-autologin[Do not authenticate automatically on startup]' \
+  '--clear-auth[Remove any saved user data before launching]' \
+  '--copy-config[Copy the default configuration to]' \
+  '--copy-mailcap[Copy an example mailcap configuration to {HOME}/.mailcap]' \
+  '--enable-media[Open external links using programs defined in the mailcap]' \
+  '(-V --version)'{-V,--version}'[show program'\''s version number and exit]' \
+  '--no-flash[Disable screen flashing]' \
+  '--debug-info[Show system and environment information and exit]' && ret=0
+
+return ret
+

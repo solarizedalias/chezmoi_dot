@@ -1,0 +1,33 @@
+#compdef git-rename-branch
+
+# ==========================================================
+# _git_rename_branch
+# Tue Mar 30 20:39:16 2021
+# based on git-rename-branch version
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+_arguments \
+  '1:old-name:__git-rename-branch_compl_branch' \
+  '2:new-name: ' &&
+ret=0
+
+function __git-rename-branch_compl_branch() {
+  if (( ${+functions[__gitex_branch_names]} )); then
+    __gitex_branch_names
+  elif (( ${+functions[_git-branch]} )); then
+    _git-branch
+  fi
+}
+
+return ret
+

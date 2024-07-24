@@ -1,0 +1,103 @@
+#compdef rbenv
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _rbenv
+# Mon Jul 20 17:35:06 2020
+# based on rbenv version 1.1.2
+# AUTHOR: solarizedalias
+# Completions for rbenv. (Unlike the rbenv builtin based on
+# compctl, this uses the newer system described in zshcompsys(1).)
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a reply match mbegin mend
+local REPLY MATCH
+integer MBEGIN MEND
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+local -A opt_args
+
+local -a commands_from_help other_commands commands_in_path
+local -a _dups_
+local -aU extra_commands
+commands_from_help=( ${${${(M)${(f)"$(rbenv --help 2>/dev/null)"}:#(#s) *}## #}/ ##/:} )
+
+_dups_=( ${(@)commands_from_help%:*} )
+other_commands=( ${(R)${(f)"$(rbenv commands)"}:#--*} )
+commands_in_path=( ${(@)^path}/rbenv-*(#qN-.*)(#q:s@(#s)*/rbenv-@) )
+extra_commands=( ${(@)other_commands:|_dups_} ${(@)commands_in_path:|_dups_} )
+
+local -a all_commands
+all_commands=( ${(@)commands_from_help} ${(@)extra_commands} )
+
+__rbenv_complete_current() {
+  reply=( $(rbenv completions ${words[1,-2]} 2>/dev/null) )
+  local -a opts=( ${(@M)reply:#--*} )
+  local -a non_opts=( ${(@)reply:|opts} )
+  _arguments -S \
+    ${(@)^opts}'[some option]' \
+    '*:non-option:{ _describe "non-option" non_opts }' && ret=0
+}
+
+_arguments -C -S \
+  '(-h --help)'{-h,--help}'[help]' \
+  '(- : *)'{-v,--version}'[version]' \
+  '1: :{ _describe "commands" all_commands }' \
+  '*:: :->command-arg' && ret=0
+
+case "${state}" in
+  (command-arg)
+    case "${words[1]}" in
+      # XXX In order to complete things with descriptions, we have to provide more specific codes for each `case`.
+      # It would be a little time consuming, and these below do the least thing as expected.
+      # So I'll just take them for now.
+      (commands)
+        _arguments \
+          '--help[help]' \
+          '--sh[ "${command:0:3}" == "sh-" ]' \
+          '--no-sh[ "${command:0:3}" != "sh-" ]' && ret=0
+      ;;
+      (local)
+        __rbenv_complete_current && ret=0
+      ;;
+      (global)
+        __rbenv_complete_current && ret=0
+      ;;
+      (shell)
+        __rbenv_complete_current && ret=0
+      ;;
+      (install)
+        __rbenv_complete_current && ret=0
+      ;;
+      (uninstall)
+        __rbenv_complete_current && ret=0
+      ;;
+      (rehash)
+        __rbenv_complete_current && ret=0
+      ;;
+      (version)
+        __rbenv_complete_current && ret=0
+      ;;
+      (versions)
+        __rbenv_complete_current && ret=0
+      ;;
+      (which)
+        __rbenv_complete_current && ret=0
+      ;;
+      (whence)
+        __rbenv_complete_current && ret=0
+      ;;
+      (*)
+        __rbenv_complete_current && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

@@ -1,0 +1,36 @@
+#compdef syserror
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _syserror
+# Tue Dec 22 06:10:00 2020
+# based on zsh 5.8.0.2-dev
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '-e[assign the message to specified var]:errvar:_parameters'
+  '-p[specify the prefix to be inserted in front of the message]:prefix: '
+  )
+
+local MATCH MBEGIN MEND
+local -a errno_idx=( {1..${#errnos}} )
+local -A Errnos=( ${(@)errno_idx:^errnos} )
+local -a descs=(
+  ${(nk@)Errnos/(#m)*/${MATCH}:${Errnos[${MATCH}]}}
+)
+
+_arguments \
+  ${(@)optspecs} \
+  '1: :{ _describe ERRNO descs }' && ret=0
+

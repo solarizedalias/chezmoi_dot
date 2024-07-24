@@ -1,0 +1,4 @@
+
+# _values 'foo' 'bar[baz]' 'nar[jar]'
+_alternative "val:val:_values 'foo' 'bar\[baz\]' 'nar\[jar\]'" "zsh:zsh:_files -g '*.zsh'"
+

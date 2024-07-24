@@ -1,0 +1,53 @@
+#compdef ipcrm
+
+# ==========================================================
+# _ipcs
+# Fri Dec 17 17:21:02 2021
+# based on ipcs version file_cmds-287.100.2
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions       NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+(( ${+functions[__ipcrm_comp]} )) || function __ipcrm_comp() {
+  local OPT=$1
+  local WHAT=$2
+  integer IDX
+  local MATCH MBEGIN MEND
+  local -a lines result
+  lines=( ${(@)${(f)"$(ipcs ${OPT} -a)"}[4,-1]} )
+  case ${WHAT} in
+    (*id) IDX=2 ;;
+    (*key) IDX=3 ;;
+  esac
+  result=( ${(@)lines/(#m)*/${MATCH[(w)IDX]}:"${MATCH}"} )
+  print -lr > /tmp/$$-$0 -- \
+    'args:' OPT=$OPT WHAT=$WHAT IDX=$IDX $'\n' \
+    'lines:' ${(@)lines} $'\n' \
+    'result' ${(@)result}
+
+
+  _describe ${WHAT} result
+}
+
+local -a optspecs=(
+  '-M[mark the shared memory segment associated with specified key for removal]:shmkey: __ipcrm_comp -m shmkey'
+  '-m[mark the shared memory segment associated with specified id for removal]:shmid: __ipcrm_comp -m shmid'
+  '-Q[remove the message queue associated with specified key]:msgkey: __ipcrm_comp -q msgkey'
+  '-q[remove the message queue associated with specified id]:msqid: __ipcrm_comp -q msqid'
+  '-S[remove the semaphore set associated with specified key]:semkey: __ipcrm_comp -s semkey'
+  '-s[remove the semaphore set associated with specified id]:semid: __ipcrm_comp -s semid'
+)
+
+_arguments : \
+  ${(@)optspecs} && ret=0
+
+return ret
+

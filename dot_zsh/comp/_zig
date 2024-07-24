@@ -1,0 +1,46 @@
+#compdef zig
+
+# ==========================================================
+# _zig
+# Tue Jan 19 13:33:53 2021
+# based on zig version 0.7.1
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a subcommands=(
+  'build:build project from build.zig'
+  'build-exe:create executable from source or object files'
+  'build-lib:create library from source or object files'
+  'build-obj:create object from source or object files'
+  'cc:use Zig as a drop-in C compiler'
+  'c++:use Zig as a drop-in C++ compiler'
+  'env:print lib path, std path, cache directory, and version'
+  'fmt:reformat Zig source into canonical form'
+  'help:print help and exit'
+  'init-exe:initialize a `zig build` application in the cwd'
+  'init-lib:initialize a `zig build` library in the cwd'
+  'libc:display native libc paths file or validate one'
+  'run:create executable and run immediately'
+  'translate-c:convert C code to Zig code'
+  'targets:list available compilation targets'
+  'test:create and run a test build'
+  'version:print version number and exit'
+  'zen:print Zen of Zig and exit'
+)
+
+_arguments \
+  '(: * -)--help[print help and exit]' \
+  '1:command:{ _describe command subcommands }' \
+  '*: :_default' && ret=0
+
+return ret
+

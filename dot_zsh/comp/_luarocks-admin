@@ -1,0 +1,122 @@
+#compdef luarocks-admin
+
+_luarocks-admin() {
+  local context state state_descr line
+  typeset -A opt_args
+
+  local -a options=(
+    {-h,--help}"[Show this help message and exit]"
+    "--version[Show version info and exit]"
+    "--dev[Enable the sub-repositories in rocks servers for rockspecs of in-development versions]"
+    {--server,--from}"[Fetch rocks/rockspecs from this server (takes priority over config file)]: :_files"
+    {--only-server,--only-from}"[Fetch rocks/rockspecs from this server only (overrides any entries in the config file)]: :_files"
+    {--only-sources,--only-sources-from}"[Restrict downloads to paths matching the given URL]: :_files"
+    "--namespace[Specify the rocks server namespace to use]: :_files"
+    "--lua-dir[Which Lua installation to use]: :_files"
+    "--lua-version[Which Lua version to use]: :_files"
+    {--tree,--to}"[Which tree to operate on]: :_files"
+    "--local[Use the tree in the user's home directory]"
+    "--global[Use the system tree when \`local_by_default\` is \`true\`]"
+    "--verbose[Display verbose output of commands executed]"
+    "--timeout[Timeout on network operations, in seconds]: :_files"
+    "--project-tree: :_files"
+  )
+  _arguments -s -S \
+    $options \
+    ": :_luarocks-admin_cmds" \
+    "*:: :->args" \
+    && return 0
+
+  case $words[1] in
+    help)
+      options=(
+        $options
+        {-h,--help}"[Show this help message and exit]"
+      )
+      _arguments -s -S \
+        $options \
+        ": :(help completion add make_manifest make-manifest refresh_cache refresh-cache remove)" \
+        && return 0
+      ;;
+
+    completion)
+      options=(
+        $options
+        {-h,--help}"[Show this help message and exit]"
+      )
+      _arguments -s -S \
+        $options \
+        ": :(bash zsh fish)" \
+        && return 0
+      ;;
+
+    add)
+      options=(
+        $options
+        {-h,--help}"[Show this help message and exit]"
+        "--server[The server to use]: :_files"
+        "--no-refresh[Do not refresh the local cache prior to generation of the updated manifest]"
+        "--index[Produce an index.html file for the manifest]"
+      )
+      _arguments -s -S \
+        $options \
+        "*: :_files" \
+        && return 0
+      ;;
+
+    make_manifest|make-manifest)
+      options=(
+        $options
+        {-h,--help}"[Show this help message and exit]"
+        "--local-tree[If given, do not write versioned versions of the manifest file]"
+        "--deps-mode[How to handle dependencies]: :(all one order none)"
+        "--nodeps"
+      )
+      _arguments -s -S \
+        $options \
+        ": :_files" \
+        && return 0
+      ;;
+
+    refresh_cache|refresh-cache)
+      options=(
+        $options
+        {-h,--help}"[Show this help message and exit]"
+        "--from[The server to use]: :_files"
+      )
+      _arguments -s -S \
+        $options \
+        && return 0
+      ;;
+
+    remove)
+      options=(
+        $options
+        {-h,--help}"[Show this help message and exit]"
+        "--server[The server to use]: :_files"
+        "--no-refresh[Do not refresh the local cache prior to generation of the updated manifest]"
+      )
+      _arguments -s -S \
+        $options \
+        "*: :_files" \
+        && return 0
+      ;;
+
+  esac
+
+  return 1
+}
+
+_luarocks-admin_cmds() {
+  local -a commands=(
+    "help:Show help for commands"
+    "completion:Output a shell completion script"
+    "add:Add a rock or rockspec to a rocks server"
+    {make_manifest,make-manifest}":Compile a manifest file for a repository"
+    {refresh_cache,refresh-cache}":Refresh local cache of a remote rocks server"
+    "remove:Remove a rock or rockspec from a rocks server"
+  )
+  _describe "command" commands
+}
+
+_luarocks-admin

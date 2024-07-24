@@ -1,0 +1,95 @@
+#compdef delta
+
+# ==========================================================
+# _delta
+# Wed Oct 27 19:23:11 2021
+# based on delta version 0.8.3
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions
+setopt NO_sh_word_split
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+# TODO complete theme, style, color?
+
+local -a optspecs=(
+  '--light[use default colors appropriate for a light terminal background]'
+  '--dark[use default colors appropriate for a dark terminal background]'
+  '(-n --line-nimbers)'{-n,--line-numbers}'[display line numbers next to the diff]'
+  '(-s --side-by-side)'{-s,--side-by-side}'[display a sid-by-side diff view instead of the traditional view]'
+  '--diff-highlight[emulate diff-highlight]'
+  '--navigate[activate diff navigation]'
+  '--relative-paths[output all file paths relative to the current directory]'
+  '--hyperlinks[render commit hashes, file names, and line numbers as hyperlinks]'
+  '--keep-plus-minus-markers[prefix added/removed lines with a +/- character]'
+  '--show-config[display the active values for all Delta options]'
+  '--list-languages[list supported languages and associated file extensions]'
+  '--list-syntax-themes[list available syntax-highlighting color themes]'
+  '--show-syntax-themes[show all available syntax-highlighting themes, each with an example]'
+  '--show-themes[show available delta themes, each with an example]'
+  '--no-gitconfig[do not take any settings from git config]'
+  '--raw[do not alter the input in any way]'
+  '--color-only[do not alter the input structurally]'
+  '(-h --help)'{-h,--help}'[print help information]'
+  '(-V --version)'{-V,--version}'[print version information]'
+
+  '--features=[name of delta features to use (space-separated)]:features: '
+
+  '--syntax-theme=[the code syntax-highlighting theme to use]:theme: '
+  '--minus-style=[style for removed lines]:style: '
+  '--zero-style=[style for unchanged lines]:style: '
+  '--plus-style=[style for added lines]:style: '
+  '--minus-emph-style=[style for emphasised sections of removed lines]:style: '
+  '--minus-non-emph-style=[style for non-emphasised sections of removed lines]:style: '
+  '--plus-emph-style=[style for emphasised sections of added lines]:style: '
+  '--plus-non-emph-style=[style for non-emphasised sections of added lines]:style: '
+  '--commit-style=[style for the commit hash line]:style: '
+  '--commit-decoration-style=[style for the commit hash decorations]:style: '
+  '--file-style=[style for the file section]:style: '
+  '--file-decoration-style=[style for the file decoration]:style: '
+  '--hunk-header-style=[style for the hunk-header]:style: '
+  '--hunk-header-file-style=[style for the file path part of the hunk-header]:style: '
+  '--hunk-header-line-number-style=[style for the hunk-header decoration]:style: '
+  '--line-numbers-minus-style=[style for line numbers in the old version of the file]:style: '
+  '--line-numbers-zero-style=[style for line numbers in unchanged lines]:style: '
+  '--line-numbers-plus-style=[style for line numbers in the new version of the file]:style: '
+  '--minus-empty-line-marker-style=[style for removed empty line marker]:style: '
+  '--plus-empty-line-marker-style=[style for added empty line marker]:style: '
+  '--whitespace-error-style=[style for whitespace errors]:style: '
+
+  '--commit-regex=[the regular expression used to identify the commit line whe parsing git output]:regex: '
+  '--hyperlinks-commit-link-format=[format strings for commit hyperlinks]:format: '
+  '--hyperlinks-file-link-format=[format strings for file hyperlinks]:format: '
+  '--word-diff-regex=[the regular expression used to decide what a word is for the within-line highlight algorithm]:regex: '
+  '--max-line-distance=[the maximum distance between two lines for them to be inferred to be homologous]:float: '
+  '--line-numbers-left-format=[format string for the left column of line numbers]:format: '
+  '--line-numbers-right-format=[format string for the right column of line numbers]:format: '
+  '--file-modified-label=[text to display in front of a modified file path]:label: '
+  '--file-removed-label=[text to display in front of a removed file path]:label: '
+  '--file-added-label=[text to display in front of a added file path]:label: '
+  '--file-copied-label=[text to display in front of a copied file path]:label: '
+  '--file-renamed-label=[text to display in front of a renamed file path]:label: '
+  '--max-line-length=[truncate lines longer than this]:int: '
+  '(-w --width)'{-w,--width=}'[the width of underline/overline decorations]:width: '
+  '--diff-stat-align-width=[width allocated for file paths in a diff stat section]:width: '
+  '--tabs=[the number of spaces to replace tab characters with]:int: '
+  '--true-color=[whether to emit 24-bit ("true color") RGB color codes]:when:(auto always never)'
+  '--inspect-raw-lines=[whether to examine ANSI color escape sequences in raw lines received from Git]:true/false:(true false)'
+  "--pager=[which pager to use]:pager:_path_commands"
+  '--line-buffer-size=[size of internal line buffer]:size: '
+)
+
+_arguments \
+  ${(@)optspecs} \
+  '1:minus-file:_files' \
+  '2:plus-file:_files' && ret=0
+
+return ret
+

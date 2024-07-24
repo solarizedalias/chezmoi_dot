@@ -1,0 +1,74 @@
+#compdef mackup
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _mackup
+# Tue Jul  7 19:23:18 2020
+# based on mackup version 0.8.29
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args
+
+local -a subcommands=(
+  'list:display a list of all supported applications.'
+  'backup:sync your conf files to your synced storage, use this the 1st time you use Mackup.'
+  'restore:link the conf files already in your synced storage on your system, use it on any new system you use.'
+  'show:show what would be backed up by Mackup for a given application.'
+  'uninstall:reset everything as it was before using Mackup.'
+)
+function __mackup_subcommands() {
+  _describe "commands" subcommands && ret=0
+}
+
+
+local -a opts=(
+  '(-f --force)'{-f,--force}'[Force every question asked to be answered with "Yes".]'
+  '(-r --root)'{-r,--root}'[Allow mackup to be run as superuser.]'
+  '(-n --dry-run)'{-n,--dry-run}'[Show steps without executing.]'
+  '(-v --verbose)'{-v,--verbose}'[Show additional details.]'
+)
+
+_arguments -S -C \
+  '(: * -)'{-h,--help}'[Show this screen.]' \
+  '(: * -)--version[Show version]' \
+  ${(@)opts} \
+  '1: :__mackup_subcommands' \
+  '*:: :->command_args' && ret=0
+
+case ${state} in
+  (command_args)
+    case ${words[1]} in
+      (list)
+        _message "No more arguments" && ret=0
+      ;;
+      (backup)
+        _arguments -S ${(@)opts} && ret=0
+      ;;
+      (restore)
+        _arguments -S ${(@)opts} && ret=0
+      ;;
+      (show)
+        local -a apps
+        apps=(${(@)^${(@M)${(f)"$(mackup list)"}:#*-*}#*-[[:blank:]]})
+        _describe "applications" apps && ret=0
+      ;;
+      (uninstall)
+        _arguments -S ${(@)opts} && ret=0
+      ;;
+      (*)
+        _describe "words is" words && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ${ret}
+

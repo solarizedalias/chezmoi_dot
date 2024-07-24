@@ -1,0 +1,184 @@
+#compdef choosenim
+
+# ==========================================================
+# _choosenim
+# Last updated on 2021/10/06
+# AUTHROR: solarizedalias
+# Based on choosenim v0.8.2
+# Completeions for choosenim.
+# ==========================================================
+
+# TODO devel --latest
+# TODO devel might be better to be implemented as its own func.
+# you can use case statement to catch new state once again. see _yarn.
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob typeset_silent no_short_loops rc_quotes no_auto_pushd
+setopt hist_subst_pattern warn_create_global glob_dots
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a choosenim_commands
+choosenim_commands=(
+  'update:Updates the version installed on the stable release channel or updates choosenim itself.'
+  'show:Displays the selected version and channel.'
+  'versions:Lists available versions of Nim, passing `--installed` only displays versions that are installed locally (no network requests).'
+  'remove:Removes specified version (if installed).'
+)
+
+# This needs to be here as __choosenim_remote_versions also needs this array.
+local -aU local_versions
+
+# XXX inline this
+__choosenim_commands() {
+  _describe -t commands 'commands' choosenim_commands && ret=0
+}
+
+__choosenim_cache_policy() {
+  local oldp
+  local _choosenim_remote_versions
+  # Only to test the array has elements.
+  source "$1" &>/dev/null || return 0
+
+  oldp=( "$1"(Nmh+12) ) # 12 hour
+  (( $#oldp )) && return 0
+  # If retrieved array was empty, cache is invalid else valid.
+  (( ${#_choosenim_remote_versions} )) || return 0
+  (( ${#_choosenim_remote_versions} )) && return 1
+
+}
+
+# Fetch available versions
+__choosenim_remote_versions() {
+  local cache_policy _cache_dir var
+  local _choosenim_remote_versions
+  local -a T
+  local U
+  if zstyle -s ":completion:${curcontext}:" use-auth U; then
+    T=(--user ${U})
+  else
+    T=()
+  fi
+
+  if zstyle -t ":completion:${curcontext}:" fetch-remote ; then
+    zstyle -s ":completion:${curcontext}:" cache-policy cache_policy
+    if [[ -z "${cache_policy}" ]]; then
+      zstyle ":completion:${curcontext}:" cache-policy __choosenim_cache_policy
+    fi
+
+    if { _cache_invalid choosenim_remote_versions || ! _retrieve_cache choosenim_remote_versions } ; then
+      local -a json
+      local -a _choosenim_remote_versions
+      # TODO curl or wget ?
+      json=( ${(f)"$(curl -s -L ${(@)T} 'https://api.github.com/repos/nim-lang/Nim/tags' 2>/dev/null)"} )
+
+      [[ "${(F)json[@]}" == *"API rate limit"* ]] && {
+        _message -e 'API-rate-limit' "Fetching remote failed. API rate limit exceeded." && return 1
+      }
+      _choosenim_remote_versions=( ${^${(@MQ)json:#*name*}//(*:|v|,|[[:blank:]])/} )
+
+      _store_cache choosenim_remote_versions _choosenim_remote_versions
+      _choosenim_remote_versions=( ${(@)_choosenim_remote_versions:|local_versions} )
+      _describe 'remote versions' _choosenim_remote_versions
+    else
+      _choosenim_remote_versions=( ${(@)_choosenim_remote_versions:|local_versions} )
+      _describe 'remote versions' _choosenim_remote_versions
+    fi
+  else
+    # Do nothing unless style is set
+    return 0
+  fi
+}
+
+# Get installed version
+__choosenim_local_versions() {
+  # TODO v0.8.2 has `choosenim show path`
+  local TOOLCHAINS_PATH
+  TOOLCHAINS_PATH="${${(s/ /)${(@)${(f)"$(choosenim show)"}:#Path:*}##[^/]##}:h}"
+
+  local_versions=(
+    "${TOOLCHAINS_PATH:-${HOME}/.choosenim/toolchains}"/nim-*(#qN-/:s@*/nim-@)
+  )
+  # stable should always be there.
+  local_versions+=(stable)
+
+  _describe 'installed versions' local_versions && ret=0
+}
+
+__choosenim_colon_path() {
+  local -a compadd_opts=( -P ':'  )
+  local -a separators=( '\:' '=' )
+  if compset -P '*[:=]'; then
+    _path_files "-/" && ret=0
+  else
+    _arguments -O compadd_opts ':separator:{ _describe "separator" separators -Q -S "" }' && ret=0
+  fi
+}
+
+_arguments -S -C \
+  '(-h --help)'{-h,--help}'[Show this output.]' \
+  '(-y --yes)'{-y,--yes}'[Agree to every question.]' \
+  '--version[Prints version information]' \
+  '--verbose[Show low (and higher) priority output.]' \
+  '(-f --force)'{-f,--force}'[  ]' \
+  '--debug[Show debug (and higher) priority output.]' \
+  '--noColor[Don''t colorise output.]' \
+  '--choosenimDir-[Specify the directory where toolchains should be installed. Default\: ~/.choosenim.]:dir:{__choosenim_colon_path}' \
+  '--nimbleDir-[Specify the Nimble directory where binaries will be placed. Default\: ~/.nimble.]:dir:{__choosenim_colon_path}' \
+  '--firstInstall[Used by install script.]' \
+  '1: :->command_or_versions' \
+  '*:: :->command_args' && ret=0
+
+case ${state} in
+  (devel)
+    _arguments -S \
+      '--latest[select and build the latest commit in the devel branch]' && ret=0
+  ;;
+  (command_or_versions)
+    _alternative \
+      'commands:command:__choosenim_commands' \
+      'installed:version:__choosenim_local_versions' \
+      'remote:version:__choosenim_remote_versions' && ret=0
+  ;;
+  (command_args)
+    case ${words[1]} in
+      # FIXME broken
+      ((\#|)devel)
+        _arguments -S \
+          '--latest[select and build the latest commit in the devel branch]' && ret=0
+      ;;
+      (update)
+        _arguments -S -C \
+          ': :->devel'
+        _alternative \
+          'self:self update:((self\:"Updates choosenim itself."))' \
+          'installed:versions installed:__choosenim_local_versions' \
+          'remote:versions on remote:__choosenim_remote_versions' && ret=0
+      ;;
+      (show)
+        # XXX I added useless `compadd -Q " "` just to force the message to appear.
+        #     One space character being 'completed' is not ideal, but harmless.
+        #     I'd be happy to know better solutions.
+        if (( ${#words} < 3 )); then
+           _alternative \
+            'path:path:((path\:"print only the path of the current Nim version"))' \
+            'nop:display the selected version and channel (without further arguments):compadd -Q " " '
+        else
+          _message 'no more arguments'
+        fi && ret=0
+      ;;
+      (versions)
+        _arguments -S \
+          '--installed[only display versions that are installed locally]' && ret=0
+      ;;
+      (remove)
+        __choosenim_local_versions && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

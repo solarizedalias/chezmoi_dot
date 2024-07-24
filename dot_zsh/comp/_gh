@@ -1,0 +1,1802 @@
+#compdef gh
+
+# ======================================================================================
+# _gh
+# Tue Aug 11 06:20:33 2020
+# AUTHROR: solarizedalias
+#
+# gh 2.5.2 (updated 2022-03-02)
+#
+# Based on the default compdef file installed together with gh,
+# (typically, at /usr/local/share/zsh/site-functions/_gh).
+# To summarize what I have done to this:
+#   * I modified the main block to be toplevel so that the first invocation does not fail
+#     to generate completions.
+#   * Explicitly declare parameters local (do not leak unnecessary vars)
+#   * Correct the shebang (I mean, line 1. I know it's not but what else do you call it?).
+#   * Return status explicitly.
+#   * Avoid `commands` as the name of array because it's already in use by the zsh.
+#     (As long as it's declared as local, global pollutions won't happen.
+#     But we still lose access to the top-level parameter of the same name.
+#     You should avoid the general names either way.)
+#   * Some completions are extended (gists, git tags, branch, etc.)
+# ======================================================================================
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob typeset_silent rc_quotes warn_create_global
+setopt NO_short_loops NO_auto_pushd
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a __commands
+local -a match mbegin mend
+local -a urls
+
+(( ${+functions[__gh_cache_policy]} )) || function __gh_cache_policy() {
+  local oldp
+  oldp=( "$1"(Nmd+1) ) # 1 day
+  (( $#oldp )) && return 0
+}
+
+local __GH_IGN="${__GH_IGN}"
+
+(( ${+functions[__gh_REQUEST]} )) || function __gh_REQUEST() {
+  local -a res
+  res=(
+    ${(@)${(f)"$(
+      _call_program res gh __complete ${(@)argv[2,-1]} 2>/dev/null
+    )"}[1,-2]}
+  )
+  : ${(PA)1::=${(@)res}}
+}
+
+(( ${+functions[__gh_EXTENSION]} )) || function __gh_EXTENSION() {
+  integer ret=1
+  local CMD=${words[1]}
+  if (( ${+functions[_gh-${CMD}]} )); then
+    _call_function ret _gh-${CMD}
+  else
+    _message "no completions available for 'gh ${CMD}'"
+  fi
+  return ret
+}
+
+(( ${+functions[__gh_alias]} )) || function __gh_alias {
+  local -a __commands
+
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->args' && ret=0
+
+  case ${state} in
+  (cmnds)
+    __commands=(
+      "delete:Delete an alias."
+      "list:List your aliases"
+      "set:Create a shortcut for a gh command"
+    )
+    _describe 'command' __commands && ret=0
+  ;;
+  esac
+
+  case "${words[1]}" in
+  (delete)
+    __gh_alias_delete && ret=0
+  ;;
+  (list)
+    __gh_alias_list && ret=0
+  ;;
+  (set)
+    __gh_alias_set && ret=0
+  ;;
+  esac
+}
+
+(( ${+functions[__gh_alias_delete]} )) || function __gh_alias_delete {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '*:alias: ' && ret=0
+}
+
+(( ${+functions[__gh_alias_list]} )) || function __gh_alias_list {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' && ret=0
+}
+
+(( ${+functions[__gh_alias_set]} )) || function __gh_alias_set {
+  _arguments \
+    ${__GH_IGN}'(-s --shell)'{-s,--shell}'[Declare an alias to be passed through a shell interpreter]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ':alias: ' \
+    ':expansion: ' && ret=0
+}
+
+
+(( ${+functions[__gh_auth]} )) || function __gh_auth {
+  local -a __commands
+
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->args'
+
+  case ${state} in
+  (cmnds)
+    __commands=(
+      "login:Authenticate with a GitHub host"
+      "logout:Log out of a GitHub host"
+      "refresh:Refresh stored authentication credentials"
+      "setup-git:Configure git to use GitHub CLI as a credential helper"
+      "status:View authentication status"
+    )
+    _describe 'command' __commands
+  ;;
+  esac
+
+  case "${words[1]}" in
+  (login)
+    __gh_auth_login
+  ;;
+  (logout)
+    __gh_auth_logout
+  ;;
+  (refresh)
+    __gh_auth_refresh
+  ;;
+  (setup-git)
+    __gh_auth_setup-git
+  ;;
+  (status)
+    __gh_auth_status
+  ;;
+  esac
+}
+
+(( ${+functions[__gh_auth_login]} )) || function __gh_auth_login {
+  _arguments \
+    ${__GH_IGN}'(
+-p --git-protocol=)'{-p,--git-protocol}'[The protocol to use for git operations]:protocol:(ssh https)' \
+    ${__GH_IGN}'(-h --hostname)'{-h,--hostname}'[The hostname of the GitHub instance to authenticate with]:string: ' \
+    ${__GH_IGN}'--with-token[Read token from standard input]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(*-s *--scopes)'{\*-s,\*--scopes}'[Additional authentication scopes for gh to have]:strings: ' \
+    ${__GH_IGN}'--web[Login with a web browser]'
+}
+
+(( ${+functions[__gh_auth_logout]} )) || function __gh_auth_logout {
+  _arguments \
+    ${__GH_IGN}'(-h --hostname)'{-h,--hostname}'[The hostname of the GitHub instance to log out of]:string: ' \
+    ${__GH_IGN}'--help[Show help for command]'
+}
+
+(( ${+functions[__gh_auth_refresh]} )) || function __gh_auth_refresh {
+  _arguments \
+    ${__GH_IGN}'(-h --hostname)'{-h,--hostname}'[The GitHub host to use for authentication]:string: ' \
+    ${__GH_IGN}'(*-s *--scopes)'{\*-s,\*--scopes}'[Additional authentication scopes for gh to have]:strings: ' \
+    ${__GH_IGN}'--help[Show help for command]'
+}
+
+(( ${+functions[__gh_auto_setup-git]} )) || function __gh_auth_setup-git() {
+  _arguments \
+    '(-h --hostname)'{-h,--hostname}'=[The hostname to configure git for]:name: ' \
+    '--help[Show help for command]' && ret=0
+}
+
+(( ${+functions[__gh_auth_status]} )) || function __gh_auth_status {
+  _arguments \
+    ${__GH_IGN}'(-h --hostname)'{-h,--hostname}'[Check a specific hostname'\''s auth status]:string: ' \
+    ${__GH_IGN}'(-t --show-token)'{-t,--show-token}'[Display the auth token]' \
+    ${__GH_IGN}'--help[Show help for command]'
+}
+
+(( ${+functions[__gh_api]} )) || function __gh_api {
+  _arguments \
+    ${__GH_IGN}'--cache[chache the response, e.g. "3600s", "60m", "1h"]:duration: ' \
+    ${__GH_IGN}'(*-F *--field)'{\*-F,\*--field}'[Add a parameter of inferred type]:KEY=VALUE: ' \
+    ${__GH_IGN}'(*-H *--header)'{\*-H,\*--header}'[Add an additional HTTP request header]:KEY\:VALUE: ' \
+    ${__GH_IGN}'--hostname[The GitHub host to use for authentication]:string: ' \
+    ${__GH_IGN}'(-i --include)'{-i,--include}'[Include HTTP response headers in the output]' \
+    ${__GH_IGN}'--input[The file to use as body for the HTTP request]:file:_files' \
+    ${__GH_IGN}'(-q --jq)'{-q,--jq}'[query to select values from the response using jq syntax]:string: ' \
+    ${__GH_IGN}'(-X --method)'{-X,--method}'[The HTTP method for the request]:string: ' \
+    ${__GH_IGN}'--paginate[Make additional HTTP requests to fetch all pages of results]' \
+    ${__GH_IGN}'(-p --preview)'{-p,--preview}'[opt into GitHub API previews]:strings: ' \
+    ${__GH_IGN}'(*-f *--raw-field)'{\*-f,\*--raw-field}'[Add a string parameter]:KEY=VALUE: ' \
+    ${__GH_IGN}'--silent[Do not print the response body]' \
+    ${__GH_IGN}'(-t --template)'{-t,--template}'[format the response using a Go template]:string: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '*::endpoint: ' && ret=0
+}
+
+# TODO
+# * --branch
+# * issue/pull request/path
+(( ${+functions[__gh_browse]} )) || function __gh_browse {
+  _arguments \
+    ${__GH_IGN}'(-b --branch)'{-b,--branch}'[Select another branch by passing in the branch name]:branch: ' \
+    ${__GH_IGN}'(-c --commit)'{-c,--commit}'[Open the last commit]' \
+    ${__GH_IGN}'(-n --no-browser)'{-n,--no-browser}'[Print destination URL instead of opening the browser]' \
+    ${__GH_IGN}'(-p --projects)'{-p,--projects}'[Open repository projects]' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the \[HOST/\]OWNER/REPO format]:[HOST/]OWNER/REPO: ' \
+    ${__GH_IGN}'(-s --settings)'{-s,--settings}'[Open repository settings]' \
+    ${__GH_IGN}'(-w --wiki)'{-w,--wiki}'[Open repository wiki]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '*::issue/pull request/path: ' && ret=0
+}
+
+(( ${+functions[__gh_codespace]} )) || function __gh_codespace {
+  local -a __commands
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->arg' && ret=0
+
+  case ${state} in
+    (cmnds)
+      __commands=(
+        'code:Open a codespace in Visual Studio Code'
+        'cp:Copy files between local and remote file systems'
+        'create:Create a codespace'
+        'delete:Delete a codespace'
+        'list:List your codespaces'
+        'logs:Access codespace logs'
+        'ports:List ports in a codespace'
+        'ssh:SSH into a codespace'
+        'stop:Stop a running codespace'
+      )
+      _describe 'command' __commands && ret=0
+    ;;
+  esac
+
+  local -a optspecs=(
+    ${__GH_IGN}'--help[Show help for command]'
+  )
+  case ${words[1]} in
+    (code)
+      optspecs+=(
+        ${__GH_IGN}'(-c --codespace)'{-c,--codespace=}'[Name of the codespace]:string: '
+        ${__GH_IGN}'--insiders[Use the insiders version of Visual Studio Code]'
+      )
+      _arguments ${(@)optspecs} && ret=0
+    ;;
+    (cp)
+      optspecs+=(
+        ${__GH_IGN}'(-c --codespace)'{-c,--codespace=}'[Name of the codespace]:string: '
+        ${__GH_IGN}'(-e --expand)'{-e,--expand=}'[Expand remote file names on remote shell]'
+        ${__GH_IGN}'(-r --recursive)'{-r,--recursive}'[Recursively copy directories]'
+      )
+      # FIXME This is loose. It should be src... dest
+      _argument ${(@)optspecs} '*:files:_files' && ret=0
+    ;;
+    (create)
+      optspecs+=(
+        ${__GH_IGN}'(-b --branch)'{-b,--branch=}'[repository branch]:branch: '
+        ${__GH_IGN}'(-m --machine)'{-m,--machine=}'[hardware specifications for the VM]'
+        ${__GH_IGN}'(-r --repo)'{-r,--repo=}'[repository name with owner: user/repo]:repo: '
+        ${__GH_IGN}'(-s --status)'{-s,--status}'[show status of post-create command and dotfiles]'
+      )
+      _argument ${(@)optspecs} && ret=0
+    ;;
+    (delete)
+      optspecs+=(
+        ${__GH_IGN}'--all[Delete all codespaces]'
+        ${__GH_IGN}'(-c --codespace)'{-c,--codespace=}'[Name of the codespace]:string: '
+        ${__GH_IGN}'(-f --force)'{-f,--force}'[Skip confirmation for codespaces that contain unsaved changes]'
+        ${__GH_IGN}'(-r --repo)'{-r,--repo=}'[repository name with owner: user/repo]:repo: '
+      )
+      _arguments ${(@)optspecs} && ret=0
+    ;;
+    (list)
+      optspecs+=(
+        ${__GH_IGN}'(-q --jq)'{-q,--jq=}'[Filter JSON output using a jq expression]:jq-expression: '
+        ${__GH_IGN}'--json=[Output JSON with the specified fields]:fields:(
+          createdAt displayName gitStatus lastUsedAt name owner repository state )'
+        ${__GH_IGN}'(-L --limit)'{-L,--limit=}'[Maximum number of codespaces to list (default 30)]:int: '
+        ${__GH_IGN}'(-t --template)'{-t,--template=}'[Format JSON output using a Go template]:string: '
+      )
+      _arguments ${(@)optspecs} && ret=0
+    ;;
+    (logs)
+      optspecs+=(
+        ${__GH_IGN}'(-c --codespace)'{-c,--codespace=}'[Name of the codespace]:string: '
+        ${__GH_IGN}'(-f --follow)'{-f,--follow}'[Tail an follow the logs]'
+      )
+      _arguments ${(@)optspecs} && ret=0
+    ;;
+    (ports)
+      optspecs+=(
+        ${__GH_IGN}'(-c --codespace)'{-c,--codespace=}'[Name of the codespace]:string: '
+        ${__GH_IGN}'(-q --jq)'{-q,--jq=}'[Filter JSON output using a jq expression]:jq-expression: '
+        ${__GH_IGN}'--json=[Output JSON with the specified fields]:fields: '
+        ${__GH_IGN}'(-t --template)'{-t,--template=}'[Format JSON output using a Go template]:string: '
+      )
+      _arguments ${(@)optspecs} && ret=0
+    ;;
+    (ssh)
+      optspecs+=(
+        ${__GH_IGN}'(-c --codespace)'{-c,--codespace=}'[Name of the codespace]:string: '
+        ${__GH_IGN}'--config[Write OpenSSH configuration to stdout]'
+        ${__GH_IGN}'(-d --debug)'{-d,--debug}'[Log debug data to a file]'
+        ${__GH_IGN}'--debug-file[Path of the file log to]:file:_files'
+        ${__GH_IGN}'--profile[Name of the SSH profile to use]:profile: '
+        ${__GH_IGN}'--server-port[SSH server port number (0 => pick unused)]:int: '
+      )
+      _arguments ${(@)optspecs} \
+        '1:command:_path_commands' \
+        '*:: :{ emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch _ ${words[1]}" }' && ret=0
+    ;;
+    (stop)
+      optspecs+=(
+        ${__GH_IGN}'(-c --codespace)'{-c,--codespace=}'[Name of the codespace]:string: '
+      )
+      _arguments ${(@)optspecs} && ret=0
+    ;;
+  esac
+}
+
+(( ${+functions[__gh_completion]} )) || function __gh_completion {
+  _arguments \
+    ${__GH_IGN}'(-s --shell)'{-s,--shell}'[Shell type: {bash|zsh|fish|powershell}]:shell:(bash zsh fish powershell )' \
+    ${__GH_IGN}'--help[Show help for command]' && ret=0
+}
+
+
+(( ${+functions[__gh_config]} )) || function __gh_config {
+  local -a __commands
+
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->args' && ret=0
+
+  case ${state} in
+    (cmnds)
+      __commands=(
+        "get:Print the value of a given configuration key"
+        "list:Print a list of configuration keys and values"
+        "set:Update configuration with a value for the given key"
+      )
+      _describe 'command' __commands && ret=0
+    ;;
+  esac
+
+  case "${words[1]}" in
+    (get)
+      __gh_config_get && ret=0
+    ;;
+    (list)
+      __gh_config_list && ret=0
+    ;;
+    (set)
+      __gh_config_set && ret=0
+    ;;
+  esac
+}
+
+
+# XXX TODO action for key
+(( ${+functions[__gh_config_get]} )) || function __gh_config_get {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-h --host)'{-h,--host}'[get per-host setting]:host: ' \
+    ':key:((
+      "git_protocol\:https (default) or ssh"
+      "editor\:if unset, defaults to environment variables"
+      "prompt\:toggles interactive prompting"
+      "pager\:the terminal pager program to send standard output to"
+      "http_unix_socket\:the path to a unix socket through which to make HTTP connection"
+      "browser\:the web browser to use for opening URLs"
+    ))' && ret=0
+}
+
+(( ${+functions[__gh_config_list]} )) || function __gh_config_list {
+  _arguments \
+    '(-h --host)'{-h,--host}'[Get per-host configuration]' \
+    '--help[Show help for command]'
+}
+(( ${+functions[__gh_config_set]} )) || function __gh_config_set {
+  __commands=(
+    "git_protocol:https (default) or ssh"
+    "editor:if unset, defaults to environment variables"
+    "prompt:toggles interactive prompting"
+    "pager:the terminal pager program to send standard output to"
+    "http_unix_socket:the path to a unix socket through which to make HTTP connection"
+    "browser:the web browser to use for opening URLs"
+  )
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-h --host)'{-h,--host}'[get per-host setting]:host: ' \
+    ': :{_describe core-command __commands}' \
+    '*::arg:->args' && ret=0
+  case ${state} in
+    (args)
+      case ${words[1]} in
+        (git_protocol)
+          _values 'git protocol' \
+            '(ssh)https[use https]' \
+            '(https)ssh[use ssh]' && ret=0
+        ;;
+        (editor)
+          _alternative \
+            'editors:editor:(( ${EDITOR}\:"your favorite editor" ${VISUAL}\:"perhaps this is it" ))' \
+            'commands:command:_absolute_command_paths' && ret=0
+        ;;
+        (prompt)
+          _values 'whether to show prompt messages' \
+            '(disabled)enabled[enable prompting]' \
+            '(enabled)disabled[disable prompting]' && ret=0
+        ;;
+        (pager)
+          () {
+            local PAGER_DESC
+            [[ -v PAGER ]] && PAGER_DESC='pager:pager:(( ${PAGER}\:"your favorite pager" ))'
+            _alternative \
+              ${PAGER_DESC} \
+              'commands:command:_absolute_command_paths' && ret=0
+          }
+        ;;
+      esac
+    ;;
+  esac
+}
+
+(( ${+functions[__gh_gpg-key]} )) || function __gh_gpg-key {
+  local -a __commands
+  __commands=(
+    'add:Add a GPG key to your GitHub account'
+    'list:List GPG keys in your GitHub account'
+  )
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ': :{_describe core-command __commands}' \
+    '*::arg:->args' && ret=0
+  case ${state} in
+    (args)
+      case ${words[1]} in
+        (add)
+          _files && ret=0 # XXX -g '*.asc'?
+        ;;
+        (list)
+          _message 'no more arguments' && ret=0
+        ;;
+      esac
+    ;;
+  esac
+}
+
+
+(( ${+functions[__gh_extension]} )) || function __gh_extension {
+  local -a __commands
+
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->args' && ret=0
+  case ${state} in
+    (cmnds)
+      __commands=(
+        'create:Create a new extension'
+        'install:Install a gh extension from a repository'
+        'list:List installed extension'
+        'remove:Remove an installed extension'
+        'upgrade:Upgrade installed extensions'
+      )
+      _describe 'command' __commands && ret=0
+    ;;
+  esac
+
+  case ${words[1]} in
+    (create)
+      _arguments \
+        ${__GH_IGN}'--help[Show help for command]' \
+        '1:name: ' && ret=0
+    ;;
+    (install)
+      _arguments \
+        ${__GH_IGN}'--help[Show help for command]' \
+        '1:repo: ' && ret=0
+    ;;
+    (list)
+      _arguments \
+        ${__GH_IGN}'--help[Show help for command]' && ret=0
+    ;;
+    (remove)
+      # TODO complete names
+      _arguments \
+        ${__GH_IGN}'--help[Show help for command]' \
+        '1:name: ' && ret=0
+    ;;
+    (upgrade)
+      _arguments \
+        ${__GH_IGN}'--help[Show help for command]' \
+        ${__GH_IGN}'--all[Upgrade all extensions]' \
+        ${__GH_IGN}'--force[Force upgrade extension]' \
+        '1:name: ' && ret=0
+    ;;
+  esac
+}
+
+# XXX TODO filename
+(( ${+functions[__gh_gist]} )) || function __gh_gist {
+  local -a __commands
+
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->args' && ret=0
+
+  case ${state} in
+    (cmnds)
+      __commands=(
+        "clone:Clone a gist locally"
+        "create:Create a new gist"
+        "edit:Edit one of your gists"
+        "list:List your gists"
+        "view:View a gist"
+      )
+      _describe 'command' __commands && ret=0
+    ;;
+  esac
+
+  case "${words[1]}" in
+    (clone)
+      # TODO git-clone-flag
+      _arguments \
+        ${__GH_IGN}'--help[Show help for command]' \
+        ${__GH_IGN}'--filename[edit specified file in the gist]:filename: ' \
+        '1:gist-id-or-url:{ __gh_gist_id }' \
+        '2:directory:_directories' \
+        '3: :( -- )' \
+        '*:git-clone-flag: ' &&
+      ret=0
+    ;;
+    (create)
+      __gh_gist_create && ret=0
+    ;;
+    (edit)
+      _arguments \
+        ${__GH_IGN}'(-a --add)'{-a,--add}'[add a new file to the gist]' \
+        ${__GH_IGN}'(-d --desc)'{-d,--desc}'[New description for the gist]:description: ' \
+        ${__GH_IGN}'--filename[edit specified file in the gist]:filename: ' \
+        ${__GH_IGN}'--help[Show help for command]' \
+        '1:gist-id-or-url:{ __gh_gist_id }' \
+        '2:file or stdin:{
+          _alternative "stdin:stdin:(( -\:stdin ))" "files:files:_files"
+        }' && ret=0
+    ;;
+    (list)
+      _arguments \
+        '--help[Show help for command]' \
+        ${__GH_IGN}'--public[list public gists]' \
+        ${__GH_IGN}'--secret[list secret gists]' \
+        ${__GH_IGN}'--limit[limit the number of gists to print]:number: ' && ret=0
+      ;;
+    (view)
+      _arguments \
+        '--help[Show help for command]' \
+        ${__GH_IGN}'--web[open gist in browser]' \
+        ${__GH_IGN}'--raw[do not render markdown if found]' \
+        ${__GH_IGN}'--files[list file names from the gist]' \
+        ${__GH_IGN}'--filename[only print specified file]:filename: ' \
+        '*:gist-id-or-url:{ __gh_gist_id }' && ret=0
+    ;;
+  esac
+}
+
+(( ${+functions[__gh_gist_id]} )) || function __gh_gist_id() {
+  local -a ids
+  local MATCH MBEGIN MEND
+  local -a match mbegin mend
+  ids=(
+    ${(@)${(f)"$(
+      gh gist list
+    )"}//(#b)([0-9a-f]##)[[:blank:]]##(*)/${match[1]}:${(pr:$((
+      COLUMNS * 70 / 100
+    )):)${match[2]//(#m)*/${(pr:$((
+      COLUMNS * 40 / 100
+    )):)${${MATCH}%%$'\t'*}} \|\| ${${MATCH#*$'\t'}//$'\040'/$'\t'}}}}
+  )
+  _describe 'gists' ids
+}
+
+
+(( ${+functions[__gh_gist_create]} )) || function __gh_gist_create {
+  _arguments \
+    ${__GH_IGN}'(-d --desc)'{-d,--desc}'[A description for this gist]:string: ' \
+    ${__GH_IGN}'(-p --public)'{-p,--public}'[List the gist publicly (default: private)]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '*::files:{ _path_files }' && ret=0
+}
+
+
+(( ${+functions[__gh_help]} )) || function __gh_help {
+  __GH_IGN='!'
+  _arguments \
+    '--help[Show help for command]' \
+    '*::: := _gh' && ret=0
+}
+
+
+(( ${+functions[__gh_issue]} )) || function __gh_issue {
+  local -a __commands
+
+  _arguments -C \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->args' && ret=0
+
+  case ${state} in
+    (cmnds)
+      __commands=(
+        "close:Close issue"
+        "comment:Create a new issue comment"
+        "create:Create a new issue"
+        "delete:delete an issue"
+        "edit:edit an issue"
+        "list:List and filter issues in this repository"
+        "reopen:Reopen issue"
+        "status:Show status of relevant issues"
+        "view:View an issue"
+      )
+      _describe 'command' __commands && ret=0
+    ;;
+  esac
+
+  case "${words[1]}" in
+    (close)
+      __gh_issue_close && ret=0
+    ;;
+    (comment)
+      __gh_issue_comment && ret=0
+    ;;
+    (create)
+      __gh_issue_create && ret=0
+    ;;
+    (edit)
+      __gh_issue_edit && ret=0
+    ;;
+    (list)
+      __gh_issue_list && ret=0
+    ;;
+    (reopen)
+      __gh_issue_reopen && ret=0
+    ;;
+    (status)
+      __gh_issue_status && ret=0
+    ;;
+    (view)
+      __gh_issue_view && ret=0
+    ;;
+  esac
+}
+
+# FIXME strange issue of inserting `3` in the `fzf-tab buffer` only for certain repositories
+# FIXME (e,g, my dotfiles)
+(( ${+functions[__gh_issue_numbers]} )) || function __gh_issue_numbers() {
+  local -a reply all_issues open_issues closed_issues
+  local -a match mbegin mend
+  local REQUESTED="${1:#^(all|open|closed)}"
+  reply=( ${(f)"$( gh issue list --state ${REQUESTED:-all} 2>/dev/null )"} )
+  all_issues=(
+    ${(@)${(@)reply//:/\\:}/(#b)(<->)[	]##(OPEN|CLOSED)[	]##(*)[	]##(*)/${match[1]}:${(pr:$((
+      COLUMNS * 80 / 100
+    )):):-${(pr:$((
+      COLUMNS * 50 / 100
+    )):):-${${(M)REQUESTED:#all}:+${(r:6:):-${match[2]} }} ${match[4]} ${match[3]//	/ }}}}
+  )
+
+  _describe "${REQUESTED:-all} issues" all_issues
+
+}
+
+(( ${+functions[__gh_issue_close]} )) || function __gh_issue_close {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ':issue ident (number or url):{ __gh_issue_numbers open }' && ret=0
+}
+
+(( ${+functions[__gh_issue_comment]} )) || function __gh_issue_comment() {
+  _arguments \
+    ${__GH_IGN}'(-b --body)'{-b,--body}'[Supply a body. Will prompt for one otherwise.]:string: ' \
+    ${__GH_IGN}'(-e --editor)'{-e,--editor}'[Add body using editor]' \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Add body in browser]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ':issue ident (number or url):{ __gh_issue_numbers all }' && ret=0
+
+}
+
+(( ${+functions[__gh_issue_create]} )) || function __gh_issue_create {
+  _arguments \
+    ${__GH_IGN}'(*-a *--assignee)'{\*-a,\*--assignee}'[Assign people by their `login`]:string: ' \
+    ${__GH_IGN}'(-b --body)'{-b,--body}'[Supply a body. Will prompt for one otherwise.]:string: ' \
+    ${__GH_IGN}'(*-l *--label)'{\*-l,\*--label}'[Add labels by `name`]:label: ' \
+    ${__GH_IGN}'(-m --milestone)'{-m,--milestone}'[Add the issue to a milestone by `name`]:name: ' \
+    ${__GH_IGN}'(*-p *--project)'{\*-p,\*--project}'[Add the issue to projects by `name`]:name: ' \
+    ${__GH_IGN}'--recover[Recover input from a failed run of create]' \
+    ${__GH_IGN}'(-t --title)'{-t,--title}'[Supply a title. Will prompt for one otherwise.]:string: ' \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open the browser to create an issue]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' && ret=0
+}
+(( ${+functions[__gh_issue_delete]} )) || function __gh_issue_delete() {
+  _arguments \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ':issue ident (number or url):{ __gh_issue_numbers all }' && ret=0
+}
+
+(( ${+functions[__gh_issue_edit]} )) || function __gh_issue_edit() {
+  _arguments \
+    ${__GH_IGN}'--add-assignee[Add assigned users by their login. Use "@me" to assign yourself.]:login: ' \
+    ${__GH_IGN}'--add-label[Add labels by name]:name: ' \
+    ${__GH_IGN}'--add-project[Add the issue to projects by name]:name: ' \
+    ${__GH_IGN}'(-b --body)'{-b,--body}'[Set the new body.]:string: ' \
+    ${__GH_IGN}'(-F --body-file)'{-F,--body-file}'[Read body text from file]:file:_files' \
+    ${__GH_IGN}'(-m --milestone)'{-m,--milestone}'[Edit the milestone the issue belongs to by name]:name: ' \
+    ${__GH_IGN}'--remove-assignee[Remove assigned users by their login. Use "@me" to unassign yourself.]:login: ' \
+    ${__GH_IGN}'--remove-label[Remove labels by name]:name: ' \
+    ${__GH_IGN}'--remove-project[Remove the issue from projects by name]:name: ' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ${__GH_IGN}'(-t --title)'{-t,--title}'[Set the new title.]:string: ' \
+    ':issue ident (number or url):{ __gh_issue_numbers all }' && ret=0
+}
+
+(( ${+functions[__gh_issue_list]} )) || function __gh_issue_list {
+  local -a json_keys
+
+  # `gh issue list --json`
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'(-a --assignee)'{-a,--assignee}'[Filter by assignee]:string: ' \
+    ${__GH_IGN}'(-A --author)'{-A,--author}'[Filter by author]:string: ' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-q --jq)'{-q,--jq}'[query to select values from the response using jq syntax]:string: ' \
+    ${__GH_IGN}'(*-l *--label)'{\*-l,\*--label}'[Filter by labels]:label: ' \
+    ${__GH_IGN}'(-L --limit)'{-L,--limit}'[Maximum number of issues to fetch]:int: ' \
+    ${__GH_IGN}'--mention[Filter by mention]:string: ' \
+    ${__GH_IGN}'(-m --milestone)'{-m,--milestone}'[Filter by milestone `name`]:number: ' \
+    ${__GH_IGN}'(-S --search)'{-S,--search}'[search issues with query]:query: ' \
+    ${__GH_IGN}'(-s --state)'{-s,--state}'[Filter by state: {open|closed|all}]:state:(open closed all)' \
+    ${__GH_IGN}'(-t --template)'{-t,--template}'[format the response using a Go template]:string: ' \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open the browser to list the issue(s)]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' && ret=0
+}
+
+(( ${+functions[__gh_issue_reopen]} )) || function __gh_issue_reopen {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ':issue ident (number or url):{ __gh_issue_numbers closed }' && ret=0
+}
+
+(( ${+functions[__gh_issue_status]} )) || function __gh_issue_status {
+  local -a json_keys
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-t --template)'{-t,--template}'[format JSON output using a Go template]:string: ' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' && ret=0
+}
+
+(( ${+functions[__gh_issue_view]} )) || function __gh_issue_view {
+  local -a json_keys
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open an issue in the browser]' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-t --template)'{-t,--template}'[format JSON output using a Go template]:string: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ${__GH_IGN}'(-c --comments)'{-c,--comments}'[View issue comments]' \
+    ':issue ident (number or url):{ __gh_issue_numbers all }' && ret=0
+}
+
+# TODO [<number> | <url> | <branch>]
+(( ${+functions[__gh_pr]} )) || function __gh_pr {
+  local -a __commands
+
+  _arguments -C \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->args' && ret=0
+
+  case ${state} in
+  (cmnds)
+    __commands=(
+      "checkout:Check out a pull request in Git"
+      "checks:Show CI status for single pull request"
+      "close:Close a pull request"
+      "comment:Create a new pr comment"
+      "create:Create a pull request"
+      "diff:View a pull request's changes."
+      "edit:edit a pull request"
+      "list:List and filter pull requests in this repository"
+      "merge:Merge a pull request"
+      "ready:Mark a pull request as ready for review"
+      "reopen:Reopen a pull request"
+      "review:Add a review to a pull request"
+      "status:Show status of relevant pull requests"
+      "view:View a pull request"
+    )
+    _describe 'command' __commands && ret=0
+  ;;
+  esac
+
+  case "${words[1]}" in
+    (checks) __gh_pr_checks && ret=0 ;;
+    (checkout) __gh_pr_checkout && ret=0 ;;
+    (close) __gh_pr_close && ret=0 ;;
+    (comment) __gh_pr_comment && ret=0 ;;
+    (create) __gh_pr_create && ret=0 ;;
+    (diff) __gh_pr_diff && ret=0 ;;
+    (edit) __gh_pr_edit && ret=0 ;;
+    (list) __gh_pr_list && ret=0 ;;
+    (merge) __gh_pr_merge && ret=0 ;;
+    (ready) __gh_pr_ready && ret=0 ;;
+    (reopen) __gh_pr_reopen && ret=0 ;;
+    (review) __gh_pr_review && ret=0 ;;
+    (status) __gh_pr_status && ret=0 ;;
+    (view) __gh_pr_view && ret=0 ;;
+  esac
+}
+
+# TODO Support more flags (at least -R/--repo)
+(( ${+functions[__gh_pr_complete_prs_with_state]} )) || function __gh_pr_complete_prs_with_state() {
+  integer ret=1
+  local STATE=${${(M)1##(#i)(open|closed|merged|all)}:-open}
+  integer LIMIT=${${(M)2##<1->}:-100}
+  local -a match mbegin mend
+
+  local TB=$'\t'
+  local PAT="(<1->)${TB}(*)${TB}(*)${TB}(OPEN|DRAFT|MERGED|CLOSED)"
+  local -a prs
+  prs=( ${(f)"$(gh pr list --limit ${LIMIT} --state ${STATE})"} )
+  prs=(
+    ${(@)prs/(#b)${~PAT}/${match[1]}:${(r<6>)match[4]} ${(r<20>):-"$(
+      [[ ${match[3]} == *:* ]] &&
+        print -r -- "${(r<12>)${match[3]%:*}}  ${(r<6>)${match[3]#*:}}" ||
+        print -r -- ${match[3]}
+    )"}    ${match[2]//:/\\:}}
+  )
+
+  (( ${#prs} )) || return 1
+
+  # (( COMP_DEBUG )) && builtin print -lr -- ${(%):-'%D{%F %H%M%S}'} ${(@)prs} >>| /tmp/"$0.log"
+  _describe "pull requests" prs && ret=0
+  return ret
+}
+
+(( ${+functions[__gh_pr_complete_prs]} )) || function __gh_pr_complete_prs() {
+  if [[ ${1} == (open|closed|all) ]]; then
+    __gh_pr_complete_prs_with_state $1
+    return $?
+  fi
+  local STATE
+  for STATE in open all; do
+    __gh_pr_complete_prs_with_state ${STATE} && return 0
+  done
+}
+
+(( ${+functions[__gh_pr_checks]} )) || function __gh_pr_checks {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-i --interval)'{-i,--interval}'[Refresh interval in seconds when using --watch flag]:interval: ' \
+    ${__GH_IGN}'--watch[Watch checks until they finish]' \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open the browser to show details about checks]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '1:id:{ __gh_pr_complete_prs open }' &&
+  ret=0
+}
+
+# TODO
+# * --branch
+(( ${+functions[__gh_pr_checkout]} )) || function __gh_pr_checkout {
+  _arguments \
+    ${__GH_IGN}'(-b --branch)'{-b,--branch}'[Local branch name to use (default: the name of the head branch)]:branch: ' \
+    ${__GH_IGN}'--detach[checkout PR with a detached HEAD]' \
+    ${__GH_IGN}'(
+-f --force)'{-f,--force}'[reset the existing local branch to the latest state of the pull request]' \
+    ${__GH_IGN}'--recurse-submodules[Update all active submodules (recursively)]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '1:id:{ __gh_pr_complete_prs }' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_close]} )) || function __gh_pr_close {
+  _arguments \
+    ${__GH_IGN}'(-d --delete-branch)'{-d,--delete-branch}'[Delete the local and remote branch after close]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: '
+    '1:id:{ __gh_pr_complete_prs open }' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_comment]} )) || function __gh_pr_comment() {
+  _arguments \
+    ${__GH_IGN}'(-b --body)'{-b,--body}'[Supply a body. Will prompt for one otherwise.]' \
+    ${__GH_IGN}'(-F --body-file)'{-F,--body-file}'[read body text from file]:file:_files' \
+    ${__GH_IGN}'(-e --editor)'{-e,--editor}'[Add body using editor]' \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Add body in browser]' \
+    '1:id:{ __gh_pr_complete_prs }' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_create]} )) || function __gh_pr_create {
+  _arguments \
+    ${__GH_IGN}'(*-a *--assignee)'{\*-a,\*--assignee}'[Assign people by their `login`]:string: ' \
+    ${__GH_IGN}'(-B --base)'{-B,--base}'[The branch into which you want your code merged]:branch:{
+      (( ${+functions[__git_branch_name]} )) && __git_branch_name || _message "branch name"
+    }' \
+    ${__GH_IGN}'(-b --body)'{-b,--body}'[Supply a body. Will prompt for one otherwise.]:string: ' \
+    ${__GH_IGN}'(-d --draft)'{-d,--draft}'[Mark pull request as a draft]' \
+    ${__GH_IGN}'(-f --fill)'{-f,--fill}'[Do not prompt for title/body and just use commit info]' \
+    ${__GH_IGN}'(-H --head)'{-H,--head}'[The branch that contains commits for your pull request]:branch:{
+      (( ${+functions[__git_branch_name]} )) && __git_branch_name || _message "branch name"
+    }' \
+    ${__GH_IGN}'(*-l *--label)'{\*-l,\*--label}'[Add labels by `name`]:label: ' \
+    ${__GH_IGN}'(-m --milestone)'{-m,--milestone}'[Add the pull request to a milestone by `name`]:name: ' \
+    ${__GH_IGN}'(*-p *--project)'{\*-p,\*--project}'[Add the pull request to projects by `name`]:name: ' \
+    ${__GH_IGN}'(*-r *--reviewer)'{\*-r,\*--reviewer}'[Request reviews from people by their `login`]:login: ' \
+    ${__GH_IGN}'--recover[Recover input from a failed run of create]' \
+    ${__GH_IGN}'(-t --title)'{-t,--title}'[Supply a title. Will prompt for one otherwise.]:title string: ' \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open the web browser to create a pull request]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_diff]} )) || function __gh_pr_diff {
+  _arguments \
+    ${__GH_IGN}'(
+-c --color)'{-c,--color}'[Whether or not to output color: {always|never|auto}]:when:( always never auto )' \
+    ${__GH_IGN}'--patch[Display diff in patch format]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '1:id:{ __gh_pr_complete_prs all }' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_edit]} )) || function __gh_pr_edit() {
+  _arguments \
+    ${__GH_IGN}'--add-assignee[Add assigned users by their login. Use "@me" to assign yourself.]:login: ' \
+    ${__GH_IGN}'--add-label[Add labels by name]:name: ' \
+    ${__GH_IGN}'--add-project[Add the pull request to projects by name]:name: ' \
+    ${__GH_IGN}'--add-reviewer[Add reviewers by their login.]:login: ' \
+    ${__GH_IGN}'(-B --base)'{-B,--base}'[Change the base branch for this pull request]:branch:{
+      (( ${+functions[__git_branch_name]} )) && __git_branch_name || _message "branch name"
+    }' \
+    ${__GH_IGN}'(-b --body)'{-b,--body}'[Set the new body.]:string: ' \
+    ${__GH_IGN}'(-F --body-file)'{-F,--body-file}'[Read body text from file]:file:_files' \
+    ${__GH_IGN}'(-m --milestone)'{-m,--milestone}'[Edit the milestone the pull request belongs to by name]:name: ' \
+    ${__GH_IGN}'--remove-assignee[Remove assigned users by their login. Use "@me" to unassign yourself.]:login: ' \
+    ${__GH_IGN}'--remove-label[Remove labels by name]:name: ' \
+    ${__GH_IGN}'--remove-project[Remove the pull request from projects by name]:name: ' \
+    ${__GH_IGN}'--remove-reviewer[Remove reviewers by their login.]:login: ' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    ${__GH_IGN}'(-t --title)'{-t,--title}'[Set the new title.]:string: ' \
+    '1:id:{ __gh_pr_complete_prs }' && ret=0
+}
+
+(( ${+functions[__gh_pr_list]} )) || function __gh_pr_list {
+  local -a json_keys
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'--app=[Filter by GitHub App author]:app: ' \
+    ${__GH_IGN}'(-a --assignee)'{-a,--assignee}'[Filter by assignee]:string: ' \
+    ${__GH_IGN}'(-A --author)'{-A,--author}'[filter by author]:string: ' \
+    ${__GH_IGN}'(-B --base)'{-B,--base}'[Filter by base branch]:branch:{
+      (( ${+functions[__git_branch_name]} )) && __git_branch_name || _message "branch name"
+    }' \
+    ${__GH_IGN}'(-d --draft)'{-d,--draft}'=[Filter by draft state]:state:(true false)' \
+    ${__GH_IGN}'(-H --head)'{-H,--head}'=[Filter by head branch]:branch: ' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-q --jq)'{-q,--jq}'[query to select values from the response using jq syntax]:string: ' \
+    ${__GH_IGN}'(*-l *--label)'{\*-l,\*--label}'[Filter by labels]:label: ' \
+    ${__GH_IGN}'(-L --limit)'{-L,--limit}'[Maximum number of items to fetch]:int: ' \
+    ${__GH_IGN}'(-S --search)'{-S,--search}'[search pull requests with query]:query: ' \
+    ${__GH_IGN}'(-s --state)'{-s,--state}'[Filter by state: {open|closed|merged|all}]:state:(open closed merged all)' \
+    ${__GH_IGN}'(-t --template)'{-t,--template}'[format the response using a Go template]:string: ' \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open the browser to list the pull request(s)]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_merge]} )) || function __gh_pr_merge {
+  _arguments \
+    ${__GH_IGN}'--admin[Use administrator privilleges to merge a pull request that does not meet requirements]' \
+    ${__GH_IGN}'(--disable-auto)--auto[automatically merge only after necessary requirements are met]' \
+    ${__GH_IGN}'(-b --body)'{-b,--body}'[Body text for the merge commit]' \
+    ${__GH_IGN}'(-F --body-file)'{-F,--body-file}'[Read body text from file]:file:_files' \
+    ${__GH_IGN}'(
+-d --delete-branch)'{-d,--delete-branch}'[Delete the local and remote branch after merge]' \
+    ${__GH_IGN}'(--auto)--disable-auto[disable auto-merge for this pull request]' \
+    ${__GH_IGN}'(-m --merge)'{-m,--merge}'[Merge the commits with the base branch]' \
+    ${__GH_IGN}'(
+-r --rebase)'{-r,--rebase}'[Rebase the commits onto the base branch]' \
+    ${__GH_IGN}'(
+-s --squash)'{-s,--squash}'[Squash the commits into one commit and merge it into the base branch]' \
+    ${__GH_IGN}'(-t --subject)'{-t,--subject}'[Subject text for the merge commit]:text: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '1:id:{ __gh_pr_complete_prs open }' &&
+  ret=0
+}
+
+# XXX Does `gh list --state DRAFT` work?
+(( ${+functions[__gh_pr_ready]} )) || function __gh_pr_ready {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '1:id:{ __gh_pr_complete_prs open }' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_reopen]} )) || function __gh_pr_reopen {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '1:id:{ __gh_pr_complete_prs closed }' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_review]} )) || function __gh_pr_review {
+  _arguments \
+    ${__GH_IGN}'(-a --approve)'{-a,--approve}'[Approve pull request]' \
+    ${__GH_IGN}'(-b --body)'{-b,--body}'[Specify the body of a review]:string: ' \
+    ${__GH_IGN}'(-c --comment)'{-c,--comment}'[Comment on a pull request]' \
+    ${__GH_IGN}'(-r --request-changes)'{-r,--request-changes}'[Request changes on a pull request]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '1:id:{ __gh_pr_complete_prs open }' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_status]} )) || function __gh_pr_status {
+  local -a json_keys
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-q --jq)'{-q,--jq}'[filter JSON output using a jq expression]:expression: ' \
+    ${__GH_IGN}'(-t --template)'{-t,--template}'[format the response using a Go template]:string: ' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' &&
+  ret=0
+}
+
+(( ${+functions[__gh_pr_view]} )) || function __gh_pr_view {
+  local -a json_keys
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'(-q --jq)'{-q,--jq}'[filter JSON output using a jq expression]:string: ' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-t --template)'{-t,--template}'[format the JSON output using a Go template]:string: ' \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open a pull request in the browser]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-c --comment)'{-c,--comments}'[view pull request comments]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+  '1:id:{ __gh_pr_complete_prs all }' &&
+  ret=0
+}
+
+
+(( ${+functions[__gh_repo]} )) || function __gh_repo {
+  local -a __commands
+
+  _arguments -C \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1: :->cmnds' \
+    '*::arg:->args' && ret=0
+
+  case ${state} in
+    (cmnds)
+      __commands=(
+        "archive:Archive a repository"
+        "clone:Clone a repository locally"
+        "create:Create a new repository"
+        "delete:Delete arepository"
+        "deploy-key:Manage deploy keys in a repository"
+        "edit:Edit repository settings"
+        "fork:Create a fork of a repository"
+        "list:list repositories owned by user or organization"
+        "rename:Rename a repository"
+        "sync:Sync a repository"
+        "view:View a repository"
+      )
+      _describe 'command' __commands && ret=0
+    ;;
+  esac
+
+  case "${words[1]}" in
+    (archive)
+      __gh_repo_archive && ret=0
+    ;;
+    (clone)
+      __gh_repo_clone && ret=0
+    ;;
+    (create)
+      __gh_repo_create && ret=0
+    ;;
+    (delete)
+      __gh_repo_delete && ret=0
+    ;;
+    (deploy-key)
+      __gh_repo_deploy-key && ret=0
+    ;;
+    (edit)
+      __gh_repo_edit && ret=0
+    ;;
+    (fork)
+      __gh_repo_fork && ret=0
+    ;;
+    (list)
+      __gh_repo_list && ret=0
+    ;;
+    (rename)
+      __gh_repo_rename && ret=0
+    ;;
+    (sync)
+      __gh_repo_sync && ret=0
+    ;;
+    (view)
+      __gh_repo_view && ret=0
+    ;;
+  esac
+}
+
+(( ${+functions[__gh_repo_archive]} )) || function __gh_repo_archive {
+  _arguments \
+    '1:repository: ' \
+    '--help[Show help for command]' && ret=0
+}
+
+(( ${+functions[__gh_repo_clone]} )) || function __gh_repo_clone {
+  _arguments \
+    ${__GH_IGN}'--help[Show help for command]' && ret=0
+}
+
+(( ${+functions[__gh_repo_create]} )) || function __gh_repo_create {
+  _arguments \
+    ${__GH_IGN}'(-c --clone)'{-c,--clone}'[Clone the new repository to the current directory]' \
+    ${__GH_IGN}'(-d --description)'{-d,--description}'[Description of repository]:string: ' \
+    ${__GH_IGN}'--disable-issues[Disable issues in the new repository]' \
+    ${__GH_IGN}'--disable-wiki[Disable wiki in the new repository]' \
+    ${__GH_IGN}'(-g --gitignore)'{-g,--gitignore}'[Specify a gitignore template for the repository]:template:{
+      local -a templates
+      __gh_REQUEST templates repo create --gitignore=
+      _describe template templates
+    }' \
+    ${__GH_IGN}'(-h --homepage)'{-h,--homepage}'[Repository home page URL]:url:{
+      (( ${+functions[_urls]} )) && _urls
+    }' \
+    ${__GH_IGN}'--internal[Make the new repository internal]' \
+    ${__GH_IGN}'(-l --license)'{-l,--license}"[Specify an Open Source License for the repository]:license:{
+      local -a licenses
+      __gh_REQUEST licenses repo create --license=
+      licenses=( \${(@)licenses/$'\t'/\\:} )
+      _describe license licenses
+    }" \
+    ${__GH_IGN}'--private[Make the new repository private]' \
+    ${__GH_IGN}'--public[Make the new repository public]' \
+    ${__GH_IGN}'--push[Push local commits to the neww repository]' \
+    ${__GH_IGN}'(-r --remote)'{-r,--remote}'=[Specify remote name for the new repository]:name: ' \
+    ${__GH_IGN}'(
+-s --source)'{-s,--source}'=[Specify path to local repository to use as source]:path:_path_files -/' \
+    ${__GH_IGN}'(
+-t --team)'{-t,--team}'=[The name of the organization team to be granted access]:string: ' \
+    ${__GH_IGN}'(
+-p --template)'{-p,--template}'=[Make the new repository based on a template repository]:OWNER/REPO: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1:repo: _message "repo"'
+}
+
+(( ${+functions[__gh_repo_edit]} )) || function __gh_repo_edit {
+
+  local -a optspecs=(
+      '--add-topic[Add repository topic]:strings: '
+      '--allow-forking[Allow forking of an organization repository]'
+      '--default-branch[Set the default branch name for the repository]:name: '
+      '--delete-branch-on-merge[Delete head branch when pull requests are merged]'
+      '(-d --description)'{-d, --description}'[Description of the repository]:string: '
+      '--enable-auto-merge[Enable auto-merge functionality]'
+      '--enable-issues[Enable issues in the repository]'
+      '--enable-merge-commit[Enable merging pull requests via merge commit]'
+      '--enable-projects[Enable projects in the repository]'
+      '--enable-rebase-merge[Enable merging pull requests via rebase]'
+      '--enable-squash-merge[Enable merging pull requests via squashed commit]'
+      '--enable-wiki[Enable wiki in the repository]'
+      '(-h --homepage)'{-h,--homepage}'[Repository home page URL]:URL: '
+      '--remove-topic[Remove repository topic]:strings: '
+      '--template[Make the repository available as a template repository]'
+      '--visibility[Change the visibility of the repository to {public,private,internal}]:string: '
+      '--help[Show help for command]'
+  )
+  _arguments \
+    ${(@)optspecs} \
+    '1:repository: _message "[OWNER/REPO] or [URL]"' && ret=0
+}
+
+# TODO Complete $(gh repo list) ?
+(( ${+functions[__gh_repo_delete]} )) || function __gh_repo_delete {
+  _arguments \
+    ${__GH_IGN}'--confirm[confirm deletion without prompting]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ':repository: ' && ret=0
+}
+
+(( ${+functions[__gh_repo_deploy-key]} )) || function __gh_repo_deploy-key() {
+  local -a cmdspecs=(
+    "add:Add a deploy key to a GitHub repository"
+    "delete:Delete a deploy key from a GitHub repository"
+    "list:List deploy keys in a GitHub repository"
+  )
+  _arguments -C \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+      '--help[Show help for command]' \
+      '1:command:{ _describe command cmdspecs }' \
+      '*:: :->grd_args' && ret=0
+  case ${words[1]} in
+    (add)
+      _arguments \
+        ${__GH_IGN}'(-w --allow-write)'{-w,--allow-write}'[Allow write access for the key]' \
+        ${__GH_IGN}'(-t --title)'{-t,--title}'[Title of the new key]' \
+        ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+        ${__GH_IGN}'--help[Show help for command]' \
+        '1:key-file:_files' && ret=0
+    ;;
+    (delete)
+      _arguments \
+        ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+        ${__GH_IGN}'--help[Show help for command]' \
+        '1:key-id: ' && ret=0
+    ;;
+    (list)
+      _arguments \
+        ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+        ${__GH_IGN}'--help[Show help for command]' && ret=0
+    ;;
+  esac
+
+}
+
+(( ${+functions[__gh_repo_fork]} )) || function __gh_repo_fork {
+  _arguments \
+    ${__GH_IGN}'--clone[Clone the fork {true|false}]:clone the fork:(true false)' \
+    ${__GH_IGN}'--fork-name[Specify the name for the forked repo]:name: ' \
+    ${__GH_IGN}'--org[Create the fork in an organization]:org: ' \
+    ${__GH_IGN}'--remote[Add remote for fork {true|false}]:add remote:(true false)' \
+    ${__GH_IGN}'--remote-name[specify a name for a fork'\''s new remote (default "origin")]:string: ' \
+    ${__GH_IGN}'--help[Show help for command]'
+    ':repository: ' && ret=0
+}
+
+(( ${+functions[__gh_repo_list]} )) || function __gh_repo_list() {
+  local -a json_keys
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'--archived[show only archived repositories]' \
+    ${__GH_IGN}'--fork[show only forks]' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-q --jq)'{-q,--jq}'[filter JSON output using a jq expression]:expression: ' \
+    ${__GH_IGN}'(-l --language)'{-l,--language}'[filter by primary coding language]:string: ' \
+    ${__GH_IGN}'(-L --limit)'{-L,--limit}'[maximum number of repositories to list (default 30)]:int: ' \
+    ${__GH_IGN}'--no-archived[omit archived repositories]' \
+    ${__GH_IGN}'--private[show only private repositories]' \
+    ${__GH_IGN}'--public[show only public repositories]' \
+    ${__GH_IGN}'--source[show only non-forks]' \
+    ${__GH_IGN}'--topic[Filter by topic]:topic: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1:owner: ' && ret=0
+}
+
+(( ${+functions[__gh_repo_rename]} )) || function __gh_repo_rename {
+  _arguments \
+    '(-y --confirm)'{-y,--confirm}'[skip confirmation prompt]' \
+    '(-R --repo)'{-R,--repo}'=[Select another repositor]:\[HOST/\]OWNER/REPO: ' \
+    '1:new-name: _message "new name"' && ret=0
+}
+
+# TODO
+# * --branch
+(( ${+functions[__gh_repo_sync]} )) || function __gh_repo_sync {
+  _arguments \
+    ${__GH_IGN}'(-b --branch)'{-b,--branch}'[Branch to sync (default: main branch)]:branch: ' \
+    ${__GH_IGN}'--force[Hard reset the branch of the destination repository to match the source repository]' \
+    ${__GH_IGN}'(-s --source)'{-s,--source}'[SOuce repository]:source: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    '1:destination: ' && ret=0
+}
+
+(( ${+functions[__gh_repo_view]} )) || function __gh_repo_view {
+  local -a json_keys
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open a repository in the browser]' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-q --jq)'{-q,--jq}'[filter JSON output using a jq expression]:expression: ' \
+    ${__GH_IGN}'(-b --branch)'{-b,--branch}'[Open the repository in a web browser instead]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ':repository: ' && ret=0
+}
+
+(( ${+functions[__gh_release]} )) || function __gh_release() {
+  integer ret=1
+  _arguments -C \
+    '1:command:->cmnds' \
+    '*::args:->args' && ret=0
+
+  case ${state} in
+    (cmnds)
+      local -a __commands=(
+        "create:Create a new release"
+        "delete:Delete a release"
+        "delete-asset:Delete an asset from a release"
+        "download:Donwload release assets"
+        "list:List releases in a repository"
+        "upload:Upload assets to a release"
+        "view:View information about a release"
+      )
+      _describe 'command' __commands && ret=0
+      return ret
+    ;;
+  esac
+
+  _call_function ret __gh_release_${words[1]}
+  return ret
+
+}
+
+(( ${+functions[__gh_release_create]} )) || function __gh_release_create() {
+  _arguments \
+    ${__GH_IGN}'--discussion-category[Start a discussion of the specified category]:category: ' \
+    ${__GH_IGN}'(-d --draft)'{-d,--draft}'[Save the release as a draft instead of publishing it]' \
+    ${__GH_IGN}'--generate-notes[Automatically generate title and notes for the release]' \
+    ${__GH_IGN}'(-n --notes)'{-n,--notes}'[Release notes]:string: ' \
+    ${__GH_IGN}'(-F --notes-file)'{-F,--notes-file}'[Read release notes from file]:file:{ _path_files }' \
+    ${__GH_IGN}'(-p --prerelease)'{-p,--prerelease}'[Mark the release as a prerelease]' \
+    ${__GH_IGN}'--target[Target branch or commit SHA]:commit-or-sha:{ (( ${+functions[_git-log]} )) && _git-log }' \
+    ${__GH_IGN}'(-t --title)'{-t,--target}'[Release title]:title: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '*:files:{ _path_files }' && ret=0
+}
+
+(( ${+functions[__gh_release_delete]} )) || function __gh_release_delete() {
+  local -a tags
+  tags=( ${(@)${(f)"$(git for-each-ref --format='%(refname)' refs/tags)"}#refs/tags} )
+  _arguments \
+    ${__GH_IGN}'(-y --yes)'{-y,--yes}'[Skip the confirmation prompt]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '1:tags:{ _describe tags tags }' \
+     '*:files: _files' && ret=0
+}
+
+(( ${+functions[__gh_release_delete-asset]} )) || function __gh_release_delete-asset {
+  local -a tags
+  tags=( ${(@)${(f)"$(git for-each-ref --format='%(refname)' refs/tags)"}#refs/tags} )
+  local -a optspecs=(
+    ${__GH_IGN}'(-y --yes)'{-y,--yes}'[Skip the confirmation prompt]'
+    ${__GH_IGN}'--help[Show help for command]'
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: '
+  )
+  _arguments \
+    ${(@)optspecs} \
+    '1:tags:{ _describe tags tags }' \
+    '2:asset-name: ' && ret=0
+}
+
+(( ${+functions[__gh_release_download]} )) || function __gh_release_download() {
+  _arguments \
+    ${__GH_IGN}'(
+-A --archive)'{-A,--archive}'=[Download the source code archive in the specified format]:format:(zip tar.gz)' \
+    ${__GH_IGN}'(-D --dir)'{-D,--dir}'[The directory to download files into]:dir:{ _path_files -/ }' \
+    {\*-p,\*--pattern}'[Download only assets that match a glob pattern]:glob pattern: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' && ret=0
+}
+
+(( ${+functions[__gh_release_list]} )) || function __gh_release_list() {
+  _arguments \
+    ${__GH_IGN}'(-L --limit)'{-L,--limit}'[Maximum number of items to fetch (default 30)]:int: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' && ret=0
+}
+
+(( ${+functions[__gh_release_upload]} )) || function __gh_release_upload() {
+  _arguments \
+    ${__GH_IGN}'--clobbler[Overwrite existing assets of the same name]' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '*:files:{ _path_files }' && ret=0
+}
+
+# TODO optargs to change the local repo?
+(( ${+functions[__gh_release_view]} )) || function __gh_release_view() {
+  local -a tags
+  tags=( ${(@)${(f)"$(git for-each-ref --format='%(refname)' refs/tags)"}#refs/tags} )
+  local -a json_keys
+  json_keys=( ${(@s: :)${(@M)${(f)"$(${(s:_:)0} --json 2>&1 ; :)"}:#(#s)[[:blank:]]*}} )
+  _arguments \
+    ${__GH_IGN}'(-w --web)'{-w,--web}'[Open the release in the browser]' \
+    ${__GH_IGN}'--json[output JSON with the specified fields]:fields:{ _values -s , fields ${(@)json_keys} }' \
+    ${__GH_IGN}'(-q --jq)'{-q,--jq}'[filter JSON output using ajq expression]:expression: ' \
+    ${__GH_IGN}'(-t --template)'{-t,--template}'[format JSON output using a Go template]:string: ' \
+    ${__GH_IGN}'--help[Show help for command]' \
+    ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+    '*:tag:{ _describe tags tags }' && ret=0
+}
+
+(( ${+functions[__gh_compl_runid]} )) || function __gh_compl_runid() {
+  local -a match mbegin mend
+  local -a lns
+  local T=$'\t'
+  # running : status : title : workflow-name : branch : on(push/pr) : time : run-id
+  lns=( ${(f)"$(gh run list --limit 50 2>/dev/null)"} )
+  (( $? == 0 )) || return 1
+  lns=(
+    ${(@)lns/(#b)(*)$T(*)$T(*)$T(*)$T(*)$T(*)$T(*)$T(*)$T(*)/${match[7]}:${(r<COLUMNS / 2>):-\
+${(r<12>)match[2]:-${match[1]}} ${(r<60>)match[3]} ${(r<8>)match[8]} ${(r<4>)match[9]} ${(r<20>)match[5]} ${(r<10>)match[4]} ${match[6]}
+}}
+  )
+  _describe -t 'run-id' 'run-id' lns && return 0
+}
+
+(( ${+functions[__gh_run]} )) || function __gh_run() {
+  local -a subs=(
+    'cancel:Cancel a workflow run'
+    'download:download artifacts generated by a workflow run'
+    'list:list recent workflow runs'
+    'view:view a summary of a workflow run'
+    'watch:watch a run until it completes, showing its progress'
+  )
+  local -a optspecs=(
+    ${__GH_IGN}'(-R --repo)'{-R-,--repo=}'[select another repository]:[HOST/]OWNER/REPO: '
+    ${__GH_IGN}'--help[show help for command]'
+  )
+  _arguments -S -C \
+    ${(@)optspecs} \
+    '1:command:{ _describe command subs }' \
+    '*:: :->args' &&
+  ret=0
+  case ${state} in
+    (args)
+      case ${words[1]} in
+        (cancel)
+          _arguments -S ${(@)optspecs} '1:run-id:{ __gh_compl_runid }' && ret=0
+        ;;
+        (download)
+          optspecs+=(
+            ${__GH_IGN}'(-D --dir)'{-D,--dir}'[directory to download artifacts into]:dir:_files -/'
+            ${__GH_IGN}'*'{-n,--name}'[only download artifacts that match any of the given names]:name: '
+          )
+          _arguments -S ${(@)optspecs} '1:run-id:{ __gh_compl_runid }' && ret=0
+        ;;
+        (list)
+          optspecs+=(
+            ${__GH_IGN}'(-b --branch)'{-b,--branch=}'[Filter runs by branch]:branch: '
+            ${__GH_IGN}'(-q --jq)'{-q,--jq}'[Filter JSON output using a jq expression]:string: '
+            ${__GH_IGN}'--json[Output JSON with the specified fields]:fields: '
+            ${__GH_IGN}'(-L --limit)'{-L,--limit}'[maximux number of runs to fetch (default 20)]:int: '
+            ${__GH_IGN}'(-t --template)'{-t,--template}'[Format JSON output using a Go template]:template: '
+            ${__GH_IGN}'(-u --user)'{-u,--user}'[Filter runs by user who triggered the run]:user: '
+            ${__GH_IGN}'(-w --workflow)'{-w,--workflow}'[filter runs by workflow]:string: '
+            ${__GH_IGN}'(
+-R --repo)'{-R,--repo}'[Select another repository using the `OWNER/REPO` format]:OWNER/REPO: ' \
+            ${__GH_IGN}'--help[Show help for command]' \
+          )
+          _arguments -S ${(@)optspecs} && ret=0
+        ;;
+        (rerun)
+          __gh_compl_runid && ret=0
+        ;;
+        (view)
+          optspecs+=(
+            ${__GH_IGN}'--exit-status[exit with non-zero status if run failed]'
+            ${__GH_IGN}'(-q --jq)'{-q,--jq}'[Filter JSON output using a jq expression]:string: '
+            ${__GH_IGN}'--json[Output JSON with the specified fields]:fields: '
+            ${__GH_IGN}'--log[view full log for either a run or specific job]'
+            ${__GH_IGN}'--log-failed[view the log for any failed steps in a run or specific job]'
+            ${__GH_IGN}'(-t --template)'{-t,--template}'[Format JSON output using a Go template]'
+            ${__GH_IGN}'(-v --verbose)'{-v,--verbose}'[show job steps]'
+            ${__GH_IGN}'(-w --web)'{-w,--web}'[open run in the browser]'
+          )
+          # TODO complete job id
+          _arguments -S \
+            - job \
+              ${__GH_IGN}'(-j --job)'{-j,--job}'[view a specific job ID from a run]:job-id: ' \
+            - run \
+              ${(@)optspecs} \
+              '1:run-id:{ __gh_compl_runid }' && ret=0 # TODO
+        ;;
+        (watch)
+          optspecs=(
+            ${__GH_IGN}'--exit-status[exit with non-zero status if run fails]'
+            ${__GH_IGN}'(-i --interval)'{-i,--interval}'[refresh interval in seconds (default 3)]:int: '
+          )
+          _arguments -S ${(@)optspecs} '1:run-id:{ __gh_compl_runid }' && ret=0
+        ;;
+      esac
+    ;;
+  esac
+}
+
+(( ${+functions[__gh_secret]} )) || function __gh_secret() {
+  local -a subs=(
+    'list:list secrets'
+    'remove:remove an organization or repository secret'
+    'set:create or update secrets'
+  )
+  local -a optspecs=(
+    ${__GH_IGN}'(-R --repo)'{-R-,--repo=}'[select another repository]:[HOST/]OWNER/REPO: '
+    ${__GH_IGN}'--help[show help for command]'
+  )
+  _arguments -S -C \
+    ${(@)optspecs} \
+    '1:command:{ _describe command subs }' \
+    '*:: :->args' &&
+  ret=0
+  case ${state} in
+    (args)
+      optspecs=(
+        ${(@)optspecs}
+        ${__GH_IGN}'(-o --org)'{-o-,--org=}'[list secrets for an organization]:org: '
+      )
+      case ${words[1]} in
+        (list)
+          _arguments -S ${(@)optspecs} && ret=0
+        ;;
+        (remove)
+          _arguments ${(@)optspecs} \
+            '1:secret name: ' &&
+          ret=0
+        ;;
+        (set)
+          optspecs=(
+            ${(@)optspecs}
+            ${__GH_IGN}'(-b --body
+              )'{-b-,--body=}'[specify a value for the secret]:value: '
+            ${__GH_IGN}'(-e --env)'{-e,--env}'=[Set deployment environment secret]:environment: '
+            ${__GH_IGN}'(-f --env-file
+          )'{-f,--env-file}'[Load secret names and values from a dotenv-formatted file]:file: _files'
+            ${__GH_IGN}'--no-store[Print the encrypted, base64-encoded value instead of storing it]'
+            ${__GH_IGN}'(-r --repos
+              )'{-r-,--repos=}'[specify a list of repository names for selected visibility]:selected: '
+            ${__GH_IGN}'(-u --user)'{-u,--user}'[Set a secret for your user]'
+            ${__GH_IGN}'(-v --visibility
+              )'{-v-,--visibility=}'[set visibility for an organization secret]:visibility:(
+                all private selected )'
+          )
+          _arguments -S ${(@)optspecs} \
+            '1:secret name: ' &&
+          ret=0
+        ;;
+      esac
+    ;;
+  esac
+}
+
+(( ${+functions[__gh_ssh-key]} )) || function __gh_ssh-key() {
+  integer ret=1
+  _arguments \
+    '1: :->cmnds' \
+    '*:: :->args' && ret=0
+  case ${state} in
+    (cmnds)
+      local -a __commands=(
+        "add:add an SSH key to your GitHub account"
+        "list:list SSH keys in your GitHub account"
+      )
+      _describe 'command' __commands && ret=0
+      return ret
+    ;;
+  esac
+
+  _call_function ret __gh_ssh-key_${words[1]}
+  return ret
+
+}
+
+(( ${+functions[__gh_ssh-key_add]} )) || function __gh_ssh-key_add() {
+  _arguments \
+    '(-t --title)'{-t,--title}'[title for the new key]:title: ' \
+    '1:key-file:_files' && ret=0
+}
+
+(( ${+functions[__gh_ssh-key_list]} )) || function __gh_ssh-key_list() {
+  _message 'no more arguments'
+}
+
+(( ${+functions[__gh_compl_ref]} )) || function __gh_compl_ref() {
+  local -a refs
+  refs=( ${(@)${(f)"$(git -C "${1:-${PWD}}" for-each-ref --format '%(refname)' 2>/dev/null)"}#*/*/} )
+  (( $? == 0 )) || return 1
+  _describe -t ref ref refs
+}
+
+# TODO --limit
+(( ${+functions[__gh_compl_workflow]} )) || function __gh_compl_workflow() {
+  local -a match mbegin mend
+  local -a lns
+  local T=$'\t'
+  lns=( ${(f)"$(gh workflow list 2>/dev/null)"} )
+  (( $? == 0 )) || return 1
+  lns=( ${(@)lns/(#b)(*)$T(*)$T(*)/${match[3]}:${(r<10>)match[2]} ${match[1]}} )
+  _describe -t 'workflow' workflow lns && return 0
+}
+
+(( ${+functions[__gh_workflow]} )) || function __gh_workflow() {
+  local -a subs=(
+    'disable:disable a workflow'
+    'enable:enable a workflow'
+    'list:list workflows'
+    'run:run a workflow by creating a workflow_dispatch event'
+    'view:wiew the summary of a workflow'
+  )
+  local -a optspecs=(
+    ${__GH_IGN}'(-R --repo)'{-R-,--repo=}'[select another repository]:[HOST/]OWNER/REPO: '
+    ${__GH_IGN}'--help[show help for command]'
+  )
+  _arguments -S -C \
+    ${(@)optspecs} \
+    '1: :{ _describe subcommand subs }' \
+    '*:: :->args' && ret=0
+  case ${state} in
+    (args)
+      case ${words[1]} in
+        (disable|enable)
+          _arguments -S ${(@)optspecs} '1:workflow:{ __gh_compl_workflow }' && ret=0
+        ;;
+        (list)
+          optspecs+=(
+            '(-a --all)'{-a,--all}'[show all workflows, including disabled]'
+            '(-L --limit)'{-L,--limit}'[maximum number of workflows to fetch (default 50)]:int: '
+          )
+          _arguments -S ${(@)optspecs} && ret=0
+        ;;
+        (run)
+          optspecs+=(
+            '(-F --field)'{-F,--field}'[add a string parameter in key=value format, respecting @ syntax]:key=val: '
+            '--json[read workflow inputs as JSON via stdin]'
+            '(-f --raw-field)'{-f,--raw-field}'add a string parameter in key=value format:key=val: '
+            # TODO __gh_compl_ref $optargs[repo]
+            '(-r --ref)'{-r,--ref}'[the branch or tag name which contains the version of the workflow file]:ref:{
+              __gh_compl_ref }'
+          )
+          _arguments -S ${(@)optspecs} '1:workflow:{ __gh_compl_workflow }' && ret=0
+        ;;
+        (view)
+          optspecs+=(
+            # TODO __gh_compl_ref $optargs[repo]
+            '(-r --ref)'{-r,--ref}'[the branch or tag name which contains the version of the workflow file]:ref:{
+              __gh_compl_ref }'
+            '(-w --web)'{-w,--web}'[open workflow in the browser]'
+            '(-y --yaml)'{-y,--yaml}'[view the workflow yaml file]'
+          )
+          _arguments -S ${(@)optspecs} '1:workflow:{ __gh_compl_workflow }' && ret=0
+        ;;
+      esac
+    ;;
+  esac
+}
+
+
+#
+# MAIN
+#
+
+local cache_policy
+zstyle -s ":completion:${curcontext}:" cache-policy cache_policy
+[[ -n ${cache_policy} ]] || zstyle ":completion:${curcontext}:" cache-policy __gh_cache_policy
+
+_arguments -S -C \
+  ${__GH_IGN}'--help[Show help for command]' \
+  ${__GH_IGN}'--version[Show gh version]' \
+  '1: :->cmnds' \
+  '*::arg:->args' && ret=0
+
+case ${state} in
+  (cmnds)
+    __commands=(
+      'actions:learn about working with GitHub Actions'
+      'alias:Create command shortcuts'
+      'api:Make an authenticated GitHub API request'
+      'auth:Login, logout, and refresh your authentication'
+      'browse:Open the GitHub repository in the web browser'
+      'codespace:Connect to and manage your codespaces'
+      'completion:Generate shell completion scripts'
+      'config:Manage configuration for gh'
+      'extension:Manage gh extensions'
+      'gist:Create gists'
+      'gpg-key:Manage GPG keys'
+      'help:Help about any command'
+      'issue:Create and view issues'
+      'pr:Create, view, and checkout pull requests'
+      'release:Manage Github releases'
+      'repo:Create, clone, fork, and view repositories'
+      'run:view details about workflows runs'
+      'workflow:view details about GitHub Actions workflows'
+      'secret:Manage GitHub secrets'
+      'ssh-key:manage SSH keys'
+    )
+
+    local -a __ext_commands
+    if { _cache_invalid gh_extensions_list || ! _retrieve_cache gh_extensions_list }; then
+
+      local MATCH MBEGIN MEND
+      # XXX we should cache it because it's slow
+      __ext_commands=( ${(f)"$(gh extension list)"} )
+      __ext_commands=( ${(@)__ext_commands/(#m)*/${MATCH[(w)2]}\:${MATCH[(w)3]}} )
+
+      # _store_cache creates it "un-locally".
+      local var
+      _store_cache gh_extensions_list __ext_commands
+    fi
+    __commands+=( ${(@)__ext_commands} )
+
+    [[ ${__GH_IGN} == '!' ]] &&
+      __commands+=( 'formatting:show help for JSON formatting enabled by `--json`' )
+    _describe 'command' __commands && ret=0
+  ;;
+esac
+
+case "${words[1]}" in
+  (actions) _message 'no more arguments' && ret=0 ;;
+  (alias) __gh_alias && ret=0 ;;
+  (api) __gh_api && ret=0 ;;
+  (auth) __gh_auth && ret=0 ;;
+  (browse) __gh_browse && ret=0 ;;
+  (codespace) __gh_codespace && ret=0 ;;
+  (completion) __gh_completion && ret=0 ;;
+  (config) __gh_config && ret=0 ;;
+  (extension) __gh_extension && ret=0 ;;
+  (gpg-key) __gh_gpg-key && ret=0 ;;
+  (gist) __gh_gist && ret=0 ;;
+  (help) __gh_help && ret=0 ;;
+  (issue) __gh_issue && ret=0 ;;
+  (pr) __gh_pr && ret=0 ;;
+  (repo) __gh_repo && ret=0 ;;
+  (release) __gh_release && ret=0 ;;
+  (run) __gh_run && ret=0 ;;
+  (secret) __gh_secret && ret=0 ;;
+  (ssh-key) __gh_ssh-key && ret=0 ;;
+  (workflow) __gh_workflow && ret=0 ;;
+  (*) __gh_EXTENSION && ret=0 ;;
+esac
+
+return ret
+

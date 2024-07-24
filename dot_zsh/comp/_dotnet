@@ -1,0 +1,51 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# _dotnet
+# Thu May 16 21:37:51 2024
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent NO_short_loops NO_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber     NO_append_create
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+integer ret=1
+local -a all_comps non_flags flags
+
+# function DBG() {
+#   [[ -r /tmp/$0.log ]] || : > /tmp/$0.log
+#   print -rl -- $@ >>/tmp/$0.log
+# }
+
+DBG "start"
+DBG 'words:' ${(j: :)words}
+
+all_comps=( ${(@f)"$(dotnet complete "${(j: :)words}")"} ) || return ret
+
+non_flags=( ${(@R)all_comps:#[-/]*} )
+flags=( ${(@M)all_comps:#-*} )
+
+non_flags=( ${(@)^non_flags}:'' )
+flags=( ${(@)^flags}'[]' )
+
+# DBG 'non_flags:' ${(@)non_flags} '---------------------------' ''
+# DBG 'flags:' ${(@)flags} '---------------------------' ''
+
+if (( ${#non_flags} < 1 )); then
+  _default && ret=0
+fi
+
+# _values 'commands' ${(@)non_flags} && ret=0
+
+_arguments \
+  ${(@)flags} "*:command:{ _describe word non_flags }" && ret=0
+
+return ret
+

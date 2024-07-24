@@ -1,0 +1,132 @@
+#compdef mas
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _mas
+# Tue Jul  7 00:31:00 2020
+# based on mas version 1.7.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args
+
+local -a subcommands=(
+   'account:Prints the primary account Apple ID'
+   'help:Display general or command-specific help'
+   'home:Opens MAS Preview app page in a browser'
+   'info:Display app information from the Mac App Store'
+   'install:Install from the Mac App Store'
+   'list:Lists apps from the Mac App Store which are currently installed'
+   'lucky:Install the first result from the Mac App Store'
+   'open:Opens app page in AppStore.app'
+   'outdated:Lists pending updates from the Mac App Store'
+   'purchase:Purchase and download free apps from the Mac App Store'
+   'reset:Resets the Mac App Store'
+   'search:Search for apps from the Mac App Store'
+   'signin:Sign in to the Mac App Store'
+   'signout:Sign out of the Mac App Store'
+   'uninstall:Uninstall app installed from the Mac App Store'
+   'upgrade:Upgrade outdated apps from the Mac App Store'
+   'vendor:Opens vendor''s app page in a browser'
+   'version:Print version number'
+)
+
+function __mas_subcommands() {
+  _describe 'mas commands' subcommands
+}
+
+function __mas_installed() {
+  local MATCH MBEGIN MEND
+  # TODO add app names as descriptions
+  local -a installed_apps
+  installed_apps=(${(@)${(@)^${(f)"$(mas list)"}}/(#m)(*)/${${(s: :)MATCH}[1]}:${${(s: :)MATCH}[2,-1]}})
+  _describe 'installed apps' installed_apps
+}
+
+_arguments -C \
+  '1: :__mas_subcommands' \
+  '*:: :->command_args' && ret=0
+
+case ${state} in
+  (command_args)
+    case ${words[1]} in
+      (account)
+        _message "No more arguments." && ret=0
+      ;;
+      (help)
+        __mas_subcommands && ret=0
+      ;;
+      (home)
+        _message "No more arguments." && ret=0
+      ;;
+      (info)
+        __mas_installed && ret=0
+      ;;
+      (install)
+        _arguments -S \
+          '--force[force reinstall]:installed apps:{__mas_installed}' \
+          '*:appid:' && ret=0
+      ;;
+      (list)
+        _message "No more arguments." && ret=0
+      ;;
+      (lucky)
+        _arguments -S \
+          '--force[force reinstall]' \
+          '1:app name:' && ret=0
+      ;;
+      (open)
+        __mas_installed && ret=0
+      ;;
+      (outdated)
+        _message "No more arguments." && ret=0
+      ;;
+      (purchase)
+        _message "app ID(s) to install"
+      ;;
+      (reset)
+        _arguments -S \
+          '--debug[Enable debug mode]' && ret=0
+      ;;
+      (search)
+        _arguments -S \
+          '--price[Show price of found apps]' \
+          '1:app name:' && ret=0
+      ;;
+      (singnin)
+        # FIXME I can't test this since I couldn't use this feature for my version of macOS.
+        _arguments  -S \
+          '--dialog[Complete login with graphical dialog]' \
+          '1:apple id:' && ret=0
+      ;;
+      (signout)
+        _message "No more arguments." && ret=0
+      ;;
+      (uninstall)
+        _arguments -S \
+          '--dry-run[dry run]' \
+          '1:app id:{__mas_installed}' && ret=0
+      ;;
+      (upgrade)
+        _arguments -S \
+          '*::apps to upgrade:' && ret=0
+      ;;
+      (vendor)
+        __mas_installed && ret=0
+      ;;
+      (version)
+        _message "No more arguments." && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ${ret}
+

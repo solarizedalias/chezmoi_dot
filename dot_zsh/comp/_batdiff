@@ -1,0 +1,28 @@
+#compdef batdiff
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _batdiff
+# Sun Aug  2 05:55:14 2020
+# based on batdiff version eth-p/bat-extras v2020.05.01
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args
+
+_arguments \
+  '(-C --context)'{-C,--context=}'[The number of lines to show before and after the differing lines.]' \
+  '--delta[Display diffs using delta.]' \
+  '--color[Force color output.]' \
+  '--no-color[Force disable color output.]' \
+  '--pager=[Specify the pager to use.]:pager:((less\: more\:))' \
+  '--terminal-width=[Generate output for the specified terminal width.]:width:{_guard "[0-9]#" "numeric value"}' \
+  '*:files:{_files}' && ret=1
+

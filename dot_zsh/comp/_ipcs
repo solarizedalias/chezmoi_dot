@@ -1,0 +1,39 @@
+#compdef ipcs
+
+# ==========================================================
+# _ipcs
+# Fri Dec 17 17:21:02 2021
+# based on ipcs version file_cmds-287.100.2
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions       NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '-a[show the maximum amount of information possible (same as `-b -c -o -p -t`)]'
+  '-b[show the maximum allowed sizes]'
+  "-c[show the creator's name and group]"
+  '-M[display system information about shared memory]'
+  '-m[display information about active shared memory segments]'
+  '-o[show outstanding usage]'
+  '-p[show the process ID information]'
+  '-Q[display system information about messages queues]'
+  '-q[display information about active messages queues]'
+  '-S[display system information about semaphores]'
+  '-s[display information about active semaphores]'
+  '-T[display system information]'
+  '-t[show access times]'
+)
+
+_arguments \
+  ${(@)optspecs} && ret=0
+
+return ret
+

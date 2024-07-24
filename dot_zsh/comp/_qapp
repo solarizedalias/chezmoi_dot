@@ -1,0 +1,25 @@
+#compdef qapp
+
+# ==========================================================
+# _qapp
+# Wed Jul 21 03:40:05 2021
+# based on qapp version _
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+# _store_cache creates this
+local var
+local -a _mac_apps
+_mac_applications && ret=0
+
+return ret
+

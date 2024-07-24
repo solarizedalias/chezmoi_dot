@@ -1,0 +1,67 @@
+#compdef relma
+
+# ==========================================================
+# _relma
+# Fri Dec 11 11:56:05 2020
+# based on relma version dev
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+local -a urls
+
+local -a subcommands=(
+  'init:initialize config file'
+  'edit:edit config file'
+  'install:install GitHub Releases'
+  'update:update installed version infomation'
+  'upgrade:upgrade installed GitHub Releases'
+  'uninstall:uninstall GitHub Releases'
+  'list:print installed GitHub Releases infomation'
+)
+
+local -a optspecs=(
+  '(- : *)'{-h,--help}'[print help]'
+  '(- : *)--version[print version]'
+)
+
+_arguments -C ${(@)optspecs} \
+  '1:command:{_describe commands subcommands}' \
+  '*:: :->args' && ret=0
+
+case ${state} in
+  (args)
+    case ${words[1]} in
+      (install)
+        optspecs+=(
+          '-f[specify installations from releases.json]:*:json:{_path_files -g "*.json"}'
+        )
+        _arguments ${(@)optspecs} \
+          '1:release url:_urls' && ret=0
+      ;;
+      (update|list|init|edit)
+        _message 'no more arguments' && ret=0
+      ;;
+      (upgrade)
+        # TODO Of course it's possible to complete them
+        optspecs+=( '--yes[accept all intereactive prompts]' )
+        _arguments ${(@)optspecs} \
+         '*:owner/repo: ' && ret=0
+      ;;
+      (uninstall)
+        # TODO
+        _message 'owner/repo' && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

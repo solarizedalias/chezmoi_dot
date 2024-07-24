@@ -1,0 +1,66 @@
+#autoload
+
+# ==========================================================
+# _tmux_buffer_words
+# Fri Nov 13 21:42:48 2020
+# based on  version
+# AUTHOR: solarizedalias
+# Experimental
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+(( ${+commands[tmux]} )) || return 1
+if [[ -z ${TMUX} ]]; then
+  _default
+  return $?
+fi
+
+local -a panes pane_lines
+panes=(
+  ${(f)"$(
+    tmux list-panes -a -F '#{session_id}:#{window_id}.#{pane_id}'
+  )"}
+)
+
+pane_lines=(
+  ${(@M)${(f)"$(
+    for p in ${(@)panes}; do
+      tmux capture-pane -p -J -S - -E - -t ${p}
+    done
+  )"}:#*[[:graph:]]*}
+)
+
+local -aU all_words=(
+  ${(@)${(@oM)${(@)${(z)pane_lines}}:#[[:alnum:]_:/.\-\?=+\\]##~(?)(#c0,4)}//:/\\:}
+)
+
+# You probably don't want anything that doesn't contain [:alnum:]
+all_words=( ${(@R)all_words:#[^[:alnum:]]##} )
+
+local -aU \
+  paths_exist=( ${(@)^all_words}(ND) ) \
+  hash_likes=( ${(@M)all_words:#[0-9a-f](#c7,)} ) \
+  url_likes=( ${(@M)all_words:#[[:graph:]]##'://'[[:graph:]]##} ) \
+  others=( ${(@)all_words} )
+
+others=( ${(@)others:|paths_exist} )
+others=( ${(@)others:|hash_likes} )
+others=( ${(@)others:|url_likes})
+
+local -a alt_specs=(
+  'hashes:words that look like hash:{_describe "hashes" hash_likes}'
+  'files:local files/directories:{_describe "local files" paths_exist}'
+  'urls:url:{_describe "urls" url_likes}'
+  'others:other words:{_describe "other words" others}'
+)
+_alternative ${(@)alt_specs} && ret=0
+
+return ret
+

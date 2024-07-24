@@ -1,0 +1,101 @@
+#compdef nodebrew
+
+# ==========================================================
+# _nodebrew
+# Thu Nov  5 08:53:40 2020
+# based on nb version
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob warn_create_global typeset_silent no_short_loops
+setopt hist_subst_pattern no_auto_pushd rc_quotes
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a _cmds _remote_versions _versions _alias var # _store_cache creates this
+
+__nodebrew_caching_policy() {
+  local -a oldp
+  oldp=( "${1}"(#qNmh+1) )
+  (( ${#oldp} ))
+}
+
+local cache_policy
+integer NOCACHE_REMOTE
+
+# We check the conditions about caching remote versions here because
+# if we do that in `case ${state}` block, `${curcontext}` is different from
+# what we have here.
+if zstyle -T ":completion:${curcontext}:" cache-policy ; then
+  zstyle ":completion:${curcontext}:" cache-policy __nodebrew_caching_policy
+fi
+
+if _cache_invalid NODEBREW_versions || ! _retrieve_cache NODEBREW_versions; then
+  (( ${#_remote_versions} )) || (( NOCACHE_REMOTE = 1 ))
+fi
+
+_arguments -C \
+  '1: :->cmds' \
+  '(1 *): :->args' && return 0
+
+case ${state} in
+  (cmds)
+    local _cmds
+    _cmds=(
+      'help:Show this message'
+      'install:Download and install a version (compile from source)'
+      'install-binary:Download and install a version (binary file)'
+      'uninstall:Uninstall a version'
+      'use:Use version'
+      'list:List installed versions'
+      'ls:Alias for `list`'
+      'ls-remote:List remote versions'
+      'ls-all:List remote and installed versions'
+      'alias:Set alias to version'
+      'unalias:Remove alias'
+      'clean:Remove source file'
+      'selfupdate:Update nodebrew'
+      'migrate-package:Install global NPM packages contained in version to current version'
+      'exec:Execute command specified version'
+    )
+    _describe -t commands 'nodebrew commands' _cmds && ret=0
+  ;;
+  (args)
+    local -a _versions _alias
+    _versions=( ${(M@)${(f)"$(_call_program commands nodebrew ls 2>/dev/null)"}:#(v<->.<->.<->|io[@]*)} )
+    _alias=( ${(@)${(f)"$(_call_program commands nodebrew alias 2>/dev/null)"}%->*} )
+    case ${line[1]} in
+      (use|migrate-package|exec)
+        _describe -t versions 'versions' _versions && ret=0
+        _describe -t alias 'alias' _alias && ret=0
+      ;;
+      (uninstall)
+        _describe -t versions 'versions' _versions && ret=0
+      ;;
+      (clean)
+        _versions=( all ${(@)_versions} )
+        _describe -t versions 'versions' _versions && ret=0
+      ;;
+      (unalias)
+        _describe -t alias 'alias' _alias && ret=0
+      ;;
+      (alias)
+        _describe -t alias 'alias' _alias && ret=0
+      ;;
+      (install|install-binary)
+        if (( NOCACHE_REMOTE )); then
+          _remote_versions=( $(_call_program commands nodebrew ls-remote 2>/dev/null) )
+          _store_cache NODEBREW_versions _remote_versions
+        fi
+        _describe -t remote_versions 'remote versions' _remote_versions && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

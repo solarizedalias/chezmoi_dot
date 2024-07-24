@@ -1,0 +1,230 @@
+#compdef launchctl
+
+# ==========================================================
+# _launchctl
+# Mon Apr 19 15:50:00 2021
+# based on launchctl version Darwin Bootstrapper Version 6.0.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a subs=(
+  "bootstrap:Bootstraps a domain or a service into a domain."
+  "bootout:Tears down a domain or removes a service from a domain."
+  "enable:Enables an existing service."
+  "disable:Disables an existing service."
+  "uncache:Removes the specified service name from the service cache."
+  "kickstart:Forces an existing service to start."
+  "attach:Attach the system's debugger to a service."
+  "debug:Configures the next invocation of a service for debugging."
+  "kill:Sends a signal to the service instance."
+  "blame:Prints the reason a service is running."
+  "print:Prints a description of a domain or service."
+  "print-cache:Prints information about the service cache."
+  "print-disabled:Prints which services are disabled."
+  "plist:Prints a property list embedded in a binary (targets the Info.plist by default)."
+  "procinfo:Prints port information about a process."
+  "hostinfo:Prints port information about the host."
+  "resolveport:Resolves a port name from a process to an endpoint in launchd."
+  "limit:Reads or modifies launchd's resource limits."
+  "runstats:Prints performance statistics for a service."
+  "examine:Runs the specified analysis tool against launchd in a non-reentrant manner."
+  "config:Modifies persistent configuration parameters for launchd domains."
+  "dumpstate:Dumps launchd state to stdout."
+  "dumpjpcategory:Dumps the jetsam properties category for all services."
+  "reboot:Initiates a system reboot of the specified type."
+  "bootshell:Brings the system up from single-user mode with a console shell."
+  "load:Bootstraps a service or directory of services."
+  "unload:Unloads a service or directory of services."
+  "remove:Unloads the specified service name."
+  "list:Lists information about services."
+  "start:Starts the specified service."
+  "stop:Stops the specified service if it is running."
+  "setenv:Sets the specified environment variables for all services within the domain."
+  "unsetenv:Unsets the specified environment variables for all services within the domain."
+  "getenv:Gets the value of an environment variable from within launchd."
+  "bsexec:Execute a program in another process' bootstrap context."
+  "asuser:Execute a program in the bootstrap context of a given user."
+  "submit:Submit a basic job from the command line."
+  "managerpid:Prints the PID of the launchd controlling the session."
+  "manageruid:Prints the UID of the current launchd session."
+  "managername:Prints the name of the current launchd session."
+  "error:Prints a description of an error."
+  "variant:Prints the launchd variant."
+  "version:Prints the launchd version."
+  "help:Prints the usage for a given subcommand."
+)
+
+_arguments -C \
+  '1:command:{ _describe command subs }' \
+  '*:: :->args' && ret=0
+
+case ${state} in
+  (args)
+    case ${words[1]} in
+      (bootstrap|bootout)
+        _arguments '1:domain-target: ' '*:service-path:_files' && ret=0
+      ;;
+      (enable|disable|blame|runstats)
+        _arguments '1:service-target: ' && ret=0
+      ;;
+      (uncache|remove|list|start|stop)
+        _arguments '1:service-name' && ret=0
+      ;;
+      (kickstart)
+        _arguments \
+          '-k[Terminates the service if it is already running.]' \
+          '-p[Prints the PID of the service that was started.]' \
+          '-s[Starts the service suspended so that a debugger may attach.]' \
+          '1:service-target: ' && ret=0
+      ;;
+      (attach)
+        _arguments \
+          '-k[Terminates the service if it is already running.]' \
+          '-s[Forces the service to start if it isn'\''t already running.]' \
+          '-x[Attaches to execution trampoline for the service (implies -k).]' \
+          '1:service-target: ' && ret=0
+      ;;
+      (debug)
+        _arguments -S \
+          '--program[Use a different binary for the service'\''s executable.]:program-path: ' \
+          '--start-suspended[Start the process suspended.]' \
+          '--guard-malloc[Enable libgmalloc(3) for the service.]' \
+          '--malloc-stack-logging[Enable malloc(3) stack logging.]' \
+          '--malloc-nano-allocator[Enables the malloc(3) nano allocator.]' \
+          '--debug-libraries[Sets DYLD?IMAGE_SUFFIX to "_debug".]' \
+          '--NSZombie[Enables NSZombie]' \
+          '--32[Runs the service in 32-bit mode (only available on 64-bit platforms).]' \
+          '--stdin[When an argument is given, the file at that path is used as the service'\''s stdin.]::path:_files' \
+          '--stdout[When an argument is given, the file at that path is used as the service'\''s stdout.]::path:_files' \
+          '--stderr[When an argument is given, the file at that path is used as the service'\''s stderr.]::path:_files' \
+          '--environment[Set environment variables on the service]:VARIABLE=value: ' \
+          '*:argv: ' && ret=0
+      ;;
+      (kill)
+        _arguments '1:signal:_signals' '1:service-target: ' && ret=0
+      ;;
+      (print)
+        _arguments '1:domain-taget/service-target: ' && ret=0
+      ;;
+      (print-cache|hostinfo|dumpstate|dumpjpcategory|manager(pid|uid|name)|variant|version)
+        _message 'no more arguments' && ret=0
+      ;;
+      (print-disabled)
+        _arguments '1:domain-specifier' && ret=0
+      ;;
+      (plist)
+        _arguments '::segment,section: ' ':path:_files' && ret=0
+      ;;
+      (procinfo)
+        _arguments '1:pid:_pids' && ret=0
+      ;;
+      (resolveport)
+        _arguments '1:ownder-pid:_pids' '2:port-name:_ports' && ret=0
+      ;;
+      (limit)
+        _arguments \
+          '1:limit-name:(cpu filesize data stack core rss memlock maxproc maxfiles)' \
+          '2:soft-limit: ' '3:hard-limit: ' && ret=0
+      ;;
+      (examine)
+        _arguments \
+          '1:tool:_command_names' \
+          '*:args: ' && ret=0
+      ;;
+      (config)
+        _arguments \
+          '1:system/user:(system user)' '2:parameter:(umask path)' \
+          '3:value:{
+            case ${words[CURRENT - 1]} in
+              (umask) _message "integer as octal" ;;
+              (path) _files ;;
+            esac
+          }' && ret=0
+      ;;
+      (reboot)
+        _arguments \
+          '-s[When rebooting the system, will bring the subsequent boot session up in single-user mode.]' \
+          '1:reboot:(system halt userspace logout apps)' && ret=0
+      ;;
+      (bootshell)
+        _arguments '::continue:(continue)' && ret=0
+      ;;
+      (load)
+        _arguments \
+          '-w[If the service is disalbed, it will be enabled]' \
+          '-F[Forcibly load the service]' \
+          '-S[Specify the name of a session]:session: ' \
+          '-D:[Loads launchd.plist(5) files from the specified domain.]:domain:((
+            system\:"Searches /System/Library for either daemons or agents."
+            local\:"Searches /Library for either daemons or agents."
+            network\:"Searches /Network (no longer valid)"
+            user\:"Searches the home directory." ))' \
+          '*:service-path:_files' && ret=0
+      ;;
+      (unload)
+        _arguments \
+          '-w[Additionally disables the service]' \
+          '-S[Only unloads the services associated with the specified session.]:session: ' \
+          '-D[Unloads launchd.plist(5) files from the specified domain.]:domain:((
+            system\:"Searches /System/Library for either daemons or agents."
+            local\:"Searches /Library for either daemons or agents."
+            network\:"Searches /Network (no longer valid)"
+            user\:"Searches the home directory." ))' \
+      ;;
+      (setenv)
+        _arguments '*:key/value: '
+      ;;
+      (unsetenv)
+        _arguments '*:key: ' && ret=0
+      ;;
+      (getenv)
+        _arguments '1:key: ' && ret=0
+      ;;
+      (bsexec)
+        _arguments \
+          '1:pid:_pids' \
+          '2:command:_command_names' \
+          '*:: :{
+            emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch _ ${words[1]}"
+          }' && ret=0
+      ;;
+      (asuser)
+        _arguments \
+          '1:uid: ' \
+          '2:command:_command_names' \
+          '*:: :{
+            emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch _ ${words[1]}"
+          }' && ret=0
+      ;;
+      (submit)
+        _arguments \
+          '-l[Specify unique lable to assign this job to launchd]:label: ' \
+          '-p[Specify the command (preferred to the command in the subseqent arguments)]:program:_command_names' \
+          '-o[Where to send the stdout]:stdout-path:_files' \
+          '-e[Where to send the stderr]:stderr-path:_files' \
+          '1:command:_command_names' \
+          '*:: :{
+            emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch _ ${words[1]}"
+          }' && ret=0
+      ;;
+      (error)
+        _arguments '1:domain:(posix mach bootstrap)' '2:code: ' && ret=0
+      ;;
+      (help)
+        _describe "command" subs && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

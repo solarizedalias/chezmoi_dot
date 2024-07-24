@@ -1,0 +1,30 @@
+#compdef sysread
+
+# ==========================================================
+# _sysread
+# Tue Dec 22 05:11:29 2020
+# based on zsh 5.8.0.2-dev
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '-c+[specify variable name to store the number of bytes read]:countvar:_parameters'
+  '-i+[specify input fd]:infd: ' # XXX
+  '-o+[speciy fd to write all the bytes just read to]:outfd: '
+  '-s+[specify maximum number of bytes read (defaults to 8192)]:bufsize: '
+  '-t+[specify a timeout (seconds)]:seconds: '
+)
+
+_arguments \
+  ${(@)optspecs} \
+  '1:param:_parameters' && ret=0
+

@@ -1,0 +1,63 @@
+#compdef more
+
+_arguments \
+         '*:file:_files' \
+		{-'?',--help}'[This option displays a summary of the commands accepted by less (the same as…]' \
+		{-a,--search-skip-screen}'[By default, forward searches start at the top of the displayed screen and bac…]' \
+		{-A,--SEARCH-SKIP-SCREEN}'[Causes all forward searches (not just non-repeated searches) to start just af…]' \
+		{--buffers,-bn}'[Specifies the amount of buffer space less will use for each file, in units o…]' \
+		{-B,--auto-buffers}'[By default, when data is read from a pipe, buffers are allocated automaticall…]' \
+		{-c,--clear-screen}'[Causes full screen repaints to be painted from the top line down.]' \
+		{-C,--CLEAR-SCREEN}'[Same as -c, for compatibility with older versions of less.]' \
+		{-d,--dumb}'[The -d option suppresses the error message normally displayed if the terminal…]' \
+		{--color,-Dxcolor}'[\[MS-DOS only\] Sets the color of the text displayed.]' \
+		{-e,--quit-at-eof}'[Causes less to automatically exit the second time it reaches end-of-file.]' \
+		{-E,--QUIT-AT-EOF}'[Causes less to automatically exit the first time it reaches end-of-file.]' \
+		{-f,--force}'[Forces non-regular files to be opened.]' \
+		{-F,--quit-if-one-screen}'[Causes less to automatically exit if the entire file can be displayed on the…]' \
+		{-g,--hilite-search}'[Normally, less will highlight ALL strings which match the last search comman…]' \
+		{-G,--HILITE-SEARCH}'[The -G option suppresses all highlighting of strings found by search commands.]' \
+		{--max-back-scroll,-hn}'[Specifies a maximum number of lines to scroll backward.]' \
+		{-i,--ignore-case}'[Causes searches to ignore case; that is, uppercase and lowercase are consider…]' \
+		{-I,--IGNORE-CASE}'[Like -i, but searches ignore case even if the pattern contains uppercase lett…]' \
+		{--jump-target,-jn}'[Specifies a line on the screen where the "target" line is to be positioned.]' \
+		{-J,--status-column}'[Displays a status column at the left edge of the screen.]' \
+		{--lesskey-file,-kfilename}'[Causes less to open and interpret the named file as a lesskey (1) file.]' \
+		{-K,--quit-on-intr}'[Causes less to exit immediately (with status 2) when an interrupt character …]' \
+		{-L,--no-lessopen}'[Ignore the LESSOPEN environment variable (see the INPUT PREPROCESSOR section …]' \
+		{-m,--long-prompt}'[Causes less to prompt verbosely (like more), with the percent into the file.]' \
+		{-M,--LONG-PROMPT}'[Causes less to prompt even more verbosely than more.]' \
+		{-n,--line-numbers}'[Suppresses line numbers.]' \
+		{-N,--LINE-NUMBERS}'[Causes a line number to be displayed at the beginning of each line in the dis…]' \
+		{--log-file,-ofilename}'[Causes less to copy its input to the named file as it is being viewed.]' \
+		{--LOG-FILE,-Ofilename}'[The -O option is like -o, but it will overwrite an existing file without aski…]' \
+		{--pattern,-ppattern}'[The -p option on the command line is equivalent to specifying +/pattern; that…]' \
+		{--prompt,-Pprompt}'[Provides a way to tailor the three prompt styles to your own preference.]' \
+		{-q,--quiet,--silent}'[Causes moderately "quiet" operation: the terminal bell is not rung if an atte…]' \
+		{-Q,--QUIET,--SILENT}'[Causes totally "quiet" operation: the terminal bell is never rung.]' \
+		{-r,--raw-control-chars}'[Causes "raw" control characters to be displayed.]' \
+		{-R,--RAW-CONTROL-CHARS}'[Like -r, but only ANSI "color" escape sequences are output in "raw" form.]' \
+		{-s,--squeeze-blank-lines}'[Causes consecutive blank lines to be squeezed into a single blank line.]' \
+		{-S,--chop-long-lines}'[Causes lines longer than the screen width to be chopped (truncated) rather th…]' \
+		{--tag,-ttag}'[The -t option, followed immediately by a TAG, will edit the file containing t…]' \
+		{--tag-file,-Ttagsfile}'[Specifies a tags file to be used instead of "tags".]' \
+		{-u,--underline-special}'[Causes backspaces and carriage returns to be treated as printable characters;…]' \
+		{-U,--UNDERLINE-SPECIAL}'[Causes backspaces, tabs and carriage returns to be treated as control charact…]' \
+		{-V,--version}'[Displays the version number of less.]' \
+		{-w,--hilite-unread}'[Temporarily highlights the first "new" line after a forward movement of a ful…]' \
+		{-W,--HILITE-UNREAD}'[Like -w, but temporarily highlights the first new line after any forward move…]' \
+		{--tabs,-xn}'[Sets tab stops.]' \
+		{-X,--no-init}'[Disables sending the termcap initialization and deinitialization strings to t…]' \
+		{--max-forw-scroll,-yn}'[Specifies a maximum number of lines to scroll forward.]' \
+		'--window[Changes the default scrolling window size to n lines.]' \
+		{-~,--tilde}'[Normally lines after end of file are displayed as a single tilde (~).]' \
+		{-'#',--shift}'[Specifies the default number of positions to scroll horizontally in the RIGHT…]' \
+		'--follow-name[Normally, if the input file is renamed while an F command is executing, less…]' \
+		'--no-keypad[Disables sending the keypad initialization and deinitialization strings to th…]' \
+		'--use-backslash[This option changes the interpretations of options which follow this one.]' \
+		'-+[Followed by one of the command line option letters this will reset the option…]' \
+		'--+[Like the -+ command, but takes a long option name rather than a single option…]' \
+		{--qui,--qui}'[Some long option names are in uppercase, such as --QUIT-AT-EOF, as distinct f…]' \
+		'--quotes[Changes the filename quoting character.]' \
+		'-k[use of lesskey files.]' \
+		'-t[use of tags files metacharacters in filenames, such as * filename complet…]'

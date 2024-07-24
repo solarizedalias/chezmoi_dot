@@ -1,0 +1,22 @@
+#compdef typeof
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _typeof
+# Tue Aug 18 11:53:27 2020
+# based on typeof version 0.0.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args
+
+_parameters -qS '' && ret=0
+return ret
+

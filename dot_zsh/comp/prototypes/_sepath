@@ -1,0 +1,8 @@
+
+local -a compadd_opts=( -P ':' -qS ':' )
+
+__sepath() {
+  compset -P '*:'
+  _arguments -O compadd_opts '*::items:(foo baz bar)'
+}
+

@@ -1,0 +1,84 @@
+#compdef atlas
+
+# ==========================================================
+# _atlas
+# Sun May 28 2023
+# based on atlas version 0.4
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions       NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a subcommands=(
+  'init:initializes the current directory as a workspace'
+  'use:clone apackage and all of its dependencies and make it importable for the current project'
+  'clone:clone a package and all of its dependencies'
+  'update:update apackage and all of its dependencies'
+  "install:use the .nimble file to setup the project's dependencies"
+  'search:search for package that contains the given keywords'
+  'extract:the requirements and custom commands from the given Nimble file'
+  'updateProjects:update every project that has aremote URL that matches `filter` if a filter is given'
+  'updateDeps:update every dependency that has a remote URL that matches `filter` if a filter is given'
+  'tag:add and push a new tag'
+  {build,test,doc,tasks}':currently delegates to nimble'
+  'task:currently delegates to nimble <taskname>'
+)
+
+local -a optspecs=(
+  '--keepCommits[do not perform any `git checkouts`]'
+  '--cfgHere[also create/maintain a nim.cfg in the current working directory]'
+  '--workspace=[use DIR as workspace]:DIR:_directories'
+  '--genlock[generate a lock file (use with `clone` and `update`)]'
+  '--uselock[use the lock file for the build]'
+  '--version[show the version]'
+  '--help[show this help]'
+)
+
+_arguments -C \
+  ${(@)optspecs} \
+  '1:command:{ _describe command subcommands }' \
+  '*:: :->args' && ret=0
+
+case ${state} in
+  (args)
+    case ${words[1]} in
+      (init)
+        _arguments \
+          '--deps=[use DIR as the directory for dependencies (default: store directly in the workspace)]:DIR:_directories' && ret=0
+      ;;
+      (clone|use|update)
+        (( CURRENT == 2 )) && _message 'url|pkgname' && ret=0
+      ;;
+      (install|extract)
+        (( CURRENT == 2 )) && _path_files -g '*(N-/)' -g '*.nimble(N-.)' && ret=0
+      ;;
+      (search)
+        _message 'keyw keywB...' && ret=0
+      ;;
+      (updateProjects|updateDeps)
+        _message 'filter' && ret=0
+      ;;
+      (tag)
+        _message \
+          "['major'|'minor'|'patch'] or a SemVer tag like ['1.0.3'] or a letter ['a'..'z']: a.b.c.d.e.f.g" \
+          && ret=0
+      ;;
+      (build|test|doc|tasks)
+        # TODO: dispatch _nimble ?
+      ;;
+      (task)
+        # TODO: dispatch _nimble ?
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

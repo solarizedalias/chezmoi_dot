@@ -1,0 +1,85 @@
+#compdef nimgrep
+
+# ==========================================================
+# _nimgrep
+# Tue Nov 23 23:58:41 2021
+# based on nimgrep version 1.6.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions       NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '(--find -f)'{--find,-f}'[find the PATTERN (default)]'
+
+  '(--rex -x --re --peg)--peg[PATTERN and PAT are Peg]'
+  '(--rex -x --re --peg)--re[PATTERN and PAT are regular expression]'
+  '(--rex -x --re --peg)'{--rex,-x}'[PATTERN and PAT are extended regular expression (whitespace is not significant)]'
+  '(--word -w)'{--word,-w}'[matches should have word boundaries]'
+  '(--ignoreCase -i)'{--ignoreCase,-i}'[case insensitive]'
+  '(--ignoreStyle -y)'{--ignoreStyle,-y}'[style insensitive]'
+
+  '(--recursive -r)'{--recursive,-r}'[process directories revursively]'
+  '--follow[follow all symlinks]'
+  # FIXME actual syntax --ext:EX1:EX2:...
+  '--ext\:-[only search the files with the given extension(s)]:ext: _message extension'
+  '--noExt\:-[exclude files having given extension(s)]:ext: _message extension'
+  '(--if --includeFile
+)'{--if,--includeFile}'\:-[search only files whose names contain spcified pattern]:PAT: _message PAT'
+  '(--ef --excludeFile
+)'{--ef,--excludeFile}'\:-[skip files whose names contain spcified pattern]:PAT: _message PAT'
+  '(--id --includeDir
+)'{--id,--includeDir}'\:-[search only files with their whole directory path containing PAT]:PAT: _message PAT'
+  '(--ed --excludeDir
+)'{--ed,--excludeDir}'\:-[skip directories whose name (not path) contains PAT]:PAT: _message PAT'
+
+  '--match\:-[select files containing a (not displayed) match of PAT]:PAT: _message PAT'
+  '--noMatch\:-[select files not containing any match of PAT]:PAT: _message PAT'
+  '(--text -t --bin*)--bin\:-[process binary files]:which:(on off only)'
+  '(--text -t --bin*)'{--text,-t}'[process only text files]'
+
+  '(--nocolor --color*)--nocolor[output will be given without any colors]'
+  '(--nocolor --color*)--color\:-[specify whether to color output]:mode:(on off auto)'
+  '--colorTheme\:-[select color THEME]:theme:((
+    simple\:"default" bnw\:"black and white" ack\:"similar to ack" gnu\:"similar to GNU grep"
+  ))'
+  '--count[only print counts of matches for files that matched]'
+  '(--context\: -c\:)'{--context,-c}'\:-[print N lines of leading and trailing context]:int: '
+  '(--afterContext\: -a\:)'{--afterContext,-a}'\:-[print N lines of trailing context]:int: '
+  '(--beforeContext\: -b\:)'{--beforeContext,-a}'\:-[print N lines of leading context]:int: '
+  '(--group -g)'{--group,-g}'[group matches by file]'
+  '(--newLine -l)'{--newLine,-l}'[display every matching line starting from a new line]'
+  '(--cols\: -%)--cols\:-[limit max displayed columns of output lines]:cols:(off auto)'
+  '-%[calculate columns from terminal width (synonym for --cols:auto)]'
+  '(--onlyAscii -@)'{--onlyAscii,-@}'[display only printable ASCII Latin characters]'
+
+  '(--threads* -j\:)'{--threads,-j}'\:-[speed up search by N additional workers]:N:(0 off)'
+  '--stdin[read PATTERN (and REPLACEMENT if given) from stdin]'
+  '--verbose[be verbose and list every processed file]'
+  '(--help -h)'{--help,-h}'[print help text]'
+  '(--version -v)'{--version,-v}'[print the version]'
+)
+
+_arguments \
+  ${(@)optspecs} \
+  - search \
+    '1:PATTERN: _message "PATTERN"' '2:(FILE/DIRECTORY)*/-:_files' \
+  - replace \
+    '--confirm[confirm each occurrence/replacement]' \
+    '1:PATTERN: ' \
+    '(--replace -!)'{--replace,-\!}'[replace the PATTERN to REPLACEMENT]' \
+    '2:REPLACEMENT: _message "REPLACEMENT"' \
+    '3:(FILE/DIRECTORY)*:_files' \
+  - list \
+    '--filenames[just list filenames matching PATTERN]' \
+    '1:PATTERN: _message "PATTERN"' '2:(FILE/DIRECTORY)*:_files' && ret=0
+
+return ret
+

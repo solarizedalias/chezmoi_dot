@@ -1,0 +1,44 @@
+#compdef @test@
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _docker0
+# Sat Jul 18 21:15:57 2020
+# based on docker version 0.0.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -L zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args
+
+local -a subcmds=(
+  'cmdA:subcommandA'
+  'cmdB:subcommandB'
+  'cmdC:subcommandC'
+)
+_arguments -C \
+  '(- :)--foo[desc for foo]' \
+  '(-)'{-b,--bar}'[bar bar]' \
+  '(-): :->command' \
+  '(-)*:: :->option-or-argument' && return
+case ${state} in
+  (command)
+    _describe 'command' subcmds && ret=0
+  ;;
+  (option-or-argument)
+    curcontext="${curcontext%:*:*}:@test@-${words[1]}:"
+    # I want _docker-app to be called here.
+    if ! _call_function ret _docker-${words[1]}; then
+      _normal && ret=0
+    fi
+  ;;
+esac
+
+return ret
+

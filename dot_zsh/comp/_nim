@@ -1,0 +1,373 @@
+#compdef nim
+
+# TODO
+# --cc:SYMBOL (Look in $configDir/nim.cfg)
+#
+
+setopt localoptions       NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+typeset -A opt_args val_args
+
+local -a match mbegin mend
+local -a hints warnings
+
+# Avoid global pollution (_store_cache)
+local var
+
+(( ${+functions[__nim_cache_policy]} )) || function __nim_cache_policy() {
+  # 1 week
+  local -a oldp=( "$1"(Nmw+1) )
+  (( ${#oldp} )) && return 0
+}
+
+local cache_policy
+builtin zstyle -s ":completion:${curcontext}:" cache-policy cache_policy
+[[ -n "${cache_policy}" ]] ||
+  builtin zstyle ":completion:${curcontext}:" cache-policy __nim_cache_policy
+
+if { _cache_invalid nim_hints || ! _retrieve_cache nim_hints }; then
+  hints=(
+    ${(@ou)^${(@M)${(f)"$(
+      nim --hints:list 2>&1; :
+    )"}:#(#s)[[:blank:]]##\[?\]*}##*\[*\][[:blank:]]##}\\:{on,off}
+  )
+  _store_cache nim_hints hints
+fi
+
+if { _cache_invalid nim_warnings || ! _retrieve_cache nim_warnings }; then
+  warnings=(
+    ${(@ou)^${(@M)${(f)"$(
+      nim --warnings:list 2>&1; :
+    )"}:#(#s)[[:blank:]]##\[?\]*}##*\[*\][[:blank:]]##}\\:{on,off}
+  )
+  _store_cache nim_warnings warnings
+fi
+
+# TODO:  rewrite optspecs with `compeset -P '*[:=]'` approach.
+# FIXME: There are far more possibilities in config files (e.g. --dump.format.json, --gcc.exe:"gcc-11")
+local -a optspecs=(
+  '(: * -)'{-h,--help}'[show help]'
+  '(: * -)--fullhelp[show all command line switches]'
+  '(: * -)'{-v,--version}'[show detailed version information]'
+  '--eval\:-[evaluates nim code directly]:nim code: '
+  '(-o: --out:)'{-o\\:-,--out\\:-}'[set the output file]:output name:{
+    _wanted output-name expl "output name" _files
+  }'
+  '--outdir\:-[set the path where the output file will be written]:dir:{_files -/}'
+  '--colors\:'{on,off}'[turn compiler messages coloring on|off]'
+  '--stdout\:'{on,off}'[output to stdout]'
+  '--listFullPaths\:'{on,off}'[list full paths in messages]'
+  '--filenames\:-[specify how the file names are shown in the messages]:how:((
+    abs\:"show full paths"
+    canonical\:"show canonical import name"
+    legacyRelProj\:"the same as the old `--listfullpaths\:off`"
+  ))'
+  '--unitsep\:'{on,off}'[use the ASCII unit separator (31) between error messages]'
+  '--declaredLocs\:'{on,off}'[show declaration locations in messages]'
+  '--defusages\:-[find the definition and all usages of a symbol]:FILE,LINE,COL: '
+
+  '(-w: --warning*)'{-w\\:,--warnings\\:}{on,off,list}'[turn all warnings on|off or list all available]'
+  '--warning\:all\:off[select|deselect all warnings]'
+  '(-w: --warnings:)*--warning\:-[turn specified waraning on|off]:waring:('" ${(j: :)warnings}"')'
+
+  '(--hint* )--hints\:'{on,off,list}'[turn all hints on|off or list all available]'
+  '--hint\:all\:off[select|deselect all hints]'
+  '(--hints: )*--hint\:-[turn specified hint on|off]:hint:('" ${(j: :)hints} "')'
+  '--processing\:-[custimize `hintProcessing`]:how:(dots filenames off)'
+
+  '--warningAsError\:-[turn specified warning into an error on|off]:warning:('" ${(j: :)warnings} "')'
+  '--hintAsError\:-[turn specified hint into an error on|off]:hint:('" ${(j: :)hints} "')'
+
+  '*--styleCheck\:-[produce hints or errors for Nim identifiers that do not adhere to Nim'\''s official style guide]:how:((
+    off\:"turn off style checks"
+    hint\:"show as hints"
+    error\:"show as errors"
+    usages\:"check if identifiers written as they are declared (requires --styleCheck\:{hint,error})"
+  ))'
+  '--spellSuggest\:-[show spelling suggestions on typos]:num: '
+
+  '--docRoot\:-[specify the dirname which the doc generation takes as toplevel]:dir:{_files -/}'
+  '--project[document the whole project (doc2)]'
+  '(-b: --backend:)'{-b,--backend}'\:-[sets backend to use]:backend:( c cpp js objc )'
+  '--docCmd\:-[if `cmd == skip`, skips runnableExamples, else, runs runnableExamples with given options]:cmd: '
+  "--docSeeSrcUrl\:-[activate 'see source' for doc command]:url:_urls"
+  '--docInternal[also generate documentation for non-exported symbols]'
+  '--lineDir\:'{on,off}'[generate #line directive on|off]'
+  '--embedsrc\:'{on,off}'[embeds the original source code as comments in the generated output]'
+
+  '--listCmd[list the compilation commands]'
+  '--parallelBuild\:-[perform a parallel build]:number of processors: '
+  '--verbosity\:-[set Nim'\''s verbosity level (default 1)]:verbosity level:( 0 1 2 3 )'
+  '--lib\:-[set the system library path]:path{ _files -/ }'
+  '*--import\:-[add an automatically imported module]:module: '
+  '*--include\:-[add an automatically included module]:module: '
+  '--nimcache\:-[set the path used for generated files]:dir:{ _files -/ }'
+  '--usenimcache[generate an output file that includes a hash of some of the compilation options]'
+  '(-c --compileOnly)'{-c,--compileOnly}'[whether not to assemble nor link]'
+  '--noLinking\:-[whether not to link]:on/off:( on off )'
+  '--noMain\:-[whether not to generate a main procedure]:on/off:( on off )'
+  '--genScript\:-[generate a compile script]:on/off:( on off )'
+  '--genDeps\:-[generate a '\''.deps'\'' file containing the dependencies]:on/off:( on off )'
+  '--os\:-[set the target operating system (cross-compilation)]:SYMBOL:((
+    Standalone\:"generate a stand-alone executable"
+    AIX\:"compile for AIX"
+    Amiga\:"compile for Amiga OS"
+    Android\:"compile for Android"
+    Any\:"compile for any OS"
+    Atari\:"compile for Atari"
+    DOS\:"compile for DOS"
+    DragonFly\:"compile for DragonFly"
+    FreeBSD\:"compile for FreeBSD"
+    FreeRTOS\:"compile for FreeRTOS"
+    Genode\:"compile for Genode"
+    Haiku\:"compile for Haiku"
+    iOS\:"compile for iOS"
+    Irix\:"compile for Irix"
+    Linux\:"compile for Linux"
+    MacOS\:"compile for MacOS"
+    MacOSX\:"compile for MacOSX"
+    MorphOS\:"compile for MorphOS"
+    NetBSD\:"compile for NetBSD"
+    Netware\:"compile for Netware"
+    NimVM\:"compile for NimVM"
+    NintendoSwitch\:"compile for NintendoSwitch"
+    OS2\:"compile for OS2"
+    OpenBSD\:"compile for OpenBSD"
+    PalmOS\:"compile for PalmOS"
+    QNX\:"compile for QNX"
+    SkyOS\:"compile for SkyOS"
+    Solaris\:"compile for Solaris"
+    VxWorks\:"compile for VxWorks"
+    Windows\:"compile for Windows"
+    JS\:"generate javascript"
+  ))'
+  '--cpu\:-[set the target processor (cross-compilation)]:SYMBOL:((
+    alpha\:"compile for Alpha architecture"
+    amd64\:"compile for x86_64 architecture"
+    arm\:"compile for ARM architecture"
+    arm64\:"compile for ARM64 architecture"
+    avr\:"compile for AVR architecture"
+    esp\:"compile for ESP architecture"
+    e2k\:"compile for Elbrus 2000 architecture"
+    hppa\:"compile for HPPA architecture"
+    i386\:"compile for i386 architecture"
+    ia64\:"compile for ia64 architecture"
+    js\:"compile to JavaScript"
+    loongarch64\:"compile for LoongArch64 architecture"
+    m68k\:"compile for m68k architecture"
+    mips\:"compile for MIPS architecture"
+    mipsel\:"compile for MIPS EL architecture"
+    mips64\:"compile for MIPS64 architecture"
+    mips64el\:"compile for MIPS64 EL architecture"
+    msp430\:"compile for msp430 architecture"
+    nimvm\:"compile for Nim VM"
+    powerpc\:"compile for PowerPC architecture"
+    powerpc64\:"compile for PowerPC64 architecture"
+    powerpc64el\:"compile for PowerPC64 EL architecture"
+    riscv32\:"compile for RISC-V 32 architecture"
+    riscv64\:"compile for RISC-V 64 architecture"
+    sparc\:"compile for SPARC architecture"
+    sparc64\:"compile for SPARC64 architecture"
+    vm\:"compile for Nim VM"
+    wasm32\:"compile to WASM 32"
+  ))'
+
+  '--debuginfo\:-[whether to enable debug information]:on/off:( on off )'
+  '--tlsEmulation\:-[turn thread local storeage emulation on|off]:on/off:( on off )'
+  '--implicitStatic\:-[turn implicit compile time evaluation on|off]:on/off:( on off )'
+  '--trmacros\:-[turn term rewriting macros on|off]:on/off:( on off )'
+  '--multimethods\:-[turn multi-methods on|off]:on/off:( on off )'
+  '--hotCodeReloading\:-[turn support for hot code reloading on|off]:on/off:( on off )'
+  '--excessiveStackTrace\:-[stack traces use full file paths]:on/off:( on off )'
+  '--stackTraceMsgs\:-[enable user defined stack frame msgs via `setFrameMsg`]:on/off:/( on off )'
+  '--exceptions\:-[select the exception handling implementation]:impl:( setjmp cpp goto quirky )'
+
+  '*'{-t,--passC}'\:-[pass an option to the C compiler]:OPTION:{ _message SYNBOL }'
+  '*'{-l,--passL}'\:-[pass an option to the linker]:OPTION:{ _message SYMBOL }'
+
+  # TODO filter by configs like `nim.cfg`?
+  '--cc\:-[specify the C compiler]:SYMBOL:(
+    gcc switch_gcc llvm_gcc clang vcc clang_cl icl icc bcc tcc env
+  )'
+  '--cincludes\:-[modify the C compiler header search path]:DIR:{ _files -/ }'
+  '--clibdir\:-[modify the linker library search path]:DIR:{ _files -/ }'
+  '--clib\:-[link an additional C library]:LIBNAME: '
+  '--dynlibOverride\:-[override the usage of dynlib\:SYMBOL]:SYMBOL:{ _message SYMBOL }'
+  '--dynlibOverrideAll[disable the effects of the dynlib pragma]'
+  '--experimental\:-[enable experimental language feature]:feature:((
+    implicitDeref\:"Automatic dereferencing is performed for the first argument of a routine call."
+    dotOperators\:"Offers a special family of dot operators that can be used to intercept and rewrite proc call and field access attempts, referring to previously undeclared symbol names."
+    callOperator\:
+    parallel\:"The preferred mechanism to introduce parallelism which is checked during semantic analysis to be free of data races."
+    destructor\:
+    notnil\:"All types for which nil is a valid value can be annotated with the not nil annotation to exclude nil as a valid value."
+    dynamicBindSym\:
+    forLoopMacros\:
+    caseStmtMacros\:"A macro that needs to be called match can be used to rewrite case statements in order to implement pattern matching for certain types."
+    codeReordering\:"Implicitly rearrange procedure, template, and macro definitions along with variable declarations and initializations at the top level scope."
+    compiletimeFFI\:
+    vmopsDanger\:
+    strictFuncs\:"Add a stricter definition of \"side effect\" where any mutation to an object does count as a side effect if that object is reachable via a parameter that is not declared as a var parameter."
+    views\:
+    strictNotNil\:
+    overloadableEnums\:
+    strictEffects\:
+    unicodeOperators\:
+  ))'
+  '--legacy\:-[enable obsolete/legacy language feature]:feature:(
+    allowSemcheckedAstModification checkUnsignedConversions
+  )'
+
+  '--useVersion\:-[emulate Nim verison X of the Nim compiler]:version:( 1.0 1.2 )'
+  '--index\:-[turn index file generation on|off]:on/off:( on off )'
+  # TODO _values _parameters can be useful
+  '--putenv\:-[set an environment variable]:key=value: '
+  '( --*NimblePath: )--NimblePath\:-[add a path for Nimble support]:PATH:{ _files -/ }'
+  '( --*NimblePath: )--noNimblePath[deactivate the Nimble path]'
+  '( --*NimblePath: )--clearNimblePath[empty the list of Nimble package search paths]'
+  '--expandMacro\:-[dump every generated AST from specified macro]:MACRO: '
+  '--expandArc\:-[show how specified proc looks like after diverse optimizations]:PROCNAME: '
+  '--asm[produce assembler code]'
+  '--profiler\:-[enable/disable profiling; requires `import nimprof` and works better with --stackTrace\:on]:profiler:(on off)'
+  '--errorMax\:-[stop compilation after specified number of errors (0 for unlimited)]:number: '
+  '--skipCfg\:'{on,off}'[do not read the nim installation'\''s configuration file]'
+  '--skipUserCfg\:'{on,off}'[do not read the user'\''s configuration file]'
+  '--skipParentCfg\:'{on,off}'[do not read the parent dir'\''s configuration file]'
+  '--skipProjCfg\:'{on,off}'[do not read the project'\''s configuration file]'
+  '(--gc: --mm:)--mm\:-['"select which memory management to use; default is 'refc' recommended is 'orc'"']:GC:(
+    refc arc orc markAndSweep boehm go none regions
+  )'
+  '--incremental\:'{on,off}'[only recompile the changed modules (experimental!)]'
+  '--maxLoopIterationsVM\:-[set max iterations for all VM loops (default 10000000)]:int: '
+
+  '--benchmarkVM\:'{on,off}'[turn benchmarking of VM code with cpuTime() on|off]'
+  '--profileVM\:'{on,off}'[turn compile time VM profiler on|off]'
+  '--sinkInference\:'{on,off}'[turn sink parameter inference on|off (default on)]'
+  '--panics\:'{on,off}'[turn panics into process terminations (default\: off)]'
+  '--deepcopy\:'{on,off}'[enable/disable `system.deepCopy` for `--gc:arc|orc`]'
+
+  '--cppCompileToNamespace\:-[use the provided namespace for the generated C++ code]:namespace: '
+
+  '*--excludePath\:-[exclude a path from the list of search paths]:path:{_files -/}'
+
+  '(-r --run)'{-r,--run}'[run the application]'
+  '*'{-p,--path}'\:-[add path to search paths]:path:{ _files -/ }'
+
+  # TODO Complete common symbols
+  '*'{-d,--define}'\:-[define a conditional symbol]:SYMBOL: '
+  '*'{-u,--undef}'\:[undefine a conditional symbol]:SYMBOL: '
+
+  '(-f --forceBuild)'{-f,--forceBuild}'[force rebuilding of all modules]'
+  '--showAllMismatches\:-[whether to show all mismatching candidates in overloading resolution]:on/off:(on off)'
+  '(--stackTrace*)--stackTrace\:'{on,off}'-[turn stack tracing on|off]'
+
+  # TODO fold aliases with braces
+  # FIXME Some grouping `(...)` not working
+  '(--lineTrace*)--lineTrace\:on[turn line tracing on]'
+  '(--lineTrace*)--lineTrace\:off[turn line tracing off]'
+  '(--threads*)--threads\:on[turn support for multi-threading on]'
+  '(--threads*)--threads\:off[turn support for multi-threading off]'
+  '(-x:* --checks*)-x\:on[turn all runtime checks on]'
+  '(-x:* --checks*)-x\:off[turn all runtime checks off]'
+  '(-x:* --checks*)--checks\:on[turn all runtime checks on]'
+  '(-x:* --checks*)--checks\:off[turn all runtime checks off]'
+  '(--objChecks*)--objChecks\:on[turn obj conversion checks on]'
+  '(--objChecks*)--objChecks\:off[turn obj conversion checks off]'
+  '(--fieldChecks*)--fieldChecks\:on[turn case variant field checks on]'
+  '(--fieldChecks*)--fieldChecks\:off[turn case variant field checks off]'
+  '(--rangeChecks*)--rangeChecks\:on[turn range checks on]'
+  '(--rangeChecks*)--rangeChecks\:off[turn range checks off]'
+  '(--boundChecks*)--boundChecks\:on[turn bound checks on]'
+  '(--boundChecks*)--boundChecks\:off[turn bound checks off]'
+  '(--overflowChecks*)--overflowChecks\:on[turn int over-/underflow checks on]'
+  '(--overflowChecks*)--overflowChecks\:off[turn int over-/underflow checks off]'
+  '(-a --assertions*)-a\:on[turn assertions on]'
+  '(-a --assertions*)-a\:off[turn assertions off]'
+  '(-a --assertions*)--assertions\:on[turn assertions on]'
+  '(-a --assertions*)--assertions\:off[turn assertions off]'
+  '(--floatChecks*)--floatChecks\:on[turn all floating point (NaN/Inf) checks on]'
+  '(--floatChecks*)--floatChecks\:off[turn all floating point (NaN/Inf) checks off]'
+  '(--nanChecks*)--nanChecks\:on[turn NaN checks on]'
+  '(--nanChecks*)--nanChecks\:off[turn NaN checks off]'
+  '(--infChecks*)--infChecks\:on[turn Inf checks on]'
+  '(--infChecks*)--infChecks\:off[turn Inf checks off]'
+  '(--nilChecks*)--nilChecks\:on[turn nil checks on]'
+  '(--nilChecks*)--nilChecks\:off[turn nil checks off]'
+  '(--opt:*)--opt\:none[do not optimize]'
+  '(--opt:*)--opt\:speed[optimize for speed|size - use -d:release for a release build]'
+  '(--opt:*)--opt\:size[optimize for size]'
+  '--debugger\:native[use native debugger (gdb)]'
+  '-g[use native debugger (gdb)]' # it's not documented for some reason
+  '*--app\:console[generate a console app]'
+  '*--app\:gui[generate a GUI app]'
+  '*--app\:lib[generate a dynamic library]'
+  '*--app\:staticlib[generate a static library]'
+)
+
+if [[ ${service} == nimble ]]; then
+  _arguments ${(@)optspecs}
+  return $?
+fi
+
+local -a nims_cmds
+nims_cmds=(
+  ${(@)${(f)"$(
+    nim --hints:off --listCmd 2>/dev/null
+  )"}/(#b)(#s)([[:graph:]]##)[[:blank:]]##(*)(#e)/${match[1]}:${match[2]}}
+)
+
+local cmddescs=(
+  {compile,c}:"compile project with default code generator C"
+  'r:compile to $nimcache/projname, run with [arguments]'
+  doc:"generate the documentation for inputfile"
+  {compileToC,cc}:"compile project with C code generator"
+  {compileToCpp,cpp}:"compile project to C++ code"
+  {compileToOC,objc}:"compile project to Objective C code"
+  js:"compile project to Javascript"
+  e:"run a Nimscript file"
+  rst2html:"convert a reStructuredText file to HTML"
+  rst2tex:"convert a reStructuredText file to TeX"
+  doc2tex:"extract the documentation to a LaTeX file"
+  jsondoc:"extract the documentation to a json file"
+  ctags:"create a tags file"
+  buildIndex:"build an index for the whole documentation"
+  genDepend:"generate a DOT file containing the module dependency graph"
+  dump:"dump all defined conditionals and search paths"
+  check:"checks the project for syntax and semantic"
+  nop:"do nothing"
+  ${(@b)nims_cmds}
+)
+
+_arguments -C \
+  ${(@)optspecs} \
+  ':command:{ _describe -t command command cmddescs }' \
+  '*:: :->args' && ret=0
+
+# FIXME Not accurate enough
+#       * rst2XXX should complete *.rst
+#       * command specific completions (e.g. dump --dump.format:json)
+case ${state} in
+  (args)
+    # XXX: This is not working properly. Fails with `nim c -d:foo <||>`.
+    case $(( CURRENT )) in
+      (2)
+        # _wanted 'nim-files' expl 'nim files' \
+        #   _path_files -g '*(N-/)' -g '*.nim(|s|ble)(ND-.)' && ret=0
+
+        # XXX I don't know why it doesn't work without being wrapped by _arguments
+        #     Also, I don't know why _files doesn't respect the glob
+        _arguments '1:nim files:_path_files -/ -g"*.(nim|nims|nimble)"' && ret=0
+      ;;
+      (*)
+        _default && ret=0
+      ;;
+    esac
+    [[ ${PREFIX} == -* ]] && _arguments ${(@)optspecs} && ret=0
+  ;;
+esac
+
+return ret
+

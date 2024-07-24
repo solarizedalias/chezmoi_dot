@@ -1,0 +1,59 @@
+#compdef cargo-install-update
+
+# ==========================================================
+# _cargo_install_update
+# Tue Oct 27 23:01:27 2020
+# based on cargo-install-update version 4.1.2
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+
+function __cargo-install-update-packages() {
+  # XXX This might take quite a long time since it is trying to update
+  # crate.io list.
+
+  local -a match mbegin mend
+  local -a packages
+  packages=(
+    ${(M@)${(f)"$(
+      cargo-install-update install-update --list 2>/dev/null
+    )"}:#(#s)[[:graph:]]##*[[:blank:]]##(v<->.<->.<->[[:blank:]]#)(#c2)(Yes|No)}
+  )
+
+  local BL='[[:blank:]]##' GR='[[:graph:]]##'
+  packages=(
+    ${(@)packages/(#b)(${~GR})${~BL}(${~GR})${~BL}(${~GR})${~BL}(No|Yes)*/${match[1]}:$(
+      [[ ${match[4]} != No ]] && builtin print "New" || builtin print ${match[4]}
+    ) update available$(
+      [[ ${match[4]} != No ]] && builtin print -r -- " ${match[2]} -> ${match[3]}"
+    )}
+  )
+  _describe packages packages
+}
+
+# TODO This one has `help` and `install-update` subcommand
+# when called directly rather than by `cargo install-update`
+# so add those subcommands and ignore them by checking `${service}`
+_arguments \
+  '(-a --all)'{-a,--all}'[Update all packages]' \
+  '(-i --allow-no-update)'{-i,--allow-no-update}'[Allow for fresh-installing packages]' \
+  '(-f --force)'{-f,--force}'[Update all packages regardless if they need updating]' \
+  '(-g --git)'{-g,--git}'[Also update git packages]' \
+  '(-h --help)'{-h,--help}'[Prints help information]' \
+  '(-l --list)'{-l,--list}'[Don'\''t update packages, only list and check if they need an update (all packages by default)]' \
+  '(-q --quiet)'{-q,--quiet}'[No output printed to stdout]' \
+  '(-V --version)'{-V,--version}'[Prints version information]' \
+  '(-c --cargo-dir)'{-c,--cargo-dir}='[The cargo home directory. Default: $CARGO_HOME or $HOME/.cargo \[aliases: root\]]:CARGO_DIR: _files -/' \
+  '(-s --filter)'{-s,--filter}='[Specify a filter a package must match to be considered]:PACKAGE_FILTER: ' \
+  '(-t --temp-dir)'{-t,--temp-dir}='[The temporary directory. Default: $TEMP/cargo-update]:TEMP_DIR: _files -/' \
+  '*::packages:{ __cargo-install-update-packages }' && ret=0
+

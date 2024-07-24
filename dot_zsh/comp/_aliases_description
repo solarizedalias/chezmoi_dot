@@ -1,0 +1,37 @@
+#autoload
+
+# ==========================================================
+# _aliases_description
+# Tue Dec 15 00:36:46 2020
+# based on - version -
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local MATCH MBEGIN MEND
+local -a raspecs=(
+  ${(@ok)aliases/(#m)*/${MATCH//:/\\:}:alias for ${(qq)${aliases[${MATCH}]}//:/\\:}}
+)
+local -a gaspecs=(
+  ${(@ok)galiases/(#m)*/${MATCH//:/\\:}:global alias for ${(qq)${galiases[${MATCH}]}//:/\\:}}
+  )
+local -a saspecs=(
+  ${(@ok)saliases/(#m)*/${MATCH//:/\\:}:suffix alias for ${(qq)${saliases[${MATCH}]}//:/\\:}}
+)
+
+_alternative \
+  'regular-aliases:regular alias:{ _describe "regular aliases" raspecs }' \
+  'global-aliases:global alias:{ _describe "global aliases" gaspecs}' \
+  'suffix-aliases:suffix alias:{ _describe "suffix aliases" saspecs}' &&
+ret=0
+
+return ret
+

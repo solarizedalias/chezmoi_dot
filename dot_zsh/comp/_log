@@ -1,0 +1,141 @@
+
+#compdef log
+
+# ==========================================================
+# _log
+# Sat Oct 24 00:38:03 2020
+# based on log version
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+_log () {
+
+  setopt localoptions NO_shwordsplit
+  setopt extended_glob warn_create_global typeset_silent no_short_loops
+  setopt hist_subst_pattern no_auto_pushd rc_quotes
+  local context curcontext=${curcontext} state line expl state_descr
+  integer ret=1
+  local -A opt_args val_args
+  local variant
+  _pick_variant -r variant macos='usage:' -b zsh --version
+
+  case ${variant} in
+    (macos)
+      local -a __log_commands
+      __log_commands=(
+        'collect:Collect the system logs into a .logarchive that can be viewed later with tools such as log or Console'
+        'config:Configure, reset or read settings for the logging systemConfigure, reset or read settings for the logging system'
+        'erase:Delete selected log data from the system'
+        'help:General help or help specific to command argument'
+        'show:Shows contents of the system log datastore, archive or a specific tracev3 file'
+        'stream:Stream activities, log data or trace messages for the system or from a given process'
+      )
+      _arguments \
+        '--help[help]' \
+        '--quiet[quiet]' \
+        '--verbose[verbose]' \
+        "1: :{_describe 'log command' __log_commands}" \
+        '*:: :->args'
+
+      case ${state} in
+
+        (args)
+
+          case ${words[1]} in
+            (collect)
+              _arguments \
+                '(-o --output)'{-o,--output}'[Output log archive to the given path:output path \[dir|file\]:_files' \
+                '(-s --start)'{-s,--start}"[Collect logs starting at the given time]::'Y-M-D H:m:s+zzzz', 'Y-M-D H:m:s', 'Y-M-D', '@unixtime':_time" \
+                '(-l --last)'{-l,--last}'[Collect logs starting <num>[m|h|d] ago]:<num>\[m|h|d\]' \
+                '(-z --size)'{-z,--size}'[Limit log collection to the given size:limit size\[k|m\]' && ret=0
+            ;;
+            (config)
+              _arguments \
+                '--status[show the current settings for the system or a specific subsystem]' \
+                '--reset[reset the current settings for the system or a specific subsystem]' \
+                '--mode[Will enable given mode]:mode(s):->mode' \
+                '--subsystem[Set or get mode for a specified subsystem]:subsystem name:->subsystem' \
+                '--category[Set or get mode for a specified category. If category is supplied, subsystem is required]:category name:->category' \
+                '--process[Set mode for a specified pid]:process id:->pids' && ret=0
+            ;;
+            (erase)
+              _arguments \
+                '--all[Deletes main log datastore, and inflight log data as well as time-to-live data (TTL), and the fault and error content]' \
+                '--ttl[Deletes time-to-live log content]' && ret=0
+            ;;
+            (show)
+              _arguments \
+                '--backtrace[Control whether backtraces are shown]' \
+                '--debug[Control whether "Debug" events are shown]' \
+                '--info[Control whether "Info" events are shown]' \
+                '--loss[Control whether message loss events are shown]' \
+                '--signpost[Control whether signposts are shown]' \
+                '--no-backtrace[Not shown the control whether backtraces]' \
+                '--no-debug[Not shown the control whether "Debug" events are shown]' \
+                '--no-info[Not shown the control whether "Info" events are shown]' \
+                '--no-loss[Not shown the control whether message loss events are shown]' \
+                '--no-signpost[Control whether signposts are shown]' \
+                '--color[Control color output]:mode:(auto always none)' \
+                "--end[Display events up to the given end date]:'Y-M-D H:m:s+zzzz', 'Y-M-D H:m:s', 'Y-M-D', '@unixtime':_time" \
+                '--last[Display recent events up to the given limit]:<num>[m|h|d]' \
+                '--predicate[Filter events using the given predicate]:predicate:->predicate' \
+                '--source[Annotate output with source file and line-number]' \
+                "--start[Display events from the given start date]:'Y-M-D H:m:s+zzzz', 'Y-M-D H:m:s', 'Y-M-D', '@unixtime':_time" \
+                '--style[Output format]:style:(syslog json compact)' \
+                '--timezone[Use the given timezone when displaying event timestamps]:timezone:->timezone' \
+                '--mach-continuous-time[Print mach continuous time timestamps rather than walltime]' \
+                '--info[Shows info level messages in the output]' \
+                '--debug[Shows debug level messages in the output]' \
+                '*:[archive logfile]:_files' && ret=0
+              case "${state}" in
+                (predicate)
+                  _message "predicate args  not implemented."
+                ;;
+                (timezone)
+                  local -a timezone_commands
+                  timezone_commands=(
+                    'local:Collect the system logs into a .logarchive that can be viewed later with tools such as log or Console'
+                    'config:Configure, reset or read settings for the logging systemConfigure, reset or read settings for the logging system'
+                    'erase:Delete selected log data from the system'
+                    'help:General help or help specific to command argument'
+                    'show:Shows contents of the system log datastore, archive or a specific tracev3 file'
+                    'stream:Stream activities, log data or trace messages for the system or from a given process'
+                  )
+                  "1: :{_describe 'log command' timezone_commands}"
+                ;;
+              esac
+            ;;
+
+            (stream)
+              _arguments \
+                '--level[Shows messages at specified level and below]:level:(default info debug)' \
+                '--predicate[Filters messages using the provided predicate based on NSPredicate]:predicate:->predicate' \
+                '--parent[Any child process of the provided process or pid will stream messages associated with the same activity id]:pid or process:->parent' \
+                '--process[The process on which to operate.  This option can be passed more than once to operate on multiple processes]:pid or process:->process' \
+                '--style[Output the content as a different style]:style:(json syslog)' \
+                '--source[Include symbol names and source line numbers for messages, if available]' \
+                '--timeout[Timeout the stream operation after a specified time]:timeout time:->timeout' \
+                '--type[Dictates the type of events to stream from a process]:type:(activity log trace)' && ret=0
+            ;;
+
+            (help)
+              _arguments "1: :{
+                _describe 'General help or help specific to command argument' __log_commands
+              }"
+            ;;
+          esac
+        ;;
+      esac
+    ;;
+
+    (zsh)
+      _nothing && ret=0
+    ;;
+  esac
+
+  return ret
+}
+
+_log $@
+

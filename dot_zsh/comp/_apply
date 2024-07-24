@@ -1,0 +1,31 @@
+#compdef apply
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _apply
+# Fri Oct 16 18:54:59 2020
+# based on apply version 4.2BSD
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+local -A opt_args val_args
+
+_arguments \
+  '-a[specify the character to use instead of "%"]:character: ' \
+  '-d[display the commands that would have been executed]' \
+  ':command:{ _command_names }' \
+  '*::cmd_args:{
+    emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch _ ${words[1]:t}"
+  }' \
+  + number \
+    '(number)-'{0..9}'[specify the number of arguments]' && ret=0
+
+return ret
+

@@ -1,0 +1,280 @@
+#compdef nimph
+
+# ==========================================================
+# _nimph
+# 2020-10-12T11:23:03
+# based on nimble version v0.12.0
+# AUTHOR: solarizedalias
+# Completions for nimble.
+# ==========================================================
+
+# **********************************************************
+# TODO:
+#   [ ] Cache huge arrays. (nimble_installable, nim_options)
+#
+#   [√] Complete nim's compiler options for some context.
+#       (Requires _nim to be installed in fpath as well as _nimble,
+#        which I believe most users of this file already have.)
+#
+#   [√] tasks in nimble files.
+#
+# Known Issues:
+#   [ ] _files -g '*.nim' fails in some cases the files are placed
+#        in a nested directory (which has no other directory?).
+#        (Adding recursive globs in __nimble_nim_files is actually
+#         a workaround for this. Not just for convenience of one-go.)
+#
+#   [ ] Completions for installable packages fail after --ver option.
+# **********************************************************
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+local curcontext=${curcontext} state line expl state_descr ret=1
+typeset -A opt_args
+local -a match mbegin mend
+# _urls creates global array urls.
+local -a urls
+
+local -a nimble_installable nimble_installed nimble_subcommands nimble_tasks
+
+nimble_subcommands=(
+  'install:Installs a list of packages.'
+  'develop:Clones a list of packages for development.'
+  'check:Verifies the validity of a package in the current working directory'
+  'init:Initialize a new Nimble project in the currenct directory or if a name is provided a new directory of the same name.'
+  'publish:Publishes a package on nim-lang/packages.'
+  'uninstall:Uninstalls a list of packages.'
+  'build:Builds a package.'
+  'run:Builds and runs a package.'
+  {c,cc,js}':Builds a file inside a package. Passes options to the Nim compiler.'
+  'test:Compiles and executes tests.'
+  'doc'{,2}':Builds documentation for a file inside a package.'
+  'refresh:Refreshes the package list. A package list URL can be optionally specified.'
+  'search:Searches for a specified package. Search is performed by tag and by name.'
+  'list:Lists all packages.'
+  'tasks:Lists the tasks specified in the Nimble package''s Nimble file.'
+  'path:Shows absolute path to the installed packages specified.'
+  'dump:Outputs Nimble package information for external tools.'
+)
+
+# Extract options from _nim.
+# This works only when _nim is fully loaded (not just marked as autoload so `+X` is needed).
+# To tell if it's loaded, check functions_source is non-blank.
+#
+# We can use `_dispatch nim nim` or `_call_function ret _nim` rather than extracting optspecs from the body
+# of _nim. But it would be more complicated to handle context, words, line.... (Invoking _nim actually
+# causes all the non-option arguments to be completed as well, which should't be here.)
+#
+# There is a possibility in shadowing `_arguments` to intercept the call.
+# You should be able to obtain all the optspecs from `$@` of shadowed `_arguments`.
+# But care must be taken not to break other completions which use `_arguments`,
+# which in reality, means almost all completions including this file.
+
+[[ -z ${functions_source[_nim]} ]] && autoload -Uz +X _nim
+
+# The only reason for the usage of `eval` here is brace expansions...
+local -a nim_options=(
+  ${(@)${(M@)${(f)"$(
+    eval builtin print -rl -- "${(@M)${(z)functions[_nim]}:#(\'*\')}" 2>/dev/null
+  )"}:#(\(*\)|)([\*]|)(-|--)[[:graph:]]##(\[*\]|)*}//(#b)(-(#c1,2)[^\[\]\\[:blank:]]##)([:])/${match[1]}\\${match[2]}}
+)
+
+#
+# Helper functions
+#
+
+(( ${+functions[__nimble_commands]} )) || {
+  function __nimble_commands() {
+    _describe 'nimble commands' nimble_subcommands && ret=0
+  }
+}
+
+(( ${+functions[__nimble_tasks]} )) || {
+  function __nimble_tasks() {
+    (( $#nibmle_tasks )) || {
+      # As of nimble v0.11.4, `2>/dev/null` here actually does not work.
+      # because nimble does NOT use stderr even for the Error messages (bug?).
+      local -a tasks_r=( ${(f)"$(nimble tasks 2>/dev/null)"} )
+      nimble_tasks=( ${(@)tasks_r/[[:blank:]]##/:} )
+      # Manually discard what looks like errors.
+      nimble_tasks=( ${(@R)nimble_tasks:#*Error: *} )
+    }
+    (( ${#nimble_tasks} )) && _describe "tasks" nimble_tasks && ret=0
+  }
+}
+
+(( ${+functions[__nimble_commands_or_tasks]} )) || {
+  function __nimble_commands_or_tasks() {
+    (( ${@[(I)(-c)]} )) && nimble_subcommands=( ${(@M)nimble_subcommands:#test*} )
+    _alternative \
+      'tasks:tasks specified in the nimble file:__nimble_tasks' \
+      'command:nimble command:__nimble_commands' && ret=0
+  }
+}
+
+(( ${+functions[__nimble_installable_packages]} )) || {
+  function __nimble_installable_packages() {
+    (( ${#nimble_installable} )) || {
+      # Interesting lines appear every 7 lines.
+      # 1 (name), 4 (description), 6 (end) 7 (empty line inbetween packages.)
+      local list_r
+      integer COUNT=1
+      list_r=( ${${(f)"$(nimble list 2>/dev/null)"}} )
+      for ((COUNT = 1; COUNT <= ${#list_r}; ++COUNT)); do
+        # package names starts at column 1. Extract them.
+        [[ ${list_r[COUNT]} == (#b)(#s)([[:graph:]]##): ]] && {
+          # descriptions appear 3 lines below package names.
+          nimble_installable+=( ${match[1]}:${list_r[COUNT+3]#*: } )
+        }
+      done
+    }
+    _describe "installable packages" nimble_installable && ret=0
+  }
+}
+
+(( ${+functions[__nimble_installed_packages]} )) || {
+  function __nimble_installed_packages() {
+    (( ${#nimble_installed} )) || {
+      local list_i_r
+      list_i_r=( ${(f)"$(nimble list -i 2>/dev/null)"} )
+      # completes package names with its versions as descriptions.
+      nimble_installed=( ${(@)list_i_r//(#b)[[:blank:]]##\[(*)\]/:${match[1]}} )
+    }
+    _describe "installable packages" nimble_installed && ret=0
+  }
+}
+
+(( ${+functions[__nimble_nim_options]} )) || {
+  function __nimble_nim_options() {
+    _arguments ${(@)nim_options} && ret=0
+  }
+}
+
+(( ${+functions[__nimble_nim_files]} )) || {
+  function __nimble_nim_files() {
+    local EXT='nim'
+    local REC=''
+
+    # switch target extensions to nimble if `dump` appears somewhere in the line.
+    (( ${words[(I)dump]} )) && EXT='nimble'
+
+    # If current word (incomplete part of path) is deep enough form the root, use recursive glob.
+    # The upshot of this is it completes src/sub/foo.nim in one-go at the project root directory.
+    # (To be honest, the biggest reason I wanted to do so is a workaround for unstable results
+    # of _files -g '*.nim', not just convenience of one-go.)
+    (( ${#${(s:/:):-${IPREFIX}${PREFIX}(#q:a)}} > 3 )) && REC='**/'
+
+    _files -g "${REC}*.${EXT:-nim}" && ret=0
+  }
+}
+
+# Our strage convension of using `:` as separators is covered here so that both `=` and `:` would work.
+(( ${+functions[__nimble_colon_path]} )) || {
+  function __nimble_colon_path() {
+    local -a args=( $@ )
+    local -a compadd_opts=( -P ':' )
+    local -a separators=( '\:' '=' )
+    if compset -P '*[:=]'; then
+      _files ${(@)args} && ret=0
+    else
+      _arguments -O compadd_opts ':separators:{ _describe "separator" separators -Q -S ""}' && ret=0
+    fi
+  }
+}
+
+_arguments -C \
+  - nimble \
+    '(-h --help)'{-h,--help}'[display help information]' \
+    '(-v --version)'{-v,--version}'[display version information]' \
+    '(-y --accept)'{-y,--accept}'[accept all interactive prompts]' \
+    '(-n --reject)'{-n,--reject}'[reject all interactive prompts]' \
+    '(-l --localdeps)'{-l,--localdeps}'[Run in project local dependency mode]' \
+    '--ver[Query remote server for package version information when searching or listing packages]' \
+    '--nimbleDir-[Set the Nimble directory]:dirname:{__nimble_colon_path -/ }' \
+    '--nim-[Use specified path for Nim compiler]:nimpath:{__nimble_colon_path -f }' \
+    '--silent[Hide all Nimble and Nim output]' \
+    '--verbose[Show all non-debug output.]' \
+    '--debug[Show all output including debug messages.]' \
+    '--noColor[Don''t colorise output.]' \
+    ':subcommands:{__nimble_commands_or_tasks}' \
+    '*:: :->subcommands' && ret=0
+  # - compiler \
+  #   ${(@)nim_options} \
+  #   ':subcommands:{__nimble_commands_or_tasks -c}' \
+  #   '*:: :->subcommands' && ret=0
+
+case ${state} in
+  (subcommands)
+    case ${words[1]} in
+      (install)
+        _arguments \
+          '(-d --depsOnly)'{-d,--depsOnly}'[Install only dependencies.]' \
+          ${(@)nim_options} \
+          '*::package:{__nimble_installable_packages}' && ret=0
+      ;;
+      (develop)
+        __nimble_installable_packages && ret=0
+      ;;
+      (check|publish|tasks)
+        _message 'No more arguments' && ret=0
+      ;;
+      (init)
+        _arguments \
+          '--git[Create a git repo in the new nible project.]' \
+          '--hg[Create a hg repo in the new nible project.]' \
+          '*::pkgname:' && ret=0
+      ;;
+      (uninstall)
+        __nimble_installed_packages && ret=0
+      ;;
+      (build|run|c|cc|js)
+        # We chose rewriting _arguments rather than just reusing __nimble_nim_options
+        # due to its difficulties combining with __nimble_nim_files.
+        _arguments \
+          ${(@)nim_options} \
+          '*:files:{__nimble_nim_files}' && ret=0
+      ;;
+      (test)
+        _arguments \
+          '(-c --continue)'{-c,--continue}'[Don''t stop execution on a failed test.]' && ret=0
+      ;;
+      (doc|doc2)
+        __nimble_nim_options && ret=0
+      ;;
+      (refresh)
+        _urls && ret=0
+      ;;
+      (search)
+        # FIXME pkgname is not completed after --ver.
+        _arguments \
+          '--ver[Query remote server for package version.]' \
+          '*:pkg-or-tag:{__nimble_installable_packages}' && ret=0
+      ;;
+      (list)
+        _arguments \
+          '--ver[Query remote server for package version.]' \
+          '(-i --installed)'{-i,--installed}'[Lists all installed packages.]' && ret=0
+      ;;
+      (path)
+        __nimble_installed_packages && ret=0
+      ;;
+      (dump)
+        _arguments \
+          '(-)--ini[Output in ini format (default)]' \
+          '(-)--json[Output in json format]' \
+          '*: :{
+            _alternative "installed:installed package:__nimble_installed_packages" "nimble-file-or-project-directory:nimble file or project directory:__nimble_nim_files"
+          }' && ret=0
+      ;;
+
+      (*)
+        # Maybe user defined tasks
+        _default && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

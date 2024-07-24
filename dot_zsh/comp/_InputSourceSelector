@@ -1,0 +1,50 @@
+#compdef InputSourceSelector
+
+# ==========================================================
+# _InputSourceSelector
+# Mon Sep 28 09:31:11 2020
+# based on InputSourceSelector version 0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+declare -A opt_args val_args
+
+local -a __commands=(
+'list:Lists currently installed input sources.'
+'list-enabled:Lists currently enabled input sources.'
+'current:Prints currently selected input source.'
+'current-layout:Prints currently used keyboard layout.'
+'enable:Enables specified input source.'
+'disable:Disables specified input source.'
+'select:Selects specified input source.'
+'deselect:Deselects specified input source.'
+)
+
+local -a __input_sources
+__input_sources=(
+  ${(@)${(f)"$(InputSourceSelector list)"}%%[[:blank:]]\(*\)(|[[:blank:]]##)}
+)
+
+_arguments -C \
+  '1::command:{_describe commands __commands}' \
+  '*:: :->cmd_args' && ret=0
+
+case ${state} in
+  (cmd_args)
+    case ${words[1]} in
+      (enable|disable|select|deselect)
+        _describe "input-source" __input_sources
+      ;;
+      (list|list-enabled|current|current-layout)
+        _message 'no more arguments'
+      ;;
+    esac
+  ;;
+esac
+

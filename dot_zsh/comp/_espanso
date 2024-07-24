@@ -1,0 +1,175 @@
+#compdef espanso
+# vim: set ft=zsh:
+
+# ==========================================================
+# _espanso
+# Wed Jun 24 10:53:11 2020
+# AUTHOR: solarizedalias
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+local context curcontext=$curcontext state line expl ret=1
+declare -A opt_args
+
+local -a subcommands
+subcommands=(
+  'cmd:Send a command to the espanso daemon.'
+  'daemon:Start the daemon without spawning a new process.'
+  'detect:Tool to detect current window properties, to simplify filters creation.'
+  'dump:Prints all current configuration options.'
+  'edit:Open the default text editor to edit config files and reload them automatically when exiting'
+  'help:Prints this message or the help of the given subcommand(s)'
+  'install:Install a package. Equivalent to ''espanso package install'''
+  'log:Print the latest daemon logs.'
+  'package:Espanso package manager commands'
+  'path:Prints all the current espanso directory paths, to easily locate configuration and data paths.'
+  'register:MacOS and Linux only. Register espanso in the system daemon manager.'
+  'restart:Restart the espanso daemon.'
+  'start:Start the daemon spawning a new process in the background.'
+  'status:Check if the espanso daemon is running or not.'
+  'stop:Stop the espanso daemon.'
+  'uninstall:Remove an installed package. Equivalent to ''espanso package uninstall'''
+  'unregister:MacOS and Linux only. Unregister espanso from the system daemon manager.'
+)
+
+_arguments -C -S \
+  '(-h --help)'{-h,--help}'[Prints help information]' \
+                        -v'[Sets the level of verbosity]' \
+  '(-V --version)'{-V,--version}'[Prints version information]' \
+  '1: :->subcommands' \
+  '*:: :->command_args' && ret=0
+
+case ${state} in
+  (subcommands)
+    _describe 'subcommand' subcommands && ret=0
+  ;;
+
+  (command_args)
+    case ${words[1]} in
+      (cmd)
+        local -a cmd_subcommands
+        cmd_subcommands=(
+          'disable:Disable the espanso replacement engine.'
+          'enable:Enable the espanso replacement engine.'
+          'exit:Terminate the daemon.'
+          'help:Prints this message or the help of the given subcommand(s)'
+          'toggle:Toggle the status of the espanso replacement engine.'
+        )
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]'
+        _describe 'subcommand' cmd_subcommands && ret=0 ;;
+      (daemon)
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]'
+        _message "Start the daemon without spawning a new process." && ret=0
+      ;;
+      (detect)
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+      (dump)
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+      (edit)
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' \
+          '(-n --nostart)'{-n,--nostart}'[Avoid restarting espanso after editing the file]::config:_path_files' \
+            && ret=0
+      ;;
+      (help)
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]'
+        _describe 'subcommand' subcommands && ret=0
+      ;;
+      (install)
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' \
+          '(-e --external)'{-e,--external}'[Allow installing packages from non-verified repositories.]:package_name:():repository_url:()' \
+        && ret=0
+      ;;
+      (log)
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+      (package)
+        local -a package_subcommands
+        package_subcommands=(
+          'help:Prints this message or the help of the given subcommand(s)'
+          'install:Install a package. Equivalent to ''espanso package install'''
+          'list:List all installed packages'
+          'refresh:Update espanso package index'
+          'uninstall:Remove an installed package. Equivalent to ''espanso package uninstall'''
+        )
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]'
+        _describe 'subcommand' package_subcommands && ret=0
+      ;;
+      (path)
+        local -a path_subcommands
+        path_subcommands=(
+          'config:Print the current config folder path.'
+          'data:Print the current data folder path.'
+          'default:Print the default configuration file path.'
+          'help:Prints this message or the help of the given subcommand(s)'
+          'packages:Print the current packages folder path.'
+        )
+        _arguments -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]'
+        _describe 'subcommand' path_subcommands && ret=0
+      ;;
+      (register)
+
+        _arguments -C -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+      (restart)
+        _arguments -C -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+      (start)
+        _arguments -C -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+      (status)
+        _arguments -C -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+      (stop)
+        _arguments -C -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+      (uninstall)
+        _arguments -C -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]'
+        _message "Package name" && ret=0
+      ;;
+      (unregister)
+        _arguments -C -S \
+          '(-h --help)'{-h,--help}'[Prints help information]' \
+          '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ${ret}
+

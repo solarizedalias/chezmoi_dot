@@ -1,0 +1,100 @@
+# vim: set ft=zsh:
+
+# ==========================================================
+# _suffer
+# Wed Aug 12 22:32:01 2020
+# based on f version 0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+function _first() {
+
+  # ****************************************************************************************
+  # TODO
+  # [ ] Set _compskip=default somewhere appropriate (to prevent _default being dispatched.)
+  #    'e.g., ${(<TAB>)} -> completing glob flags, qualifiers is so wrong!'
+  #
+  # [ ] Handle the case when inside double quotes.
+  #     This might break the code relying on OrigSet so we need to be careful.
+  #
+  # [ ] Complete different set of parameters depending on flags.
+  #     e.g., associative arrays for ${(k)NAME}.
+  # ****************************************************************************************
+
+  emulate -L zsh
+  setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+  setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+  local context curcontext=${curcontext} state line expl state_descr
+  integer ret=1
+  declare -A opt_args
+
+  local -a match mbegin mend
+
+  # Store the original values because we are going to mess around these parameters.
+  local -A OrigSet
+  OrigSet[ISUFFIX]="${ISUFFIX}"
+  OrigSet[SUFFIX]="${SUFFIX}"
+  OrigSet[PREFIX]="${PREFIX}"
+  OrigSet[IPREFIX]="${IPREFIX}"
+
+  # ***********************************************************
+  #                  PARAMETER EXPANSION FLAG
+  # ***********************************************************
+  if [[ ${PREFIX} == *'${('[^\)]# ]]; then
+
+    compset -S '\)*'
+    _dispatch -brace-parameter- -brace-parameter- && ret=0
+
+  fi
+
+  # **********************************************************
+  #                       BRACE PARAMETER
+  # **********************************************************
+  if [[ ${PREFIX} == *'${'[^\}]# ]]; then
+    compset -P '[^[:IDENT:]]#'
+    compset -P '*[\)+=\#\~]'
+
+    # Do **NOT** escape closing braces if you are not put them in `[]`.
+    if compset  -S '[\}\[]*'; then
+      # _message "PREFIX is ${PREFIX} SUFFIX is ${SUFFIX}"
+      _dispatch -brace-parameter- -brace-parameter- && ret=0
+    fi
+  fi
+
+  # **********************************************************
+  #                         Subscript
+  # **********************************************************
+  if [[ "${PREFIX}" == *\[[^\]]# ]]; then
+    # _message ":: ipre:'${IPREFIX}' pre:'${PREFIX}' suf:'${SUFFIX}' isuf:'${ISUFFIX}'"
+
+    if compset -S '\]*'; then
+
+      # Kind of a hack.
+      local PARAMNAME
+      # Restore the original state.
+      IPREFIX="${OrigSet[IPREFIX]}"
+      PREFIX="${OrigSet[PREFIX]}"
+      # Get the name of the parameter.
+      PARAMNAME="${${PREFIX%\[(\([^\)]\)|)}##*[^[:IDENT:]]}"
+      # Fallback to the extracted param name if unset.
+      compstate[parameter]="${compstate[parameter]:-${PARAMNAME}}"
+      # And then push everything up to `[` out of PREFIX.
+      compset -P '*\['
+      # At this point, the state should be like,
+      #   IPREFIX `${(FLAG)NAME[`
+      #   PREFIX  ``
+      #   SUFFIX  ``
+      #   ISUFFIX `]}`
+
+      # DEBUG
+      _message "ipre:'${IPREFIX}' pre:'${PREFIX}' suf:'${SUFFIX}' isuf:'${ISUFFIX}'"
+
+      _dispatch -subscript- -subscript- && ret=0
+    fi
+  fi
+
+  return ret
+}
+

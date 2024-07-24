@@ -1,0 +1,43 @@
+#compdef zcompile-digest
+
+# ==========================================================
+# _zcompile_digest
+# Thu Dec 17 21:59:58 2020
+# based on zcompile-digest version -
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '(-f --force)'{-f,--force}'[force overwrite existing wordcode]'
+  '(-s --save)'{-s,--save}'[save existing wordcode as *.zwc.old]'
+  '(-v --verbose)'{-v,--verbose}'[increase verbosity]'
+  '(-c --color)'{-c,--color}'[force colorized output even when redirected]'
+)
+
+function __zcompile-digest_fpath_or_dir() {
+  local -aU m_fpath=(
+    ${(@M)^fpath:#*.zwc}(#qND-.:s@.zwc(#e)@@)
+    ${(@)^fpath}(#qND-/)
+  )
+  _alternative \
+    'fpath:fpath:{ _describe "fpath dir or root dir of wordcode" m_fpath }' \
+     'directories:directory:_files -/'  &&
+  ret=0
+}
+
+_arguments -S -s \
+  ${(@)optspecs} \
+  '1:directory:{__zcompile-digest_fpath_or_dir}' &&
+ret=0
+
+return ret
+

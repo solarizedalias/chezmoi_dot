@@ -1,0 +1,74 @@
+#compdef asar
+
+# ==========================================================
+# _asar
+# Sun Nov 15 22:54:19 2020
+# based on asar version v3.0.3
+# AUTHOR: solarizedalias
+# Completions for asar
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a subcommands=(
+  {pack,p}':create asar archive'
+  {list,l}':list files of asar archive'
+  {extract-file,ef}':extract one file from archive'
+  {extract,e}':extract archive'
+  'help:display help for command'
+)
+
+local -a optspecs=(
+  '(- : *)'{-V,--version}'[output the version number]'
+  '(-h --help)'{-h,--help}'[display help for command]'
+)
+
+_arguments -C \
+  ${(@)optspecs} \
+  '1:command:{_describe command subcommands}' \
+  '*:: :->cmd_args' && ret=0
+
+case ${state} in
+  (cmd_args)
+    case ${words[1]} in
+      (pack|p)
+        optspecs+=(
+          '--ordering[path to a text file for ordering contents]:file:_path_files'
+          '--unpack[do not pack files matching glob]:glob pattern: '
+          '--unpack-dir[do not pack dirs matching glob or starting with literal expression]:glob or string: '
+          '--exclude-hidden[exclude hidden files]'
+        )
+        _arguments \
+          ${(@)optspecs} \
+          '*::file:_path_files' && ret=0
+      ;;
+      (list|l)
+        optspecs+=( '(-i --is-pack)'{-i,--is-pack}'[each file in the asar is pack or unpack]' )
+        _arguments ${(@)optspecs} \
+          '*::archive:{_path_files -g "*.asar"}' && ret=0
+      ;;
+      (extract-file|ef)
+        _arguments ${(@)optspecs} \
+          '*::archive:{_path_files -g "*.asar"}' && ret=0
+      ;;
+      (extract|e)
+        _arguments ${(@)optspecs} \
+          '*::archive:{_path_files -g "*.asar"}' && ret=0
+      ;;
+      (help)
+        _arguments \
+          ${(@)optspec} \
+          '*::: := '$0'' && ret=0
+      ;;
+    esac
+  ;;
+esac
+
+return ret
+

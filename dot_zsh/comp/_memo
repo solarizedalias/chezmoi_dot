@@ -1,0 +1,75 @@
+#compdef memo
+
+# ==========================================================
+# _memo
+# Sun Oct 31 12:15:23 2021
+# based on memo version 0.0.15
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_sh_word_split
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a subcommands=(
+  'new:create memo'
+  'list:list memo'
+  'edit:edit memo'
+  'cat:view memo'
+  'delete:delete memo'
+  'grep:grep memo'
+  'config:configure'
+  'serve:start http serveer'
+  'help:shows a list of commands or help for one command'
+)
+
+local -a optspecs=(
+  '(--help -h)'{--help,-h}'[show help]'
+  '(--version -v)'{--version,-v}'[print the version]'
+)
+
+_arguments -C \
+  ${(@)optspecs} \
+  '1:command:{ _describe command subcommands }' \
+  '*:: :->args' && ret=0
+
+# TODO complete -- edit
+case ${state} in
+  (args)
+    if (( CURRENT == 2 )); then
+      case ${words[1]} in
+        (new|n|grep|g)
+          _default && ret=0
+        ;;
+        (list|l)
+          optspecs=(
+            '--fullpath[show file path]'
+            '--format[print the result using a Go template string]:string: '
+          )
+          _arguments ${(@)optspecs} && ret=0
+        ;;
+        (edit|e|cat|v|delete|d)
+          local -a list
+          list=( ${(f)"$(memo list)"} )
+          _describe -t memo memo list && ret=0
+        ;;
+        (config|c)
+          optspecs=( '--cat[cat the file]' )
+          _arguments ${(@)optspecs} && ret=0
+        ;;
+        (serve|s)
+          optspecs=( '--addr[server address]:addr: ' )
+          _arguments ${(@)optspecs} && ret=0
+        ;;
+        (help|h)
+          _describe command subcommands && ret=0
+        ;;
+      esac
+    fi
+  ;;
+esac

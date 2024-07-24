@@ -1,0 +1,73 @@
+#compdef tab
+
+# ==========================================================
+# _tab
+# Mon Oct 26 16:03:52 2020
+# based on version 0.5.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob warn_create_global typeset_silent no_short_loops
+setopt hist_subst_pattern no_auto_pushd rc_quotes
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+(( ${+functions[__tab_available_tabs]} )) || \
+  function __tab_available_tabs() {
+    integer ret=1
+    local -A Available_tabs
+    local -a closables
+    local -a match mbegin mend
+    local \
+      P1='*/*' P2='(#b)(#s)[[:blank:]]##([^[:blank:]]##/)([[:blank:]]##\([^\)]##\)|)' \
+      P3='(#s)[[:blank:]]##' P4='(#b)\(*\)'
+
+    closables=(
+      ${(f)"$( tab --_autocomplete_close_tab 2>/dev/null )"}
+    )
+    Available_tabs=(
+      ${(@0)${(@M)${(@)${(f)"$(
+        tab --list 2>/dev/null
+      )"}//$'\033['[0-9;]##m/}:#${~P1}}/${~P2}/"${match[1]}"$'\0'"${${${match[2]/${~P3}}/${~P4}/${match[1]}}:- }"}
+    )
+    local -a open_tabs closed_tabs
+    local K
+
+    for K in ${(@k)Available_tabs}; do
+      if (( ${closables[(I)${K}]} )); then
+        open_tabs+=( "${K}:${(r:10:: :):-(open)}${Available_tabs[${K}]}" )
+      else
+        closed_tabs+=( "${K}:${(r:10:: :):-(closed)}${Available_tabs[${K}]}" )
+      fi
+    done
+
+    local alts=(
+      'open-tabs:open tab:{ _describe "open tabs" open_tabs }'
+      'closed-tabs:closed tab:{ _describe "closed tabs" closed_tabs }'
+    )
+    integer L=1 H=$(( $# < 1 ? 1 : $# ))
+    _alternative ${(@)alts[L,H]} && ret=0
+    return ret
+  }
+
+_arguments -C \
+    '1:available tabs:{ __tab_available_tabs o c }' \
+    '(-w --close)'{-w=,--close=}'[closes the tab with the given name]:open tabs:{
+      __tab_available_tabs o
+    }' \
+    '(-z --disconnect=)'{-z=,--disconnect=}'[disconnects any active sessions for the given tab]:open tabs:{
+      __tab_available_tabs o
+    }' \
+    '(-l --list)'{-l,--list}'[lists the active tabs]' \
+    '(-k --check)'{-k,--check}'[checks the current workspace for errors and warnings]' \
+    '(-W --shutdown)'{-W,--shutdown}'[terminates the tab daemon and all active pty sessions]' \
+    '--completion=[prints raw autocomplete scripts]:shell:(bash elvish fish powershell zsh)' \
+    '(-h --help)'{-h,--help}'[Prints help information]' \
+    '(-V --version)'{-V,--version}'[Prints version information]' && ret=0
+
+return ret
+

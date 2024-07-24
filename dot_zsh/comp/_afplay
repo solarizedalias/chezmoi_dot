@@ -1,0 +1,38 @@
+#compdef afplay
+
+# ==========================================================
+# _afplay
+# Mon Dec 26 03:00:43 2022
+# based on afplay version 2.0
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '(-v --volume)'{-v,--volume}'[set the volume for playback of the file]:volume: '
+  '(-h --help)'{-h,--help}'[print help]'
+  --leaks'[run leaks analysis]'
+  '(-t --time)'{-t,--time}'[play for specified seconds]:seconds: '
+  '(-r --rate)'{-r,--rate}'[play at playback rate]:rate: '
+  '(-q --rQuality)'{-q,--rQuality}'[set the quality used for ratee-scaled playback]:quality:((
+      0\:"low quality (default)"
+      1\:"high quality"
+  ))'
+  '(-d --debug)'{-d,--debug}'[debug print output]'
+)
+
+_arguments \
+  ${(@)optspecs} \
+  '*:files:_files' && ret=0
+
+return ret
+
+# vim: set ft=zsh:

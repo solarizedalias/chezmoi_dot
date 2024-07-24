@@ -1,0 +1,36 @@
+#compdef imgcat
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _imgcat
+# Thu Oct 15 22:02:30 2020
+# based on imgcat version 2.3.2
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr ret=1
+local -A opt_args val_args
+
+_arguments \
+    '(-h --help)'{-h,--help}'[show common options and quit]' \
+    '(-v --version)'{-v,--version}'[show version and quit]' \
+  + size \
+    '(-H --half-height)'{-H,--half-height}'[print half-height blocks to double the vertical resolution]' \
+    '(size)'{-R,--no-resize}'[do not resize the image to fit the terminal width]' \
+    '(-w --width)'{-w,--width=}'[shrink the image to specified characters wide]:columns: ' \
+    '(-r --height)'{-r,--height=}'[resize the image to specified rows]:rows: ' \
+  + '(depth)' \
+    {-d,--depth=}'[explicitly set the output color depth]:depth:( 8 256 iterm2 24bit )' \
+    {--8,--ansi}'[set the output colour depth to 8]' \
+    '--256[set the output colour depth to 256]' \
+    '--iterm2[set the output to iTerm inline image mode (--depth=iterm2)]' \
+    {--24bit,--true}'[set the output colour depth to 24 bit or atruea color]' \
+  '*::image file:{_path_files -g "*(N-/)" -g "*.(jpg|jpeg|png|bmp|gif)"}' && ret=0
+
+return ret

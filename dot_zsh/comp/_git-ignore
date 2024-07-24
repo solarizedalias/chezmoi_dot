@@ -1,0 +1,24 @@
+#compdef git-ignore
+
+# ==========================================================
+# _git_ignore
+# Sat Oct 24 14:55:45 2020
+# based on git-ignore version
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt extended_glob warn_create_global typeset_silent no_short_loops
+setopt hist_subst_pattern no_auto_pushd rc_quotes
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+_arguments \
+  '(--local -l)'{--local,-l}'[show local gitignore]' \
+  '(--global -g)'{--global,-g}'[show global gitignore]' \
+  '(--private -p)'{--private,-p}'[show repo gitignore]' \
+  '*:pattern:{ _path_files }' && ret=0
+

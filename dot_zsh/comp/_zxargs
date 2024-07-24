@@ -1,0 +1,33 @@
+#compdef zxargs
+
+# ==========================================================
+# _zxargs
+# Wed Nov 25 20:45:05 2020
+# based on zxargs version -
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+local -a optspecs=(
+  '(: * -)'{-h,--help}'[help (not implemented)]'
+  '(: * -)'{-v,--version}'[version (not implemented)]'
+  '(-e --eof)'{-e,--eof=}'[change the end-of-input-args string from ":::" to eof-str]:eof-str: '
+  '(-p --parallel --max-procs)'{-p,--parallel,--max-procs}'[specify max count of background jobs]'
+)
+
+# FIXME argument-rest part don't work with aliases
+_arguments \
+  ${(@)optspecs} \
+  ':command:{ _dispatch _ -command- }' \
+  '*:: :{
+    emulate zsh -o NO_warn_create_global -o extended_glob -c "_dispatch _ ${words[1]:t} -default-"
+  }' && ret=0
+

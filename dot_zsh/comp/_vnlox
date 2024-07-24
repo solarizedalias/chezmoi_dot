@@ -1,0 +1,28 @@
+#compdef vnlox
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# _vnlox
+# Sat Oct 15 03:50:45 2022
+# based on vnlox version 0.28.2
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+# Usage: vnlox [-h|--help] [-v|--version] [-n|--noExec] [-a|--dumpAst] [-s|--dumpCheckedAst] [FILE]
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+_arguments \
+  '(-h --help)'{-h,--help}'[print help text]' \
+  '(-n --noExcec)'{-n,--noExec}'[dump the disassembled bytecode]' \
+  '(-a --dumpAst)'{-a,--dumpAst}'[just dump the parsed AST]' \
+  '(-s --dumpCheckedAst)'{-s,--dumpCheckedAst}'[just dump the semchecked AST]' \
+  '*:lox file:_files -g "*.lox"'
+

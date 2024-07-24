@@ -1,0 +1,941 @@
+#compdef _glab glab
+
+
+function _glab {
+  local -a commands
+
+  _arguments -C \
+    '--help[Show help for command]' \
+    '(-v --version)'{-v,--version}'[show glab version information]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "alias:Create, list and delete aliases"
+      "check-update:Check for latest glab releases"
+      "completion:Generate shell completion scripts"
+      "config:Set and get glab settings"
+      "help:Help about any command"
+      "issue:Work with GitLab issues"
+      "label:Manage labels on remote"
+      "mr:Create, view and manage merge requests"
+      "pipeline:Manage pipelines"
+      "release:Manage GitLab releases"
+      "repo:Work with GitLab repositories and projects"
+      "version:show glab version information"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  alias)
+    _glab_alias
+    ;;
+  check-update)
+    _glab_check-update
+    ;;
+  completion)
+    _glab_completion
+    ;;
+  config)
+    _glab_config
+    ;;
+  help)
+    _glab_help
+    ;;
+  issue)
+    _glab_issue
+    ;;
+  label)
+    _glab_label
+    ;;
+  mr)
+    _glab_mr
+    ;;
+  pipeline)
+    _glab_pipeline
+    ;;
+  release)
+    _glab_release
+    ;;
+  repo)
+    _glab_repo
+    ;;
+  version)
+    _glab_version
+    ;;
+  esac
+}
+
+
+function _glab_alias {
+  local -a commands
+
+  _arguments -C \
+    '--help[Show help for command]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "delete:Delete an alias."
+      "list:List the available aliases."
+      "set:Set an alias."
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  delete)
+    _glab_alias_delete
+    ;;
+  list)
+    _glab_alias_list
+    ;;
+  set)
+    _glab_alias_set
+    ;;
+  esac
+}
+
+function _glab_alias_delete {
+  _arguments \
+    '--help[Show help for command]'
+}
+
+function _glab_alias_list {
+  _arguments \
+    '--help[Show help for command]'
+}
+
+function _glab_alias_set {
+  _arguments \
+    '(-s --shell)'{-s,--shell}'[Declare an alias to be passed through a shell interpreter]' \
+    '--help[Show help for command]'
+}
+
+function _glab_check-update {
+  _arguments \
+    '--help[Show help for command]'
+}
+
+function _glab_completion {
+  _arguments \
+    '(-s --shell)'{-s,--shell}'[Shell type: {bash|zsh|fish|powershell}]:' \
+    '--help[Show help for command]'
+}
+
+
+function _glab_config {
+  local -a commands
+
+  _arguments -C \
+    '(-g --global)'{-g,--global}'[use global config file]' \
+    '--help[Show help for command]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "get:Prints the value of a given configuration key"
+      "init:Shows a prompt to set basic glab configuration"
+      "set:Updates configuration with the value of a given key"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  get)
+    _glab_config_get
+    ;;
+  init)
+    _glab_config_init
+    ;;
+  set)
+    _glab_config_set
+    ;;
+  esac
+}
+
+function _glab_config_get {
+  _arguments \
+    '(-g --global)'{-g,--global}'[Read from global config file (~/.config/glab-cli/config.yml). [Default: looks through Environment variables → Local → Global]]' \
+    '(-h --host)'{-h,--host}'[Get per-host setting]:' \
+    '--help[Show help for command]'
+}
+
+function _glab_config_init {
+  _arguments \
+    '--help[Show help for command]'
+}
+
+function _glab_config_set {
+  _arguments \
+    '(-g --global)'{-g,--global}'[write to global ~/.config/glab-cli/config.yml file rather than the repository .glab-cli/config/config]' \
+    '(-h --host)'{-h,--host}'[Set per-host setting]:' \
+    '--help[Show help for command]'
+}
+
+function _glab_help {
+  _arguments \
+    '--help[Show help for command]'
+}
+
+
+function _glab_issue {
+  local -a commands
+
+  _arguments -C \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:' \
+    '--help[Show help for command]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "board:Work with GitLab Issue Boards in the given project."
+      "close:Close an issue"
+      "create:Create an issue"
+      "delete:Delete an issue"
+      "list:List project issues"
+      "note:Add a comment or note to an issue on Gitlab"
+      "reopen:Reopen a closed issue"
+      "subscribe:Subscribe to an issue"
+      "unsubscribe:Unsubscribe to an issue"
+      "update:Update issue"
+      "view:Display the title, body, and other information about an issue."
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  board)
+    _glab_issue_board
+    ;;
+  close)
+    _glab_issue_close
+    ;;
+  create)
+    _glab_issue_create
+    ;;
+  delete)
+    _glab_issue_delete
+    ;;
+  list)
+    _glab_issue_list
+    ;;
+  note)
+    _glab_issue_note
+    ;;
+  reopen)
+    _glab_issue_reopen
+    ;;
+  subscribe)
+    _glab_issue_subscribe
+    ;;
+  unsubscribe)
+    _glab_issue_unsubscribe
+    ;;
+  update)
+    _glab_issue_update
+    ;;
+  view)
+    _glab_issue_view
+    ;;
+  esac
+}
+
+
+function _glab_issue_board {
+  local -a commands
+
+  _arguments -C \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "create:Create a project issue board."
+      "view:View project issue board."
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  create)
+    _glab_issue_board_create
+    ;;
+  view)
+    _glab_issue_board_view
+    ;;
+  esac
+}
+
+function _glab_issue_board_create {
+  _arguments \
+    '(-n --name)'{-n,--name}'[The name of the new board]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_board_view {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_close {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_create {
+  _arguments \
+    '(-a --assignee)'{-a,--assignee}'[Assign issue to people by their ID. Multiple values should be comma separated ]:' \
+    '(-c --confidential)'{-c,--confidential}'[Set an issue to be confidential. Default is false]' \
+    '(-d --description)'{-d,--description}'[Supply a description for issue]:' \
+    '(-l --label)'{-l,--label}'[Add label by name. Multiple labels should be comma separated]:' \
+    '--linked-mr[The IID of a merge request in which to resolve all issues]:' \
+    '(-m --milestone)'{-m,--milestone}'[The global ID of a milestone to assign issue]:' \
+    '--no-editor[Don'\''t open editor to enter description. If set to true, uses prompt. Default is false]' \
+    '(-t --title)'{-t,--title}'[Supply a title for issue]:' \
+    '(-w --weight)'{-w,--weight}'[The weight of the issue. Valid values are greater than or equal to 0.]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_delete {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_list {
+  _arguments \
+    '(-a --all)'{-a,--all}'[Get all issues]' \
+    '--assignee[Filter issue by assignee <username>]:' \
+    '(-c --closed)'{-c,--closed}'[Get only closed issues]' \
+    '--confidential[Filter by confidential issues]' \
+    '(-l --label)'{-l,--label}'[Filter issue by label <name>]:' \
+    '--milestone[Filter issue by milestone <id>]:' \
+    '--mine[Filter only issues issues assigned to me]' \
+    '(-o --opened)'{-o,--opened}'[Get only opened issues]' \
+    '(-p --page)'{-p,--page}'[Page number]:' \
+    '(-P --per-page)'{-P,--per-page}'[Number of items to list per page]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_note {
+  _arguments \
+    '(-m --message)'{-m,--message}'[Comment/Note message]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_reopen {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_subscribe {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_unsubscribe {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_update {
+  _arguments \
+    '(-d --description)'{-d,--description}'[Issue description]:' \
+    '(*-l *--label)'{\*-l,\*--label}'[add labels]:' \
+    '--lock-discussion[Lock discussion on issue]' \
+    '(-t --title)'{-t,--title}'[Title of issue]:' \
+    '(*-u *--unlabel)'{\*-u,\*--unlabel}'[remove labels]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_issue_view {
+  _arguments \
+    '(-c --comments)'{-c,--comments}'[Show issue comments and activities]' \
+    '(-p --page)'{-p,--page}'[Page number]:' \
+    '(-P --per-page)'{-P,--per-page}'[Number of items to list per page]:' \
+    '(-s --system-logs)'{-s,--system-logs}'[Show system activities / logs]' \
+    '(-w --web)'{-w,--web}'[Open issue in a browser. Uses default browser or browser specified in BROWSER variable]' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+
+function _glab_label {
+  local -a commands
+
+  _arguments -C \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format. Supports group namespaces]:' \
+    '--help[Show help for command]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "list:List labels in repository"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  list)
+    _glab_label_list
+    ;;
+  esac
+}
+
+function _glab_label_list {
+  _arguments \
+    '(-p --page)'{-p,--page}'[Page number]:' \
+    '(-P --per-page)'{-P,--per-page}'[Number of items to list per page]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format. Supports group namespaces]:'
+}
+
+
+function _glab_mr {
+  local -a commands
+
+  _arguments -C \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:' \
+    '--help[Show help for command]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "approve:Approve merge requests"
+      "approvers:List merge request eligible approvers"
+      "checkout:Checkout to an open merge request"
+      "close:Close merge requests"
+      "create:Create new merge request"
+      "delete:Delete merge requests"
+      "for:Create new merge request for an issue"
+      "issues:Get issues related to a particular merge request."
+      "list:List merge requests"
+      "merge:Merge/Accept merge requests"
+      "note:Add a comment or note to merge request"
+      "rebase:Automatically rebase the source_branch of the merge request against its target_branch."
+      "reopen:Reopen merge requests"
+      "revoke:Revoke approval on a merge request <id>"
+      "subscribe:Subscribe to merge requests"
+      "todo:Add a ToDo to merge request"
+      "unsubscribe:Unsubscribe from merge requests"
+      "update:Update merge requests"
+      "view:Display the title, body, and other information about a merge request."
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  approve)
+    _glab_mr_approve
+    ;;
+  approvers)
+    _glab_mr_approvers
+    ;;
+  checkout)
+    _glab_mr_checkout
+    ;;
+  close)
+    _glab_mr_close
+    ;;
+  create)
+    _glab_mr_create
+    ;;
+  delete)
+    _glab_mr_delete
+    ;;
+  for)
+    _glab_mr_for
+    ;;
+  issues)
+    _glab_mr_issues
+    ;;
+  list)
+    _glab_mr_list
+    ;;
+  merge)
+    _glab_mr_merge
+    ;;
+  note)
+    _glab_mr_note
+    ;;
+  rebase)
+    _glab_mr_rebase
+    ;;
+  reopen)
+    _glab_mr_reopen
+    ;;
+  revoke)
+    _glab_mr_revoke
+    ;;
+  subscribe)
+    _glab_mr_subscribe
+    ;;
+  todo)
+    _glab_mr_todo
+    ;;
+  unsubscribe)
+    _glab_mr_unsubscribe
+    ;;
+  update)
+    _glab_mr_update
+    ;;
+  view)
+    _glab_mr_view
+    ;;
+  esac
+}
+
+function _glab_mr_approve {
+  _arguments \
+    '(-s --sha)'{-s,--sha}'[The HEAD of the merge request]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_approvers {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_checkout {
+  _arguments \
+    '(-b --branch)'{-b,--branch}'[checkout merge request with <branch> name]:' \
+    '(-t --track)'{-t,--track}'[set checked out branch to track remote branch, adds remote if needed]' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_close {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_create {
+  _arguments \
+    '--allow-collaboration[Allow commits from other members]' \
+    '(-a --assignee)'{-a,--assignee}'[Assign merge request to people by their IDs. Multiple values should be comma separated ]:' \
+    '--create-source-branch[Create source branch if it does not exist]' \
+    '(-d --description)'{-d,--description}'[Supply a description for merge request]:' \
+    '--draft[Mark merge request as a draft]' \
+    '(-f --fill)'{-f,--fill}'[Do not prompt for title/description and just use commit info]' \
+    '(-l --label)'{-l,--label}'[Add label by name. Multiple labels should be comma separated]:' \
+    '(-m --milestone)'{-m,--milestone}'[add milestone by <id> for merge request]:' \
+    '--no-editor[Don'\''t open editor to enter description. If set to true, uses prompt. Default is false]' \
+    '--push[Push committed changes after creating merge request. Make sure you have committed changes]' \
+    '--remove-source-branch[Remove Source Branch on merge]' \
+    '(-s --source-branch)'{-s,--source-branch}'[The Branch you are creating the merge request. Default is the current branch.]:' \
+    '(-b --target-branch)'{-b,--target-branch}'[The target or base branch into which you want your code merged]:' \
+    '--target-project[Add target project by id]:' \
+    '(-t --title)'{-t,--title}'[Supply a title for merge request]:' \
+    '--wip[Mark merge request as a work in progress. Alternative to --draft]' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_delete {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_for {
+  _arguments \
+    '--allow-collaboration[Allow commits from other members]' \
+    '(-a --assignee)'{-a,--assignee}'[Assign merge request to people by their IDs. Multiple values should be comma separated ]:' \
+    '--draft[Mark merge request as a draft. Default is true]' \
+    '(-l --label)'{-l,--label}'[Add label by name. Multiple labels should be comma separated]:' \
+    '(-m --milestone)'{-m,--milestone}'[add milestone by <id> for merge request]:' \
+    '--remove-source-branch[Remove Source Branch on merge]' \
+    '(-b --target-branch)'{-b,--target-branch}'[The target or base branch into which you want your code merged]:' \
+    '--wip[Mark merge request as a work in progress. Overrides --draft]' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_issues {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_list {
+  _arguments \
+    '(-a --all)'{-a,--all}'[Get all merge requests]' \
+    '(-c --closed)'{-c,--closed}'[Get only closed merge requests]' \
+    '(-l --label)'{-l,--label}'[Filter merge request by label <name>]:' \
+    '(-m --merged)'{-m,--merged}'[Get only merged merge requests]' \
+    '--milestone[Filter merge request by milestone <id>]:' \
+    '--mine[Get only merge requests assigned to me]' \
+    '(-o --opened)'{-o,--opened}'[Get only opened merge requests]' \
+    '(-p --page)'{-p,--page}'[Page number]:' \
+    '(-P --per-page)'{-P,--per-page}'[Number of items to list per page]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_merge {
+  _arguments \
+    '(-m --message)'{-m,--message}'[Get only closed merge requests]:' \
+    '(-d --remove-source-branch)'{-d,--remove-source-branch}'[Remove source branch on merge]' \
+    '--sha[Merge Commit sha]:' \
+    '(-s --squash)'{-s,--squash}'[Squash commits on merge]' \
+    '--squash-message[Squash commit message]:' \
+    '--when-pipeline-succeeds[Merge only when pipeline succeeds. Default to true]' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_note {
+  _arguments \
+    '(-m --message)'{-m,--message}'[Comment/Note message]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_rebase {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_reopen {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_revoke {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_subscribe {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_todo {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_unsubscribe {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_update {
+  _arguments \
+    '(-d --description)'{-d,--description}'[merge request description]:' \
+    '--draft[Mark merge request as a draft]' \
+    '--lock-discussion[Lock discussion on merge request]' \
+    '(-r --ready)'{-r,--ready}'[Mark merge request as ready to be reviewed and merged]' \
+    '(-t --title)'{-t,--title}'[Title of merge request]:' \
+    '--wip[Mark merge request as a work in progress. Alternative to --draft]' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_mr_view {
+  _arguments \
+    '(-c --comments)'{-c,--comments}'[Show mr comments and activities]' \
+    '(-p --page)'{-p,--page}'[Page number]:' \
+    '(-P --per-page)'{-P,--per-page}'[Number of items to list per page]:' \
+    '(-s --system-logs)'{-s,--system-logs}'[Show system activities / logs]' \
+    '(-w --web)'{-w,--web}'[Open mr in a browser. Uses default browser or browser specified in BROWSER variable]' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+
+function _glab_pipeline {
+  local -a commands
+
+  _arguments -C \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:' \
+    '--help[Show help for command]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "ci:Work with GitLab CI pipelines and jobs"
+      "delete:Delete a pipeline"
+      "list:Get the list of pipelines"
+      "run:Create a new pipeline run"
+      "status:View a running pipeline on current or other branch specified"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  ci)
+    _glab_pipeline_ci
+    ;;
+  delete)
+    _glab_pipeline_delete
+    ;;
+  list)
+    _glab_pipeline_list
+    ;;
+  run)
+    _glab_pipeline_run
+    ;;
+  status)
+    _glab_pipeline_status
+    ;;
+  esac
+}
+
+
+function _glab_pipeline_ci {
+  local -a commands
+
+  _arguments -C \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "lint:Checks if your .gitlab-ci.yml file is valid."
+      "trace:Work with GitLab CI pipelines and jobs"
+      "view:View, run, trace/logs, and cancel CI jobs current pipeline"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  lint)
+    _glab_pipeline_ci_lint
+    ;;
+  trace)
+    _glab_pipeline_ci_trace
+    ;;
+  view)
+    _glab_pipeline_ci_view
+    ;;
+  esac
+}
+
+function _glab_pipeline_ci_lint {
+  _arguments \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_pipeline_ci_trace {
+  _arguments \
+    '(-b --branch)'{-b,--branch}'[Check pipeline status for a branch. (Default is the current branch)]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_pipeline_ci_view {
+  _arguments \
+    '(-b --branch)'{-b,--branch}'[Check pipeline status for a branch/tag. (Default is the current branch)]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_pipeline_delete {
+  _arguments \
+    '(-s --status)'{-s,--status}'[delete pipelines by status: {running|pending|success|failed|canceled|skipped|created|manual}]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_pipeline_list {
+  _arguments \
+    '(-o --orderBy)'{-o,--orderBy}'[Order pipeline by <string>]:' \
+    '(-p --page)'{-p,--page}'[Page number]:' \
+    '(-P --per-page)'{-P,--per-page}'[Number of items to list per page]:' \
+    '--sort[Sort pipeline by {asc|desc}. (Defaults to desc)]:' \
+    '(-s --status)'{-s,--status}'[Get pipeline with status: {running|pending|success|failed|canceled|skipped|created|manual}]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_pipeline_run {
+  _arguments \
+    '(-b --branch)'{-b,--branch}'[Create pipeline on branch/ref <string>]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+function _glab_pipeline_status {
+  _arguments \
+    '(-b --branch)'{-b,--branch}'[Check pipeline status for a branch. (Default is current branch)]:' \
+    '(-l --live)'{-l,--live}'[Show status in real-time till pipeline ends]' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+
+function _glab_release {
+  local -a commands
+
+  _arguments -C \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:' \
+    '--help[Show help for command]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "list:List releases in a repository"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  list)
+    _glab_release_list
+    ;;
+  esac
+}
+
+function _glab_release_list {
+  _arguments \
+    '(-t --tag)'{-t,--tag}'[Filter releases by tag <name>]:' \
+    '--help[Show help for command]' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:'
+}
+
+
+function _glab_repo {
+  local -a commands
+
+  _arguments -C \
+    '--help[Show help for command]' \
+    "1: :->cmnds" \
+    "*::arg:->args"
+
+  case $state in
+  cmnds)
+    commands=(
+      "archive:Get an archive of the repository."
+      "clone:Clone a Gitlab repository/project"
+      "contributors:Get contributors of the repository."
+      "create:Create a new Gitlab project/repository"
+      "search:Search for GitLab repositories and projects by name"
+    )
+    _describe "command" commands
+    ;;
+  esac
+
+  case "$words[1]" in
+  archive)
+    _glab_repo_archive
+    ;;
+  clone)
+    _glab_repo_clone
+    ;;
+  contributors)
+    _glab_repo_contributors
+    ;;
+  create)
+    _glab_repo_create
+    ;;
+  search)
+    _glab_repo_search
+    ;;
+  esac
+}
+
+function _glab_repo_archive {
+  _arguments \
+    '(-f --format)'{-f,--format}'[Optionally Specify format if you want a downloaded archive: {tar.gz|tar.bz2|tbz|tbz2|tb2|bz2|tar|zip} (Default: zip)]:' \
+    '(-s --sha)'{-s,--sha}'[The commit SHA to download. A tag, branch reference, or SHA can be used. This defaults to the tip of the default branch if not specified]:' \
+    '--help[Show help for command]'
+}
+
+function _glab_repo_clone {
+  _arguments \
+    '--help[Show help for command]'
+}
+
+function _glab_repo_contributors {
+  _arguments \
+    '(-f --order)'{-f,--order}'[Return contributors ordered by name, email, or commits (orders by commit date) fields. Default is commits]:' \
+    '(-R --repo)'{-R,--repo}'[Select another repository using the OWNER/REPO format or the project ID. Supports group namespaces]:' \
+    '(-s --sort)'{-s,--sort}'[Return contributors sorted in asc or desc order. Default is asc]:' \
+    '--help[Show help for command]'
+}
+
+function _glab_repo_create {
+  _arguments \
+    '--defaultBranch[Default branch of the project. If not provided, `master` by default.]:' \
+    '(-d --description)'{-d,--description}'[Description of the new project]:' \
+    '(-g --group)'{-g,--group}'[Namespace/group for the new project (defaults to the current user’s namespace)]:' \
+    '--internal[Make project internal: visible to any authenticated user (default)]' \
+    '(-n --name)'{-n,--name}'[Name of the new project]:' \
+    '(-p --private)'{-p,--private}'[Make project private: visible only to project members]' \
+    '(-P --public)'{-P,--public}'[Make project public: visible without any authentication]' \
+    '--readme[Initialize project with README.md]' \
+    '(*-t *--tag)'{\*-t,\*--tag}'[The list of tags for the project.]:' \
+    '--help[Show help for command]'
+}
+
+function _glab_repo_search {
+  _arguments \
+    '(-p --page)'{-p,--page}'[Page number]:' \
+    '(-P --per-page)'{-P,--per-page}'[Number of items to list per page]:' \
+    '(-s --search)'{-s,--search}'[A string contained in the project name]:' \
+    '--help[Show help for command]'
+}
+
+function _glab_version {
+  _arguments \
+    '--help[Show help for command]'
+}
+
+_glab $@
+

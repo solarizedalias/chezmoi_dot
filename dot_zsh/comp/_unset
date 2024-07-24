@@ -1,0 +1,26 @@
+#compdef unset
+
+# ==========================================================
+# _unset
+# Thu Nov 26 20:56:03 2020
+# based on unset version -
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+setopt localoptions NO_shwordsplit
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local context curcontext=${curcontext} state line expl state_descr
+integer ret=1
+local -A opt_args val_args
+
+_arguments \
+  '-m[treat arguments as patterns]' \
+  '(-f)-v[specify that arguments refers to parameters (default)]:*:parameter:_vars' \
+  '(-v)-f[remove shell functions]:*:function:_functions' \
+  '*:parameter:_vars' && ret=0
+
+return ret
+
