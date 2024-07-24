@@ -1,0 +1,722 @@
+[[plugins]]
+repo = 'alaviss/nim.nvim'
+hook_add = '''
+  let g:nim_highlight_wait = 1
+'''
+
+[[plugins]]
+repo = 'solarizedalias/after-nim.nvim'
+depends = [ 'nim.nvim' ]
+
+[[plugins]]
+repo = 'neovim/nvim-lspconfig'
+hook_post_source = '''
+  call ApplyCustom('nvim-lspconfig')
+'''
+
+[[plugins]]
+# repo = 'jose-elias-alvarez/null-ls.nvim'
+repo = 'nvimtools/none-ls.nvim'
+depends = [ 'plenary.nvim' ]
+lua_post_source = '''
+  local null_ls = require('null-ls')
+  null_ls.setup({
+    sources = {
+      null_ls.builtins.diagnostics.actionlint,
+      null_ls.builtins.diagnostics.checkmake,
+    },
+  })
+'''
+
+[[plugins]]
+repo = 'glepnir/lspsaga.nvim'
+hook_add = '''
+  nnoremap <silent> <leader>gp <cmd>Lspsaga peek_definition<cr>
+'''
+lua_post_source = '''
+  require('lspsaga').setup({
+    lightbulb = {
+      debounce = 1000,
+      sign = true,
+      virtual_text = false,
+    },
+  })
+'''
+
+[[plugins]]
+repo = 'folke/lsp-colors.nvim'
+
+[[plugins]]
+repo = 'nvim-tree/nvim-web-devicons'
+
+[[plugins]]
+repo = 'folke/trouble.nvim'
+depends = ['nvim-web-devicons']
+lua_post_source = '''
+  require('trouble').setup({})
+'''
+
+[[plugins]]
+repo = 'nvim-lua/plenary.nvim'
+
+[[plugins]]
+repo = 'nvim-lua/popup.nvim'
+
+[[plugins]]
+repo = 'nvim-telescope/telescope.nvim'
+hook_post_source = '''
+lua <<END
+  require('telescope').setup({
+    defaults = {
+      mappings = {
+        i = { ['<c-h>'] = 'which_key', },
+        n = {}
+      }
+    },
+    extensions = {
+      frecency = {
+        ignore_patterns = {'*.git/*', '*/tmp/*', 'term://*', '*/doc/*.txt'}
+      }
+    }
+  })
+END
+
+call ApplyCustom('telescope.nvim')
+
+'''
+
+[[plugins]]
+repo = 'nvim-telescope/telescope-fzf-native.nvim'
+depends = [ 'telescope.nvim' ]
+build = 'make'
+lua_post_source = '''
+  require('telescope').load_extension('fzf')
+'''
+
+[[plugins]]
+repo = 'tami5/sql.nvim'
+
+[[plugins]]
+repo = 'nvim-telescope/telescope-frecency.nvim'
+depends = ['telescope.nvim', 'sql.nvim']
+lua_post_source = '''
+  require('telescope').load_extension('frecency')
+'''
+
+[[plugins]]
+repo = 'cljoly/telescope-repo.nvim'
+depends = ['telescope.nvim', 'plenary.nvim']
+lua_post_source = '''
+  require('telescope').load_extension('repo')
+'''
+
+[[plugins]]
+repo = 'nvim-telescope/telescope-github.nvim'
+lua_post_source = '''
+  require('telescope').load_extension('gh')
+'''
+
+[[plugins]]
+repo = 'nvim-treesitter/nvim-treesitter'
+merged = 0
+hook_post_update = '''
+  TSUpdate
+'''
+hook_post_source = '''
+  call ApplyCustom('nvim-treesitter')
+'''
+
+[[plugins]]
+repo = 'aMOPel/nvim-treesitter-nim'
+depends = ['nvim-treesitter']
+merged = 0
+
+[[plugins]]
+repo = 'nvim-treesitter/nvim-treesitter-refactor'
+depends = [ 'nvim-treesitter' ]
+
+[[plugins]]
+repo = 'nvim-treesitter/nvim-treesitter-textobjects'
+depends = [ 'nvim-treesitter' ]
+
+[[plugins]]
+repo = 'mfussenegger/nvim-treehopper'
+depends = [ 'nvim-treesitter' ]
+hook_add = '''
+  onoremap m <cmd>lua require('tsht').nodes()<cr>
+  xnoremap m :lua require('tsht').nodes()<cr>
+'''
+
+[[plugins]]
+repo = 'nvim-treesitter/playground'
+
+[[plugins]]
+repo = 'nvim-treesitter/nvim-treesitter-context'
+on_event = 'VimEnter'
+lua_post_source = '''
+  require('treesitter-context').setup{
+      enable = true, -- Enable this plugin (Can be enabled/disabled later via commands)
+      max_lines = 0, -- How many lines the window should span. Values <= 0 mean no limit.
+      mode = 'topline',
+      separator = '┄',
+      patterns = { -- Match patterns for TS nodes. These get wrapped to match at word boundaries.
+          -- For all filetypes
+          -- Note that setting an entry here replaces all other patterns for this entry.
+          -- By setting the 'default' entry below, you can control which nodes you want to
+          -- appear in the context window.
+          default = {
+              'class',
+              'function',
+              'method',
+              'local_function',
+              'arrow_function',
+              'arguments',
+              'namespace_definition',
+              'type_definition',
+              'acces_specifier',
+              'struct_expression',
+              'struct_specifier',
+              'union_specifier',
+              'enum_specifier',
+              'preproc_ifdef',
+              'preproc_else'
+
+              -- 'for',
+              -- 'while',
+              -- 'if',
+              -- 'switch',
+              -- 'case',
+          },
+          lua = {
+            'local_variable_declaration',
+            'table',
+          },
+          -- Example for a specific filetype.
+          -- If a pattern is missing, *open a PR* so everyone can benefit.
+          --   rust = {
+          --       'impl_item',
+          --   },
+      },
+  }
+'''
+
+[[plugins]]
+repo = 'lukas-reineke/indent-blankline.nvim'
+lua_post_source = '''
+  local ibl = require('ibl')
+  ibl.setup({
+    indent = { char = '¦' },
+    whitespace = { highlight = {"Folded"} },
+  })
+'''
+
+[[plugins]]
+repo = 'norcalli/nvim-colorizer.lua'
+lua_add = '''
+  require('colorizer').setup({'*'}, { css = true, })
+'''
+
+# Use jobstart() so it's neovim only
+[[plugins]]
+repo = 'rktjmp/git-info.vim'
+
+[[plugins]]
+repo = 'dstein64/nvim-scrollview'
+
+# rst
+[[plugins]]
+repo = 'ThePrimeagen/vim-be-good'
+
+[[plugins]]
+repo = 'romgrk/fzy-lua-native'
+build = 'make'
+
+[[plugins]]
+repo = 'gabrielpoca/replacer.nvim'
+hook_add = '''
+  command! Replacer lua require('replacer').run()
+'''
+
+[[plugins]]
+repo = 'folke/persistence.nvim'
+hook_add = '''
+
+  command! ListSession       lua print(table.concat(require('persistence').list(), '\n'))
+  command! LoadSession       lua require('persistence').load()
+  command! LoadLastSession   lua require('persistence').load({last = true})
+  command! SaveSession       lua require('persistence').save()
+  command! SessionStartAuto  lua require('persistence').start()
+  command! SessionStopAuto   lua require('persistence').stop()
+  nnoremap <leader>@s <cmd>LoadSession<cr>
+
+  augroup dein_persistence
+    autocmd!
+    autocmd User PersistenceSavePre call s:PersistenceSavePre()
+    autocmd User PersistenceSavePost call s:PersistenceSavePost()
+  augroup END
+
+  function! s:PersistenceSavePre() abort
+    let s:old_sessionoptions = &sessionoptions
+    set sessionoptions=buffers,curdir,folds,help,tabpages,winsize
+  endfunction
+
+  function! s:PersistenceSavePost() abort
+    let &sessionoptions = s:old_sessionoptions
+  endfunction
+
+'''
+lua_post_source = '''
+  require('persistence').setup({
+    need = 2,
+  })
+'''
+
+# This creates {n,v}map {y,d,c,}{f,F,t,T} <cmd>lua ...
+# If you find this lack of faith disturbing, set let g:ftFT_disable_keymap_XXX
+# variables to disable them.
+[[plugins]]
+repo = 'gukz/ftFT.nvim'
+hook_post_source = '''
+lua <<END
+  require('ftFT').setup({
+    keys = { "f", "t", "F", "T" },
+    modes = {"n", "v"},
+    hl_group = "ftFT",
+    sight_hl_group = "ftFT_sight",
+  })
+END
+  highlight ftFT       ctermfg=15 ctermbg=1 guifg=#ffffff guibg=blue
+  highlight ftFT_sight ctermfg=15 ctermbg=4 guifg=#ffffff guibg=red
+'''
+
+[[plugins]]
+repo = 'rcarriga/nvim-notify'
+lua_post_source = '''
+  require("notify").setup({
+    fps = 15,
+
+    -- Animation style (see below for details)
+    stages = "fade_in_slide_out",
+
+    -- Function called when a new window is opened, use for changing win settings/config
+    on_open = function(win)
+      -- XXX doesn't work. overwritten?
+      --vim.api.nvim_win_set_option(win, 'signcolumn', 'no')
+
+      local config = vim.api.nvim_win_get_config(win)
+      config.focusable = false
+      vim.api.nvim_win_set_config(win, config)
+    end,
+
+    -- Render function for notifications. See notify-render()
+    render = "default",
+
+    -- timeout for notifications
+    timeout = vim.v.numbermax,
+
+    -- For stages that change opacity this is treated as the highlight behind the window
+    -- Set this to either a highlight group or an RGB hex value e.g. "#000000"
+    background_colour = '#000000',
+
+    -- Minimum width for notification windows
+    minimum_width = 50,
+
+    -- Icons for the different levels
+    icons = {
+      ERROR = " ",
+      WARN  = " ",
+      INFO  = " ",
+      DEBUG = " ",
+      TRACE = "✎ ",
+    },
+  })
+  vim.notify = require('notify')
+  vim.api.nvim_create_user_command('DismissNotification', function() vim.notify.dismiss() end, {bang = true})
+  -- vim.notify.on_key_ns_id = vim.on_key(function()
+  --   vim.notify.dismiss()
+  -- end, nil)
+'''
+
+[[plugins]]
+repo = 'chentoast/marks.nvim'
+lua_post_source = '''
+  require'marks'.setup {
+    -- whether to map keybinds or not. default true
+    default_mappings = false,
+    -- which builtin marks to show. default {}
+    builtin_marks = { ".", "<", ">", "^", "'", "`", },
+    -- whether movements cycle back to the beginning/end of buffer. default true
+    cyclic = true,
+    -- whether the shada file is updated after modifying uppercase marks. default false
+    force_write_shada = false,
+    -- how often (in ms) to redraw signs/recompute mark positions.
+    -- higher values will have better performance but may cause visual lag,
+    -- while lower values may cause performance penalties. default 150.
+    refresh_interval = 250,
+    -- sign priorities for each type of mark - builtin marks, uppercase marks, lowercase
+    -- marks, and bookmarks.
+    -- can be either a table with all/none of the keys, or a single number, in which case
+    -- the priority applies to all marks.
+    -- default 10.
+    sign_priority = { lower=8, upper=8, builtin=8, bookmark=8 },
+    -- disables mark tracking for specific filetypes. default {}
+    -- XXX empty filetype '' is here for excluding `filetype=`
+    excluded_filetypes = {
+      '', 'notify', 'TelescopePrompt', 'floaterm',
+      'LspsagaHover',
+    },
+    -- marks.nvim allows you to configure up to 10 bookmark groups, each with its own
+    -- sign/virttext. Bookmarks can be used to group together positions and quickly move
+    -- across multiple buffers. default sign is '!@#$%^&*()' (from 0 to 9), and
+    -- default virt_text is "".
+    --bookmark_0 = { sign = "⚑", virt_text = "hello world" },
+    mappings = {}
+  }
+'''
+
+[[plugins]]
+repo = 'solarizedalias/nvim-quickrun'
+# rev = 'fix_alt_buf'
+depends = [ 'plenary.nvim' ]
+lua_post_source = '''
+  require('quickrun').init()
+'''
+
+[[plugins]]
+repo = 'pwntester/octo.nvim'
+depends = [ 'telescope.nvim', 'nvim-web-devicons' ]
+lua_post_source = '''
+  require('octo').setup({
+      default_to_projects_v2 = true, -- use projects v2 for the `Octo card ...` command by default.
+  })
+'''
+
+[[plugins]]
+repo = 'b0o/SchemaStore.nvim'
+
+[[plugins]]
+repo = 'glacambre/firenvim'
+hook_post_update = '  call firenvim#install(0)  '
+
+[[plugins]]
+repo = 'rebelot/kanagawa.nvim'
+
+[[plugins]]
+repo = 'folke/tokyonight.nvim'
+
+[[plugins]]
+repo = 'vijaymarupudi/nvim-fzf'
+
+[[plugins]]
+repo = 'lukas-reineke/virt-column.nvim'
+
+# XXX:
+# There is a setting called `.exclude = { filetypes = {}, buftypes = {} }` but
+# as far as I can tell from the source code, it has no effect, so I have to disable
+# it myself for now.
+hook_post_source = '''
+  lua require('virt-column').setup({ virtcolumn = '80', char = '┊' })
+
+  " XXX: workaround for now
+  lua << END
+    require('virt-column').clear_buf = function(buf)
+      local m = require('virt-column')
+      m.setup_buffer(buf, {enabled = false})
+    end
+END
+
+  function! s:disable_virt_column() abort
+    if &readonly || len(&buftype) || len(nvim_win_get_config(0).relative)
+      lua require('virt-column').clear_buf(0)
+    endif
+  endfunction
+
+  function! s:disable_virt_column_pre() abort
+    if &readonly || len(&buftype)
+      let b:no_virt_column = v:true
+    else
+      let b:no_virt_column = v:false
+    endif
+  endfunction
+
+  " Disable the plugin when in Terminal mode
+  " It's also a workaround for the issue where the cursor gets invisible in
+  " Terminal mode.
+  augroup dein_virtcolumn
+    autocmd!
+    autocmd TermEnter           *        lua require('virt-column').clear_buf(0)
+    autocmd BufEnter            *        call s:disable_virt_column()
+    autocmd OptionSet           readonly lua require('virt-column').clear_buf(0)
+    autocmd BufNew,BufReadPost  *        call s:disable_virt_column_pre()
+  augroup END
+
+  augroup VirtColumnAutogroup
+    " XXX: DO NOT `autocmd!` here. We're just appending a new one.
+    autocmd BufWinEnter * if get(b:, 'no_virt_column', v:false) ||
+                        \     len(nvim_win_get_config(0).relative) |
+                        \   execute "lua require('virt-column').clear_buf(0)" |
+                        \ endif
+  augroup END
+
+'''
+
+[[plugins]]
+repo = 'folke/which-key.nvim'
+hook_post_source = '''
+set timeoutlen=500
+lua << END
+  require('which-key').setup({
+    plugins = {
+      marks = true,
+      registers = true,
+      presets = {
+        operators = true,
+        motions = true,
+        text_objects = true,
+        windows = false, -- XXX: disabled because of infinite loops
+        nav = true,
+        z = true,
+        g = true,
+      },
+    },
+    layout = {
+      width = { min = 20, max = 100 }
+    }
+  })
+END
+'''
+
+[[plugins]]
+repo = 'folke/todo-comments.nvim'
+lua_post_source = '''
+  require('todo-comments').setup({
+    keywords = {
+      FIX =  { icon = " ", color = "error",   alt = { "FIXME", "BUG", "FIXIT", "ISSUE" } },
+      HACK = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
+      WARN = { icon = " ", color = "warning" },
+      TODO = { icon = " ", color = "info" },
+      NOTE = { icon = "󰍨 ", color = "hint", alt = { "INFO" } },
+      PERF = { icon = "󰅒 ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
+    },
+    highlight = {
+      before = '', keyword = '', after = '',
+      pattern = [[.*<(KEYWORDS)\s*:?>]],
+    },
+    search = {
+      pattern = [[\b(KEYWORDS)\b]],
+    }
+  })
+'''
+
+[[plugins]]
+repo = 'ethanholz/nvim-lastplace'
+lua_post_source = '''
+  require('nvim-lastplace').setup({
+    lastplace_ignore_buftype = {"quickfix", "nofile", "help"},
+    lastplace_ignore_filetype = {"gitcommit", "gitrebase", "svn", "hgcommit"},
+    lastplace_open_folds = true
+  })
+'''
+
+[[plugins]]
+repo = 'hrsh7th/vim-unmatchparen'
+hook_add = '''
+
+  let g:unmatchparen#pairs_for_filetype = {
+    \ 'vim': {
+    \   'if': 'endif',
+    \   'for': 'endfor'
+    \ },
+    \ 'zsh': {
+    \   'if':     'fi',
+    \   'for':    'done',
+    \   'while':  'done',
+    \   'until':  'done',
+    \   'repeat': 'done',
+    \   'elif':   'then',
+    \ }
+    \}
+
+'''
+
+[[plugins]]
+repo = 'axieax/urlview.nvim'
+# required for `default_picker = 'telescope'`
+depends = [ 'telescope.nvim' ]
+lua_post_source = '''
+  require('urlview').setup({
+    default_picker = 'telescope',
+    default_action = 'system',
+  })
+
+  -- FIXME: does not work for non-github plugins
+  local function dein()
+    local plugins_spec = vim.g['dein#_plugins'] or {}
+
+    local function filter_files(plugin_url)
+      local fs_stat = vim.loop.fs_stat(plugin_url)
+      return not fs_stat or vim.tbl_isempty(fs_stat)
+    end
+
+    local function extract_key(spec)
+      return spec['repo']
+    end
+
+    local plugins = vim.tbl_map(extract_key, vim.tbl_values(plugins_spec or {}))
+    -- table.insert(plugins, 'Shougo/dein.vim')
+    plugins = vim.tbl_filter(filter_files, plugins)
+    plugins = vim.tbl_map(function(it)
+      return string.format('https://github.com/%s', it)
+    end, plugins)
+    return plugins
+  end
+
+  local search = require('urlview.search')
+  search['dein'] = dein
+'''
+
+[[plugins]]
+repo = 'lewis6991/gitsigns.nvim'
+merged = 0
+hook_post_source = '''
+lua <<END
+  require('gitsigns').setup ({
+    on_attach = function(bufnr)
+      local gs = package.loaded.gitsigns
+
+      local function map(mode, l, r, opts)
+        opts = opts or {}
+        opts.buffer = bufnr
+        vim.keymap.set(mode, l, r, opts)
+      end
+
+      -- Navigation
+      map('n', ']c', function()
+        if vim.wo.diff then return ']c' end
+        vim.schedule(function() gs.next_hunk() end)
+        return '<Ignore>'
+      end, {expr=true})
+
+      map('n', '[c', function()
+        if vim.wo.diff then return '[c' end
+        vim.schedule(function() gs.prev_hunk() end)
+        return '<Ignore>'
+      end, {expr=true})
+
+      -- Actions
+      map('n', '<leader>hs', gs.stage_hunk, {desc = "gs.stage_hunk"})
+      map('n', '<leader>hr', gs.reset_hunk, {desc = "gs.reset_hunk"})
+
+      map('v', '<leader>hs', function() gs.stage_hunk {vim.fn.line("."), vim.fn.line("v")} end,
+        {desc = [[function() gs.stage_hunk {vim.fn.line("."), vim.fn.line("v")} end]]})
+      map('v', '<leader>hr', function() gs.reset_hunk {vim.fn.line("."), vim.fn.line("v")} end,
+        {desc = [[function() gs.reset_hunk {vim.fn.line("."), vim.fn.line("v")} end]]})
+
+      map('n', '<leader>hS', gs.stage_buffer, {desc = "gs.stage_buffer"})
+      map('n', '<leader>hu', gs.undo_stage_hunk, {desc = "gs.undo_stage_hunk"})
+      map('n', '<leader>hR', gs.reset_buffer, {desc = "gs.reset_buffer"})
+      map('n', '<leader>hp', gs.preview_hunk, {desc = "gs.preview_hunk"})
+      map('n', '<leader>hb', function() gs.blame_line{full=true} end,
+        {desc = [[function() gs.blame_line{full=true} end]]})
+
+      map('n', '<leader>tb', gs.toggle_current_line_blame, {desc = "gs.toggle_current_line_blame"})
+      map('n', '<leader>hd', gs.diffthis, {desc = "gs.diffthis"})
+
+      map('n', '<leader>hD', function() gs.diffthis('~') end,
+        {desc = [[function() gs.diffthis('~') end]]})
+
+      map('n', '<leader>td', gs.toggle_deleted, {desc = "gs.toggle_deleted"})
+
+      -- Text object
+      map({'o', 'x'}, 'ih', ':<C-U>Gitsigns select_hunk<CR>')
+    end
+  })
+END
+
+highlight GitSignsAdd          ctermfg=green   guifg=green
+highlight GitSignsChange       ctermfg=yellow  guifg=yellow
+highlight GitSignsDelete       ctermfg=red     guifg=red
+highlight GitSignsChangeDelete ctermfg=yellow  guifg=yellow
+'''
+
+[[plugins]]
+repo = 'winston0410/cmd-parser.nvim'
+
+[[plugins]]
+repo = 'winston0410/range-highlight.nvim'
+depends = [ 'cmd-parser.nvim' ]
+lua_post_source = '''
+  require("range-highlight").setup{}
+'''
+
+[[plugins]]
+repo = 'HiPhish/rainbow-delimiters.nvim'
+hook_post_source = '''
+  lua << END
+    -- This module contains a number of default definitions
+    local rainbow_delimiters = require 'rainbow-delimiters'
+
+    vim.g.rainbow_delimiters = {
+        strategy = {
+            [''] = rainbow_delimiters.strategy['global'],
+        },
+        query = {
+            [''] = 'rainbow-delimiters',
+            bash = 'rainbow-delimiters-plus',
+        },
+        highlight = {
+            'RainbowDelimiterBlue',
+            'RainbowDelimiterOrange',
+            'RainbowDelimiterGreen',
+            'RainbowDelimiterRed',
+            'RainbowDelimiterYellow',
+            'RainbowDelimiterViolet',
+            'RainbowDelimiterCyan',
+        },
+    }
+END
+  highlight RainbowDelimiterBlue   ctermfg=81  guifg=RoyalBlue3
+  highlight RainbowDelimiterOrange ctermfg=229 guifg=DarkOrange3
+  highlight RainbowDelimiterGreen  ctermfg=159 guifg=SeaGreen3
+  highlight RainbowDelimiterRed    ctermfg=225 guifg=Firebrick
+'''
+
+[[plugins]]
+repo = 'AckslD/nvim-FeMaco.lua'
+lua_post_source = '''
+  require('femaco').setup()
+'''
+
+[[plugins]]
+repo = 'fuckie/neovim-molokai'
+
+[[plugins]]
+repo = 'kylechui/nvim-surround'
+lua_post_source = '''
+  require('nvim-surround').setup({
+    keymaps = {
+      -- these are basically covered by auto-pairs
+      insert = false,
+      insert_line = false,
+    },
+  })
+'''
+
+[[plugins]]
+repo = 'yutkat/confirm-quit.nvim'
+on_event = 'CmdlineEnter'
+lua_post_source = '''
+  require('confirm-quit').setup()
+'''
+
+[[plugins]]
+repo = '~/solarizedalias/github.com/boltlessengineer/smart-tab.nvim'
+lua_post_source = '''
+  local st = require('smart-tab')
+  st.setup({
+    skips = {},
+    -- impl_forward = st.next_node(),
+    -- impl_backward = st.previous_node(),
+  })
+'''
+

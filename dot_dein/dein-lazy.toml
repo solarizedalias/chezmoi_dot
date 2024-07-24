@@ -1,0 +1,23 @@
+
+[[plugins]]
+repo = 'scrooloose/nerdtree'
+hook_add = '''
+  let g:NERDTreeShowHidden=1
+  nnoremap <silent><leader>@t :NERDTreeFind<CR>:vertical res 30<CR>
+'''
+
+[[plugins]]
+repo = 'tpope/vim-unimpaired'
+
+[[plugins]]
+repo = 'simnalamburt/vim-mundo'
+
+[[plugins]]
+repo = 'rbong/vim-flog'
+depends = [
+  'vim-fugitive'
+]
+
+[[plugins]]
+repo = 'fatih/vim-go'
+

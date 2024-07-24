@@ -1,0 +1,511 @@
+[[plugins]]
+repo = 'Shougo/ddc.vim'
+depends = ['denops.vim']
+on_event = 'InsertEnter'
+hook_post_source = '''
+
+  call ddc#custom#patch_global('sources',
+  \ [
+  \   'codeium',
+  \   'tabnine',
+  \   'lsp',
+  \   'neosnippet',
+  \   'around',
+  \   'buffer',
+  \   'tmux',
+  \ ])
+
+  call ddc#custom#patch_global('sourceOptions', #{
+  \ _: #{
+  \   ignoreCase: v:true,
+  \ }
+  \})
+
+
+  " neosnippet
+  call ddc#custom#patch_global('sourceOptions', #{
+  \ neosnippet: #{
+  \   mark: '[ns]',
+  \   matchers: ['matcher_head'],
+  \}
+  \})
+
+  " neco-vim
+  call ddc#custom#patch_filetype('vim', 'sourceOptions', #{
+  \   necovim: #{
+  \     mark: '[vim]',
+  \}
+  \})
+
+  inoremap <c-x><c-h> <cmd>call ddc#map#manual_complete()<cr>
+
+  call ddc#enable()
+'''
+
+# FILTERS
+
+[[plugins]]
+repo = 'Shougo/ddc-filter-matcher_head'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  ""call ddc#custom#patch_global('sourceOptions', #{
+  ""      \   _: #{
+  ""      \     matchers: ['matcher_head'],
+  ""      \   }
+  ""      \ })
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-filter-sorter_rank'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  ""call ddc#custom#patch_global('sourceOptions', #{
+  ""      \   _: #{
+  ""      \     sorters: ['sorter_rank'],
+  ""      \   }
+  ""      \ })
+'''
+
+[[plugins]]
+repo = 'tani/ddc-fuzzy'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', #{
+    \   _: #{
+    \     matchers: ['matcher_fuzzy'],
+    \     sorters: ['sorter_fuzzy'],
+    \     converters: ['converter_fuzzy'],
+    \   }
+    \ })
+
+  call ddc#custom#patch_global('filterParams', #{
+    \ converter_fuzzy: #{
+    \   hlGroup: 'Tag',
+    \ }
+    \})
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-filter-sorter_head'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('postFilters', ['sorter_head'])
+'''
+
+# ui
+
+[[plugins]]
+repo = 'Shougo/ddc-ui-native'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  ""call ddc#custom#patch_global('ui', 'native')
+'''
+
+[[plugins]]
+repo = 'Shougo/pum.vim'
+hook_post_source = '''
+
+  call pum#set_option(#{
+    \ follow_cursor: v:true,
+    \ auto_select: v:false,
+    \ preview: v:true,
+    \ preview_border: 'rounded',
+    \ preview_height: 30,
+    \ preview_width: 100,
+    \ scrollbar_char: '┃'
+    \})
+
+
+  inoremap   <expr> <c-p> pum#visible() ? '<cmd>call pum#map#insert_relative(-1)<cr>' :
+        \                 v:lua.vim.snippet.active(#{direction: -1}) ? '<cmd>lua vim.snippet.jump(-1)<cr>' :
+        \                                 '<cmd>normal! gk<cr>'
+
+  imap       <expr> <c-n> pum#visible() ? '<cmd>call pum#map#insert_relative(+1)<cr>' :
+        \                 neosnippet#jumpable() ? '<plug>(neosnippet_jump)' :
+        \                 v:lua.vim.snippet.active(#{direction: 1}) ? '<cmd>lua vim.snippet.jump(1)<cr>' :
+        \                                         '<cmd>normal! gj\<cr>'
+
+  inoremap <expr> <cr>    pum#visible() ? '<cmd>call pum#map#confirm()<cr>' :
+        \                 v:lua.vim.snippet.active() ? '<cmd>lua vim.snippet.stop()<cr>' :
+        \                                 '<cr>'
+
+  inoremap <expr> <c-e>   pum#visible() ? '<cmd>call pum#map#cancel()<cr>' :
+        \                 v:lua.vim.snippet.active() ? '<cmd>lua vim.snippet.stop()<cr>' :
+        \                                 '<end>'
+
+  " Cmdline
+  cnoremap <expr> <tab>   pum#visible() ? '<cmd>call pum#map#insert_relative(+1)<cr>' :
+    \                                     '<cmd>call ddc#map#manual_complete()<cr>'
+
+  cnoremap <expr> <s-tab> pum#visible() ? '<cmd>call pum#map#insert_relative(-1)<cr>' :
+    \                                     '<cmd>call ddc#map#manual_complete()<cr>'
+
+  cnoremap <expr> <c-n> pum#complete_info().selected !=# -1 ? '<cmd>call pum#map#insert_relative(+1)<cr>' :
+    \                                                         '<down>'
+
+  cnoremap <expr> <c-p> pum#complete_info().selected !=# -1 ? '<cmd>call pum#map#insert_relative(-1)<cr>' :
+    \                                                         '<up>'
+
+  cnoremap <expr> <c-e> pum#visible() ? '<cmd>call pum#map#cancel()<cr>' : '<end>'
+
+  nnoremap :       <cmd>call CommandlinePre(':')<cr>:
+
+  function! CommandlinePre(mode) abort
+    let b:prev_buffer_config = ddc#custom#get_buffer()
+
+    if a:mode ==# ':'
+      call ddc#custom#set_context_buffer({ ->
+        \ getcmdline()->stridx('!') ==# 0 ?
+        \ #{
+        \   cmdlineSources: [
+        \     'shell-native',
+        \     'cmdline',
+        \     'cmdline-history',
+        \     'path',
+        \     'buffer',
+        \   ]
+        \ } : {} })
+    endif
+
+    autocmd User DDCCmdlineLeave ++once call CommandlinePost()
+
+    " Enable command line completion for the buffer
+    call ddc#enable_cmdline_completion()
+  endfunction
+
+  function! CommandlinePost() abort
+    if exists('b:prev_buffer_config')
+      call ddc#custom#set_buffer(b:prev_buffer_config)
+      unlet b:prev_buffer_config
+    endif
+  endfunction
+
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-ui-pum'
+depends = ['ddc.vim', 'pum.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  ""call ddc#custom#patch_global('ui', 'pum')
+
+  call ddc#custom#patch_global(#{
+          \   ui: 'pum',
+          \   autoCompleteEvents: [
+          \     'InsertEnter', 'TextChangedI', 'TextChangedP', 'CmdlineChanged',
+          \   ],
+          \   cmdlineSources: {
+          \     ':': ['cmdline', 'cmdline-history', 'path', 'buffer'],
+          \     '@': ['input', 'cmdline-history', 'around'],
+          \     '/': ['cmdline-history', 'around', 'line'],
+          \     '?': ['cmdline-history', 'around', 'line'],
+          \     '-': ['around', 'line'],
+          \     '=': ['input'],
+          \   },
+          \ })
+
+'''
+
+# Source
+
+[[plugins]]
+repo = 'Shougo/ddc-source-input'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', #{
+        \   input: #{
+        \     mark: '[input]',
+        \     isVolatile: v:true,
+        \   }
+        \ })
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-source-cmdline'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+
+  call ddc#custom#patch_global('sourceOptions', #{
+        \   cmdline: #{
+        \     mark: '[cmdline]',
+        \     timeout: 10000,
+        \     preview: v:false,
+        \     minAutoCompleteLength: 0,
+        \     maxItems: 20,
+        \   },
+        \})
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-source-cmdline-history'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+
+  call ddc#custom#patch_global('sourceOptions', #{
+        \   cmdline-history: #{
+        \     mark: '[history]',
+        \     preview: v:false,
+        \     minAutoCompleteLength: 0,
+        \     maxItems: 10,
+        \   },
+        \})
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-source-around'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', #{
+          \   around: #{
+          \     mark: '[A]',
+          \     maxItems: 20,
+          \   },
+          \ })
+  call ddc#custom#patch_global('sourceParams', #{
+          \   around: #{ maxSize: 500 },
+          \ })
+'''
+
+[[plugins]]
+repo = 'matsui54/ddc-source-buffer'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', #{
+      \ buffer: #{
+      \   mark: '[B]',
+      \   maxItems: 20,
+      \ },
+      \ })
+
+  call ddc#custom#patch_global('sourceParams', #{
+      \ buffer: #{
+      \   requireSameFiletype: v:false,
+      \   limitBytes: 5000000,
+      \   fromAltBuf: v:true,
+      \   forceCollect: v:true,
+      \ },
+      \ })
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-source-line'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+
+  call ddc#custom#patch_global('sourceOptions', #{
+        \   line: #{
+        \     mark: '[line]',
+        \     maxItems: 10,
+        \},
+        \ })
+
+  call ddc#custom#patch_global('sourceParams', #{
+        \   line: #{ maxSize: 1000 },
+        \ })
+'''
+
+[[plugins]]
+repo = 'LumaKernel/ddc-source-file'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', {
+      \ 'file': {
+      \   'mark': '[F]',
+      \   'isVolatile': v:true,
+      \   'forceCompletionPattern': '\S/\S*',
+      \ }})
+'''
+
+[[plugins]]
+repo = 'tani/ddc-path'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', #{
+        \   path: #{
+        \     mark: '[fd]',
+        \     maxItems: 20,
+        \   },
+        \ })
+
+  call ddc#custom#patch_global('sourceParams', #{
+        \   path: #{
+        \     cmd: [
+        \       'fd',
+        \       '--relative-path',
+        \       '--hidden',
+        \       '--max-depth=5',
+        \       '--exclude=.git'
+        \     ],
+        \     absolute: v:false,
+        \   },
+        \ })
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-source-lsp'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', #{
+        \   lsp: #{
+        \     mark: '[lsp]',
+        \     forceCompletionPattern: '\.\w*|:\w*|->\w*',
+        \     sorters: ['sorter_lsp-kind'],
+        \     converters: ['converter_kind_labels'],
+        \   },
+        \ })
+
+  call ddc#custom#patch_global('sourceParams', #{
+        \   lsp: #{
+        \     enableResolveItem: v:true,
+        \     enableAdditionalTextEdit: v:true,
+        \     snippetEngine: denops#callback#register({
+        \       body -> v:lua.vim.snippet.expand(body)
+        \     }),
+        \   }
+        \ })
+
+  call ddc#custom#patch_global('filterParams', #{
+        \   converter_kind_labels: #{
+        \     kindLabels: #{
+        \       Text: ' text',
+        \       Method: ' meth',
+        \       Function: ' func',
+        \       Constructor: ' ctor',
+        \       Field: ' field',
+        \       Variable: ' var',
+        \       Class: ' class',
+        \       Interface: ' iface',
+        \       Module: ' mod',
+        \       Property: ' prop',
+        \       Unit: ' unit',
+        \       Value: ' val',
+        \       Enum: ' enum',
+        \       Keyword: ' keyword',
+        \       Snippet: ' snip',
+        \       Color: ' color',
+        \       File: ' file',
+        \       Reference: ' ref',
+        \       Folder: ' folder',
+        \       EnumMember: ' enum member',
+        \       Constant: ' const',
+        \       Struct: ' struct',
+        \       Event: ' event',
+        \       Operator: ' operator',
+        \       TypeParameter: ' type param'
+        \     },
+        \     kindHlGroups: #{
+        \       Method: 'Function',
+        \       Function: 'Function',
+        \       Constructor: 'Function',
+        \       Field: 'Identifier',
+        \       Variable: 'Identifier',
+        \       Class: 'Structure',
+        \       Interface: 'Structure'
+        \     },
+        \   }
+        \})
+'''
+
+[[plugins]]
+repo = 'solarizedalias/ddc-tabnine'
+# repo = 'LumaKernel/ddc-tabnine'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', #{
+      \ tabnine: #{
+      \   mark: '[TN]',
+      \   maxItems: 5,
+      \   isVolatile: v:true,
+      \ }})
+'''
+
+[[plugins]]
+# repo = 'Shougo/ddc-source-shell-native'
+repo = 'solarizedalias/ddc-source-shell-native'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+
+  call ddc#custom#patch_filetype('zsh', 'sources',
+        \ [
+        \   'shell-native',
+        \   'neosnippet',
+        \   'tabnine',
+        \   'around',
+        \   'buffer',
+        \ ])
+  call ddc#custom#patch_global('sourceOptions', #{
+        \   shell-native: #{ mark: '[zsh]' },
+        \ })
+  call ddc#custom#patch_global('sourceParams', #{
+        \   shell-native: #{ shell: 'zsh' },
+        \ })
+'''
+
+[[plugins]]
+repo = 'delphinus/ddc-source-tmux'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  call ddc#custom#patch_global('sourceOptions', {
+        \ 'tmux': {'mark': '[tmux]'},
+        \ })
+'''
+
+[[plugins]]
+repo = 'uga-rosa/ddc-source-nvim-lua'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  " XXX: probably it's better to enable nvim-lua by per-buffer basis
+  "      But I don't have in mind any easy way to figure out if the buffer is for neovim lua code.
+  call ddc#custom#patch_filetype('lua', 'sources', [
+    \ 'tabnine',
+    \ 'nvim-lua',
+    \ 'lsp',
+    \ 'neosnippet',
+    \ 'around',
+    \ 'buffer',
+    \ 'tmux',
+    \])
+
+  call ddc#custom#patch_global('sourceOptions', #{
+    \ nvim-lua: #{
+    \   mark: '[Lua]',
+    \   forceCompletionPattern: '\.',
+    \ },
+    \})
+'''
+
+[[plugins]]
+repo = 'Shougo/ddc-source-codeium'
+depends = ['ddc.vim']
+on_source = 'ddc.vim'
+hook_post_source = '''
+  let g:codeium_render = v:false
+
+  call ddc#custom#patch_global('sourceOptions', #{
+    \ codeium: #{
+    \   mark: '[codeium]',
+    \   matchers: [],
+    \   isVolatile: v:true,
+    \   minAutoCompleteLength: 0,
+    \ }
+    \})
+'''
+

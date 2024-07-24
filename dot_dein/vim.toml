@@ -1,0 +1,361 @@
+
+[[plugins]]
+repo = 'roxma/nvim-yarp'
+[[plugins]]
+repo = 'roxma/vim-hug-neovim-rpc'
+
+# nim
+[[plugins]]
+repo = 'zah/nim.vim'
+hook_add = '''
+  fun! JumpToDef()
+    if exists("*GotoDefinition_" . &filetype)
+      call GotoDefinition_{&filetype}()
+    else
+      exe "norm! \<C-]>"
+    endif
+  endf
+  " Jump to tag
+  nn <M-g> :call JumpToDef()<cr>
+  ino <M-g> <esc>:call JumpToDef()<cr>i
+'''
+
+[[plugins]]
+repo = 'mattn/ctrlp-matchfuzzy'
+hook_add = '''
+
+  let g:ctrlp_match_func = {
+        \ 'match': 'ctrlp_matchfuzzy#matcher'
+        \ }
+
+'''
+
+[[plugins]]
+repo = 'Yggdroot/indentLine'
+hook_add = '''
+
+  let g:indentLine_concealcursor = 'inc'
+  let g:indentLine_conceallevel = 2
+  let g:indentLine_fileTypeExclude = ['text', 'help', 'man']
+
+'''
+
+# [[[ASYNC
+[[plugins]]
+repo = 'prabirshrestha/async.vim'
+
+# [[plugins]]
+# repo = 'prabirshrestha/asyncomplete.vim'
+# hook_add = '''
+
+#   let g:asyncomplete_auto_completeopt = 0
+#   let g:asyncomplete_smart_completion = 1
+#   let g:asyncomplete_auto_popup = 0
+#   let g:asyncomplete_min_chars = 7
+#   augroup dein_asyncomplete
+#     autocmd!
+#     autocmd BufRead,BufNewFile *.nim,*.nims,*.nimble
+#           \ let b:asyncomplete_enable = 0
+#   augroup END
+
+# '''
+
+[[plugins]]
+repo = 'prabirshrestha/asyncomplete-lsp.vim'
+hook_add = '''
+
+  " for asyncomplete.vim log
+  " let g:asyncomplete_log_file = expand('/tmp/asyncomplete.log')
+  let g:asyncomplete_log_file = ''
+  let g:asyncomplete_auto_popup = 0
+
+'''
+# ASYNC]]]
+
+[[plugins]]
+repo = 'wellle/tmux-complete.vim'
+hook_add = '''
+
+  let g:tmuxcomplete#trigger = ''
+  let g:tmuxcomplete#asyncomplete_source_options = {
+    \ 'name':      'tmux',
+    \ 'whitelist': ['*'],
+    \ 'config': {
+    \   'splitmode': 'words',
+    \   'filter_prefix': 1,
+    \   'show_incomplete': 1,
+    \   'sort_candidates': 0,
+    \   'scrollback': 0,
+    \   'truncate': 0
+    \ }
+    \}
+
+'''
+
+# JS TS
+[[plugins]]
+repo = 'jelera/vim-javascript-syntax'
+on_ft = [ 'javascript', 'typescript' ]
+
+[[plugins]]
+repo = 'pangloss/vim-javascript'
+on_ft = [ 'javascript', 'typescript' ]
+
+# [[[
+[[plugins]]
+repo = 'prabirshrestha/vim-lsp'
+
+# See https://github.com/neovim/neovim/issues/8796
+# [[plugins]]
+# repo = 'solarizedalias/vim-lsp'
+
+[[plugins]]
+repo = 'mattn/vim-lsp-settings'
+merged = 0
+depends = ['vim-lsp']
+hook_add = '''
+
+  let g:lsp_settings = {
+    \ 'bash-language-server': {
+    \   'allowlist': ['sh', 'bash', 'zsh']
+    \ },
+    \ 'clangd': {
+    \   'cmd': ['clangd']
+    \ }
+    \}
+
+  let g:lsp_settings_root_markers = [
+    \   '.git',
+    \   '.git/',
+    \   '.svn',
+    \   '.hg',
+    \   '.bzr',
+    \ ]
+
+'''
+#]]]
+
+[[plugins]]
+repo = 'Shougo/denite.nvim'
+hook_add = '''
+
+  nnoremap <silent> <leader>dn :<c-u>Denite -resume<cr>
+
+  " Define mappings
+  autocmd FileType denite call s:denite_my_settings()
+  function! s:denite_my_settings() abort
+    nnoremap <silent><buffer><expr> <cr>
+      \ denite#do_map('do_action')
+    nnoremap <silent><buffer><expr> d
+      \ denite#do_map('do_action', 'delete')
+    nnoremap <silent><buffer><expr> p
+      \ denite#do_map('do_action', 'preview')
+    nnoremap <silent><buffer><expr> q
+      \ denite#do_map('quit')
+    nnoremap <silent><buffer><expr> i
+      \ denite#do_map('open_filter_buffer')
+    nnoremap <silent><buffer><expr> <space>
+      \ denite#do_map('toggle_select').'j'
+  endfunction
+
+'''
+[[plugins]]
+repo = 'Shougo/neoyank.vim'
+depends = [
+  'denite.nvim'
+]
+
+
+[[plugins]]
+repo = 'chemzqm/unite-location'
+depends = [ 'denite.nvim' ]
+hook_add = '''
+
+  nnoremap <silent> <space>qf :<c-u>Denite -mode=normal -auto-resize quickfix<cr>
+  nnoremap <silent> <space>ql :<c-u>Denite -mode=normal -auto-resize location_list<cr>
+
+'''
+
+# By the way, why should it be ctrl-p ?
+[[plugins]]
+repo = 'ctrlpvim/ctrlp.vim'
+on_event = 'VimEnter'
+hook_add = '''
+  let g:ctrlp_map = '<leader>cP'
+  let g:ctrlp_use_caching = 1
+  let g:ctrlp_open_new_file = 'v'
+  let g:ctrlp_show_hidden = 1
+  let g:ctrlp_working_path_mode = 'ra'
+  let g:ctrlp_user_command = 'fd --hidden --type=f --full-path %s'
+  let g:ctrlp_regexp = 1
+  let g:ctrlp_working_path_mode = 'ra'
+  let g:ctrlp_extensions = [
+        \ 'tag', 'buffertag', 'quickfix', 'dir', 'rtscript',
+        \ 'undo', 'line', 'changes', 'mixed', 'bookmarkdir',
+        \ 'autoignore', 'lsp'
+        \ ]
+
+  augroup CtrlPDirMRU
+    autocmd!
+    autocmd FileType * if &modifiable | execute 'silent CtrlPBookmarkDirAdd! %:p:h' | endif
+  augroup END
+
+'''
+
+[[plugins]]
+repo = 'tacahiroy/ctrlp-funky'
+hook_add = '''
+
+  nnoremap <Leader><leader>fu :CtrlPFunky<CR>
+  nnoremap <Leader><leader>fU :execute 'CtrlPFunky ' . expand('<cword>')<CR>
+  let g:ctrlp_funky_syntax_highlight = 1
+  let g:ctrlp_funky_use_cache = 1
+  let g:ctrlp_funky_matchtype = 'path'
+  let g:ctrlp_funky_nerdtree_include_files = 1
+
+'''
+
+# This thing and 'fisadev/vim-ctrlp-cmdpalette' don't go well together.
+# So I had to choose one of them.
+[[plugins]]
+repo = 'sgur/ctrlp-extensions.vim'
+hook_add = '''
+
+  nnoremap <leader>H :CtrlPCmdline<CR>
+  nnoremap <leader>cp :CtrlPMenu<CR>
+
+'''
+
+[[plugins]]
+repo = 'mattn/ctrlp-lsp'
+
+
+[[plugins]]
+repo = 'solarizedalias/itunes.vim'
+
+[[plugins]]
+repo = 'yuki-ycino/fzf-preview.vim'
+rev = 'release/rpc'
+
+[[plugins]]
+repo = 'machakann/vim-highlightedyank'
+
+# [[plugins]]
+# repo = 'lifepillar/vim-mucomplete'
+
+[[plugins]]
+repo = 'skanehira/vsession'
+hook_add = '''
+
+  let g:vsession_path = '~/.vim/sessions'
+  let g:vsession_use_fzf = 1
+
+'''
+[[plugins]]
+repo = 'thinca/vim-quickrun'
+hook_add = '''
+
+  let g:quickrun_config = {
+    \ '_' : {
+    \   'runner': 'job',
+    \   'outputter'                    : 'error',
+    \   'outputter/buffer/running_mark': '...',
+    \   'outputter/error/success'      : 'buffer',
+    \   'outputter/error/error'        : 'buffer',
+    \   'outputter/buffer/opener'      :
+    \     '%{winwidth(0) * 2 < winheight(0) * 5 ? "botright new" : "botright vnew"}',
+    \ }
+    \}
+
+'''
+
+[[plugins]]
+repo = 'haya14busa/incsearch.vim'
+hook_add = '''
+  let g:incsearch#emacs_like_keymap = 1
+  map /  <Plug>(incsearch-forward)\v
+  map ?  <Plug>(incsearch-backward)\v
+  map g/ <Plug>(incsearch-stay)\v
+'''
+
+[[plugins]]
+repo = 'liuchengxu/vim-which-key'
+hook_add = '''
+
+  set timeoutlen=500
+  nnoremap <silent> <leader>      :<c-u>WhichKey       '<leader>'<CR>
+  vnoremap <silent> <leader>      :<c-u>WhichKeyVisual '<leader>'<CR>
+  nnoremap <silent> <localleader> :<c-u>WhichKey       '<localleader>'<CR>
+  vnoremap <silent> <localleader> :<c-u>WhichKeyVisual '<localleader>'<CR>
+
+'''
+
+# supreme
+[[plugins]]
+repo = 'lambdalisue/suda.vim'
+
+# mru/mrw
+[[plugins]]
+repo = 'lambdalisue/mr.vim'
+
+[[plugins]]
+repo = 'lambdalisue/mr-quickfix.vim'
+depends = [ 'lambdalisue/mr.vim' ]
+
+[[plugins]]
+repo = 'ryanoasis/vim-devicons'
+hook_add = '''
+
+  let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols
+        \ = {} " needed
+  let g:WebDevIconsUnicodeDecorateFileNodesExtensionSymbols[
+        \ 'nim'] = ''
+
+'''
+
+[[plugins]]
+repo = 'tpope/vim-dispatch'
+hook_add = '''
+  augroup dispatch
+    autocmd!
+    autocmd FileType zsh let b:dispatch = 'zsh -n %'
+    autocmd FileType nim let b:dispatch = 'nim c --run %'
+  augroup END
+'''
+
+[[plugins]]
+repo = 'farmergreg/vim-lastplace'
+
+[[plugins]]
+repo = 'editorconfig/editorconfig-vim'
+
+[[plugins]]
+repo = 'airblade/vim-gitgutter'
+hook_add = '''
+
+    set signcolumn=yes
+    let g:gitgutter_async = 1
+    let g:gitgutter_sign_modified = 'rw'
+    highlight GitGutterAdd          ctermfg=green  guifg=green
+    highlight GitGutterChange       ctermfg=yellow guifg=yellow
+    highlight GitGutterDelete       ctermfg=red    guifg=red
+    highlight GitGutterChangeDelete ctermfg=yellow guifg=yellow
+
+'''
+
+[[plugins]]
+repo = 'Shougo/context_filetype.vim'
+
+[[plugins]]
+repo ='osyo-manga/vim-precious'
+depends = [
+  'Shougo/context_filetype.vim'
+]
+hook_post_source = '''
+  call ApplyCustom('vim-precious')
+'''
+
+# Much to learn you still have, my old padawan.
+[[plugins]]
+repo = 'tpope/vim-surround'
+

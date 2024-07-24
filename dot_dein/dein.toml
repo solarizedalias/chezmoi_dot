@@ -1,0 +1,725 @@
+
+# let dein manage dein
+[[plugins]]
+repo = 'Shougo/dein.vim'
+
+# pork
+[[plugins]]
+# repo = 'tweekmonster/startuptime.vim'
+repo = 'solarizedalias/startuptime.vim'
+
+[[plugins]]
+repo = 'vim-denops/denops.vim'
+
+[[plugins]]
+repo = 'lambdalisue/vim-kensaku'
+depends = ['denops.vim']
+
+[[plugins]]
+repo = 'yuki-yano/fuzzy-motion.vim'
+depends = ['denops.vim', 'vim-kensaku']
+hook_add = '''
+  let g:fuzzy_motion_auto_jump = 1
+  let g:fuzzy_motion_matchers = ['fzf', 'kensaku']
+
+  nnoremap <leader>j <cmd>FuzzyMotion<cr>
+  xnoremap <leader>j <cmd>FuzzyMotion<cr>
+  onoremap <leader>j <cmd>FuzzyMotion<cr>
+'''
+hook_post_source = '''
+  highlight FuzzyMotionShade ctermfg=248 guifg=#777777
+  highlight FuzzyMotionChar  cterm=bold,underline ctermfg=209 gui=bold,underline guifg=#f92672
+'''
+
+[[plugins]]
+repo = 'tyru/capture.vim'
+
+#
+# vv
+# [[[
+[[plugins]]
+repo = 'voldikss/vim-floaterm'
+hook_add = '''
+
+  let g:floaterm_shell = '/usr/local/bin/zsh -l'
+
+  nnoremap <leader>zz <cmd>FloatermToggle<cr>
+  command! Gitui FloatermNew --width=220 --height=60 gitui
+  nnoremap <leader>p <cmd>Gitui<cr>
+
+'''
+hook_post_source = '''
+  highlight link FloatermBorder VertSplit
+'''
+
+[[plugins]]
+repo = 'voldikss/fzf-floaterm'
+depends = [ 'vim-floaterm' ]
+
+[[plugins]]
+repo = 'voldikss/vim-browser-search'
+hook_add = '''
+
+  nmap <silent> <leader>S <plug>SearchNormal
+  vmap <silent> <leader>S <plug>SearchVisual
+
+'''
+
+# ]]]
+
+[[plugins]]
+repo = 'vim-scripts/SyntaxAttr.vim'
+hook_add = '''
+
+  map <leader><leader>A :call SyntaxAttr()<cr>
+
+'''
+
+[[plugins]]
+repo = 'tweekmonster/helpful.vim'
+merged = 0
+
+#
+# dein
+#
+[[plugins]]
+repo = 'haya14busa/dein-command.vim'
+
+[[plugins]]
+repo = 'wsdjeg/dein-ui.vim'
+
+# [[[
+[[plugins]]
+repo = 'dense-analysis/ale'
+hook_post_source = '''
+  call ApplyCustom('ale')
+'''
+
+[[plugins]]
+repo = 'Shougo/deol.nvim'
+hook_add = '''
+  let g:deol#extra_options = {'term_finish': 'close'}
+'''
+
+[[plugins]]
+repo ='Shougo/neco-syntax'
+
+[[plugins]]
+repo = 'Shougo/neco-vim'
+
+[[plugins]]
+repo = 'Shougo/echodoc.vim'
+hook_add = '''
+
+  let g:echodoc#enable_at_startup = 1
+
+'''
+
+[[plugins]]
+repo = 'Shougo/neosnippet.vim'
+hook_add = '''
+  let g:neosnippet#disable_runtime_snippets = {
+        \   'nim': 1,
+        \   'zsh': 1,
+        \ }
+
+  " let g:neosnippet#enable_conceal_markars = 0
+  let g:neosnippet#conceal_char = '@'
+
+  let g:neosnippet#snippets_directory = [
+        \ '~/dotfiles/snips',
+        \]
+  " let g:neosnippet#enable_completed_snippet = 1
+  " let g:neosnippet#enable_complete_done = 1
+
+
+  ""smap <expr><c-n> neosnippet#expandable_or_jumpable() ? "\<plug>(neosnippet_expand_or_jump)" : "\<c-n>"
+  ""xmap <expr><c-n> neosnippet#jumpable() ? "\<plug>(neosnippet_jump)" : "\<c-n>"
+  xmap <c-n> <plug>(neosnippet_expand_target)
+'''
+
+[[plugins]]
+repo = 'Shougo/neosnippet-snippets'
+
+[[plugins]]
+repo = 'tpope/vim-scriptease'
+
+# [[[
+[[plugins]]
+repo = 'junegunn/fzf.vim'
+
+[[plugins]]
+repo = 'liuchengxu/vista.vim'
+hook_add = '''
+
+  if has('nvim')
+    " OPTIONS
+    let g:vista_sidebar_position = 'vertical topleft'
+    let g:vista#renderer#enable_icon = 1
+    let g:vista_fzf_preview = ['right:50%']
+    let g:vista_icon_indent = ['╰─▸ ', '├─▸ ']
+
+    " MAPS
+    nnoremap <leader>vi <cmd>Vista!!<cr>
+    nnoremap <leader>vf <cmd>Vista finder<cr>
+  endif
+
+'''
+
+#
+# git
+# [[[G
+
+
+# required for vim-gist
+[[plugins]]
+repo = 'mattn/webapi-vim'
+
+[[plugins]]
+repo = 'mattn/vim-gist'
+depends = ['mattn/webapi-vim']
+hook_add = '''
+  let g:gist_clip_command    = 'pbcopy'
+  let g:gist_detect_filetype = 1
+  let g:gist_show_privates   = 1
+  let g:gist_post_private    = 1
+'''
+
+# An alternative gist.vim
+[[plugins]]
+repo = 'lambdalisue/vim-gista'
+
+[[plugins]]
+repo = 'tpope/vim-rhubarb'
+
+[[plugins]]
+repo = 'skanehira/gh.vim'
+hook_add = '''
+
+  let g:gh_token = getenv('GHT')
+
+'''
+# G]]]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+#          syntax
+#         language
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+# [[[
+
+[[plugins]]
+# repo = 'zinit-zsh/zinit-vim-syntax'
+repo = 'solarizedalias/zinit-vim-syntax'
+
+[[plugins]]
+repo = 'Clavelito/indent-sh.vim'
+
+[[plugins]]
+repo = 'gf3/peg.vim'
+
+[[plugins]]
+repo = 'cespare/vim-toml'
+
+[[plugins]]
+repo = 'kevinoid/vim-jsonc'
+
+[[plugins]]
+repo = 'ron-rs/ron.vim'
+
+# rst reStructuredText
+# [[plugins]]
+# repo = 'Rykka/riv.vim'
+
+[[plugins]]
+repo = 'gisphm/vim-gitignore'
+
+[[plugins]]
+repo = 'tpope/vim-git'
+
+[[plugins]]
+repo = 'bfontaine/Brewfile.vim'
+
+[[plugins]]
+repo = 'xu-cheng/brew.vim'
+
+[[plugins]]
+repo = 'plasticboy/vim-markdown'
+
+[[plugins]]
+repo = 'rust-lang/rust.vim'
+
+[[plugins]]
+repo = 'rhysd/vim-llvm'
+
+[[plugins]]
+repo = 'vim-jp/syntax-vim-ex'
+
+[[plugins]]
+repo = 'timmyjose-projects/lox.vim'
+[[plugins]]
+repo = 'aklt/plantuml-syntax'
+
+# ]]]
+
+#
+# Sizzle
+# [[[
+
+[[plugins]]
+repo = 'kana/vim-textobj-user'
+[[plugins]]
+repo = 'sgur/vim-textobj-parameter'
+depends = ['vim-textobj-user']
+[[plugins]]
+repo = 'kana/vim-textobj-indent'
+
+[[plugins]]
+repo = 'aiya000/vim-fmap'
+on_map = [
+    '<Plug>(fmap-forward-f)',
+    '<Plug>(fmap-backward-f)',
+    '<Plug>(fmap-forward-t)',
+    '<Plug>(fmap-backward-t)',
+]
+on_cmd = 'FNoreMap'
+hook_add = '''
+
+  augroup VimFmap
+      autocmd!
+      execute 'autocmd VimEnter * FNoreMap lp ('
+      execute 'autocmd VimEnter * FNoreMap rp )'
+      execute 'autocmd VimEnter * FNoreMap lb {'
+      execute 'autocmd VimEnter * FNoreMap rb }'
+      execute 'autocmd VimEnter * FNoreMap la <'
+      execute 'autocmd VimEnter * FNoreMap ra >'
+      execute "autocmd VimEnter * FNoreMap sq '"
+      execute 'autocmd VimEnter * FNoreMap dq \"'
+      execute 'autocmd VimEnter * FNoreMap an &'
+      execute 'autocmd VimEnter * FNoreMap or \|'
+      execute 'autocmd VimEnter * FNoreMap dl $'
+      execute 'autocmd VimEnter * FNoreMap pr %'
+  augroup END
+
+  nmap <leader>f <plug>(fmap-forward-f)
+  nmap <leader>F <plug>(fmap-backward-f)
+  nmap <leader>t <plug>(fmap-forward-t)
+  nmap <leader>T <plug>(fmap-backward-t)
+
+'''
+
+[[plugins]]
+repo = 'romgrk/equal.operator'
+hook_add = '''
+  let equal_operator_default_mappings = 0
+  omap <leader>ah <Plug>(operator-lhs)
+  omap <leader>aH <Plug>(operator-Lhs)
+  omap <leader>al <Plug>(operator-rhs)
+  omap <leader>aL <Plug>(operator-Rhs)
+
+  vmap <leader>ah <Plug>(visual-lhs)
+  vmap <leader>aH <Plug>(visual-Lhs)
+  vmap <leader>al <Plug>(visual-rhs)
+  vmap <leader>aL <Plug>(visual-Rhs)
+
+'''
+
+# g< g>
+[[plugins]]
+repo = 'machakann/vim-swap'
+
+[[plugins]]
+repo = 'jiangmiao/auto-pairs'
+hook_add = '''
+
+  let g:AutoPairsMapCR = 0
+  let g:AutoPairsMapCh = 0
+
+'''
+
+[[plugins]]
+repo = 'Konfekt/FastFold'
+hook_add = '''
+
+  let g:fastfold_savehook = 0
+
+'''
+
+# Replace words in a buffer in case @reserving manner
+[[plugins]]
+repo = 'lambdalisue/reword.vim'
+
+# Find and Replace in multiple files
+[[plugins]]
+repo = 'brooth/far.vim'
+hook_add = '''
+
+  let g:far#enable_undo = 1
+  if has('nvim')
+    let g:far#source = 'rgnvim'
+  else
+    let g:far#source = 'rg'
+  endif
+
+'''
+
+# desparete or seperate
+[[plugins]]
+repo = 'tpope/vim-abolish'
+
+[[plugins]]
+repo = 'tpope/vim-repeat'
+
+# FIXME It's effectively disabled because of no_mappings.
+[[plugins]]
+repo = 'tpope/vim-endwise'
+hook_add = '''
+  let g:endwise_no_mappings = 1
+'''
+
+[[plugins]]
+repo = 'svermeulen/vim-cutlass'
+hook_add = '''
+
+  nnoremap cl x
+  nnoremap x  d
+  xnoremap x  d
+  nnoremap xx dd
+  nnoremap X  D
+  xnoremap X  D
+
+'''
+
+# Do or Do NOT, there is no try.
+[[plugins]]
+repo = 'svermeulen/vim-subversive'
+hook_add = '''
+
+  " s for substitute
+  nmap       s                  <plug>(SubversiveSubstitute)
+  nmap       ss                 <plug>(SubversiveSubstituteLine)
+  nmap       S                  <plug>(SubversiveSubstituteToEndOfLine)
+
+  nmap       <leader>s          <plug>(SubversiveSubstituteRange)
+  xmap       <leader>s          <plug>(SubversiveSubstituteRange)
+  nmap       <leader>ss         <plug>(SubversiveSubstituteWordRange)
+  " ie = inner entire buffer
+  onoremap   ie                 :exec "normal! ggVG"<cr>
+  " iv = current viewable text in the buffer
+  onoremap   iv                 :exec "normal! HVL"<cr>
+
+  nmap       <leader>cs         <plug>(SubversiveSubstituteRangeConfirm)
+  xmap       <leader>cs         <plug>(SubversiveSubstituteRangeConfirm)
+  nmap       <leader>css        <plug>(SubversiveSubstituteWordRangeConfirm)
+
+  let g:subversivePromptWithCurrent = 1
+  nmap       <leader><leader>s  <plug>(SubversiveSubvertRange)
+  xmap       <leader><leader>s  <plug>(SubversiveSubvertRange)
+  nmap       <leader><leader>ss <plug>(SubversiveSubvertWordRange)
+
+  xmap       s                  <plug>(SubversiveSubstitute)
+  xmap       p                  <plug>(SubversiveSubstitute)
+  xmap       P                  <plug>(SubversiveSubstitute)
+
+'''
+
+[[plugins]]
+repo = 'svermeulen/vim-yoink'
+hook_add = '''
+
+  nmap <c-n> <plug>(YoinkPostPasteSwapBack)
+  nmap <c-p> <plug>(YoinkPostPasteSwapForward)
+  nmap p     <plug>(YoinkPaste_p)
+  nmap P     <plug>(YoinkPaste_P)
+  nmap [y    <plug>(YoinkRotateBack)
+  nmap ]y    <plug>(YoinkRotateForward)
+  nmap <c-=> <plug>(YoinkPostPasteToggleFormat)
+  nmap y     <plug>(YoinkYankPreserveCursorPosition)
+  xmap y     <plug>(YoinkYankPreserveCursorPosition)
+  let g:yoinkIncludeDeleteOperations = 1
+  let g:yoinkSyncNumberedRegisters   = 1
+  let g:yoinkMoveCursorToEndOfPaste  = 1
+
+'''
+
+[[plugins]]
+repo = 'haya14busa/vim-edgemotion'
+hook_add = '''
+  map <C-j> <Plug>(edgemotion-j)
+  map <C-k> <Plug>(edgemotion-k)
+'''
+
+[[plugins]]
+repo = 'haya14busa/vim-asterisk'
+hook_add = '''
+
+  let g:asterisk#keeppos = 1
+  map *   <Plug>(asterisk-z*)
+  map #   <Plug>(asterisk-z#)
+  map g*  <Plug>(asterisk-gz*)
+  map g#  <Plug>(asterisk-gz#)
+
+'''
+
+[[plugins]]
+repo = 'terryma/vim-expand-region'
+hook_add = '''
+  nmap <leader>. <Plug>(expand_region_expand)
+  vmap <leader>. <Plug>(expand_region_expand)
+  nmap <leader>, <Plug>(expand_region_shrink)
+  vmap <leader>, <Plug>(expand_region_shrink)
+
+'''
+
+[[plugins]]
+repo = 'junegunn/vim-easy-align'
+hook_add = '''
+  " i ... inner; p ... paragraph;
+  " Start interactive EasyAlign in visual mode (e.g. vip<Leader>e)
+  xmap <Leader>ea <Plug>(EasyAlign)
+  " Start interactive EasyAlign for a motion/text object (e.g. <Leader>eip)
+  nmap <Leader>ea <Plug>(EasyAlign)
+
+  " Dat damn autoindent
+  " autocmd InsertLeave * set nopaste
+
+'''
+
+# Feel, don't think. Use your instinct.
+[[plugins]]
+repo = 'tommcdo/vim-exchange'
+hook_add = '''
+
+  let g:exchange_no_mappings = 1
+  nmap <leader>x  <plug>(Exchange)
+  nmap <leader>xc <plug>(ExchangeClear)
+  nmap <leader>xx <plug>(ExchangeLine)
+  xmap <leader>x  <plug>(Exchange)
+
+'''
+
+# TODO Could be useful for comment out words in a line.
+[[plugins]]
+repo = 'tommcdo/vim-express'
+hook_add = '''
+
+  let g:express_no_mappings = 1
+  nmap <leader>e=   <plug>(Express)
+  nmap <leader>e==  <plug>(ExpressLine)
+  xmap <leader>e=   <plug>(Express)
+  nmap <leader>e:   <plug>(Subpress)
+  nmap <leader>e::  <plug>(SubpressLine)
+  xmap <leader>e:   <plug>(Subpress)
+
+'''
+
+
+# XXX I could probably live without this, but I'm not sure.
+[[plugins]]
+repo = 'tommcdo/vim-kangaroo'
+
+# Repeat [c]hange motion once again! Use c.{motion} c..
+[[plugins]]
+repo = 'tommcdo/vim-nowchangethat'
+
+[[plugins]]
+repo = 'preservim/nerdcommenter'
+hook_add = '''
+
+  " Add spaces after comment delimiters by default
+  let g:NERDSpaceDelims              = 1
+  " Use coact syntax for prettified multi-line comments
+  let g:NERDCoactSexyComs            = 0
+  " Align line-wise comment delimiters flush left instead of following code indentation
+  let g:NERDDefaultAlign             = 'left'
+  let g:NERDCommentWholeLinesInVMode = 2
+
+  " Set a language to use its alternate delimiters by default
+  " let g:NERDAltDelims_java         = 1
+
+  " Add your own custom formats or override the defaults
+  let g:NERDCustomDelimiters         = {
+    \ 'c':   { 'left': '/**','right': '*/' },
+    \ 'zsh': { 'left': '#' },
+    \ 'nim': { 'left': '#', 'leftAlt': '#[', 'rightAlt': ']#' },
+    \ 'lox': { 'left': '//' }
+  \}
+
+  let g:NERDCommentEtyLines          = 1
+  let g:NERDTrimTrailingWhitespace   = 1
+  let g:NERDToggleCheckAllLines      = 1
+
+'''
+
+# Highlight words that are potentially typos
+[[plugins]]
+repo = 'tweekmonster/dyslexic.vim'
+hook_add = '''
+
+  let g:dyslexic_map = ''
+  nnoremap <leader>* :DyslexicTracking<cr>
+  nnoremap <leader><leader>* :DyslexicOff<cr>
+
+'''
+hook_post_source = '''
+  highlight Dyslexic ctermfg=0 ctermbg=1 guifg=#000000 guibg=#ee4e33
+'''
+
+# FIXME `[l]ast` yilq needs to wait for a sec to work
+#       `[n]ext` works properly.
+[[plugins]]
+repo = 'wellle/targets.vim'
+
+[[plugins]]
+repo = 'ntpeters/vim-better-whitespace'
+hook_add = '''
+
+  let g:strip_whitespace_confirm = 0
+  let g:strip_whitespace_on_save = 1
+  let g:strip_only_modified_lines = 1
+  let g:better_whitespace_guicolor = '#f90926'
+  let g:better_whitespace_operator = '<leader>ww'
+  let g:better_whitespace_filetypes_blacklist= [
+    \ '',
+    \ 'which_key',
+    \ 'diff',
+    \ 'gitcommit',
+    \ 'unite',
+    \ 'denite',
+    \ 'nofile',
+    \ 'qf',
+    \ 'help',
+    \ 'markdown',
+    \ 'lsp-hover',
+    \]
+
+'''
+
+[[plugins]]
+repo = 'andymass/vim-matchup'
+on_event = 'VimEnter'
+hook_add = '''
+
+  omap i<leader>b i%
+  omap a<leader>b a%
+
+'''
+
+[[plugins]]
+repo = 'luochen1990/rainbow'
+hook_add = '''
+
+  let g:rainbow_active = 1
+  let g:rainbow_conf = {
+    \ 'separately': {
+    \   'floaterm': 0,
+    \}
+    \}
+
+'''
+
+# ]]]
+
+# [[[NICE
+# COLORSCHEMES
+[[plugins]]
+repo = 'ayu-theme/ayu-vim'
+[[plugins]]
+repo = 'sickill/vim-monokai'
+[[plugins]]
+repo = 'whatyouhide/vim-gotham'
+
+
+[[plugins]]
+repo = 'itchyny/lightline.vim'
+hook_post_source = '''
+  call ApplyCustom('lightline')
+'''
+
+[[plugins]]
+repo = 'itchyny/vim-gitbranch.git'
+
+[[plugins]]
+repo = 'tpope/vim-flagship'
+hook_post_source = '''
+  call ApplyCustom('vim-flagship')
+'''
+
+[[plugins]]
+repo = 'maximbaz/lightline-ale'
+
+# NICE]]]
+
+[[plugins]]
+repo = 'wlemuel/vim-tldr'
+
+[[plugins]]
+repo = 'mattn/vim-sonictemplate'
+hook_add = '''
+
+  let g:sonictemplate_vim_template_dir = [
+    \ '~/.vim/sonictemplate',
+    \]
+
+'''
+
+[[plugins]]
+repo = 'skanehira/preview-markdown.vim'
+hook_add = '''
+
+  let g:preview_markdown_parser = 'mdcat'
+  let g:preview_markdown_vertical = 1
+
+'''
+
+[[plugins]]
+repo = 'raghur/vim-ghost'
+hook_add = '''
+
+  let g:ghost_darwin_app = 'alacritty'
+  function! s:SetupGhostBuffer()
+    if match(expand("%:a"), '\v/ghost-(github|reddit)\.com-')
+      set ft=markdown
+    endif
+  endfunction
+
+  augroup vim_ghost
+    autocmd!
+    autocmd User vim-ghost#connected call s:SetupGhostBuffer()
+  augroup END
+
+'''
+
+[[plugins]]
+repo = 'vim-jp/vimdoc-ja'
+
+[[plugins]]
+repo = 'freitass/todo.txt-vim'
+
+[[plugins]]
+repo = 'itchyny/dictionary.vim'
+
+[[plugins]]
+repo = 'itchyny/thumbnail.vim'
+
+### Fun
+[[plugins]]
+repo = 'mattn/invader-vim'
+on_cmd = 'Invader'
+
+[[plugins]]
+repo = 'johngrib/vim-game-code-break'
+on_cmd = 'VimGameCodeBreak'
+
+
+[[plugins]]
+repo = 'tpope/vim-fugitive'
+
+[[plugins]]
+repo = 'Exafunction/codeium.vim'
+hook_add = '''
+  let g:codeium_disable_bindings = 1
+  ""inoremap <expr><silent><nowait> <tab> codeium#Accept()
+  ""inoremap                        <c-]> <cmd>call codeium#Clear()<cr>
+  command! CodeiumChat call codeium#Chat()
+'''
+
