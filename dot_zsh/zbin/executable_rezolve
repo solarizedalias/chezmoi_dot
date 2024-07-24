@@ -1,0 +1,130 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# rezolve
+# Wed Sep  9 15:58:36 2020
+# AUTHOR: solarizedalias
+# Resolve various issues regarding zsh wordcode files.
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+local -a opts
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  t -test=t \
+
+function inspect-digest-zwc() {
+  local ZWC="${1:a}"
+  if [[ "${ZWC}" != *.zwc(|.old) ]]; then
+    print -u2 -r -- "$0: Invalid wordcode $1"
+    return 127
+  fi
+
+  local -a result
+  result=( ${(f)"$(builtin zcompile -t ${ZWC})"} )
+
+  local VERSION="${${result[1]}#zwc file \((mapped|read)\) for zsh-}"
+  if [[ "${VERSION}" != "${ZSH_VERSION}" ]]; then
+    print -r -- ${ZWC}
+    print -r -u2 "$0: Incoincidece of versions ${ZWC} compiled by ${VERSION}"
+    return 1
+  fi
+
+  local -a files=( ${(@)result[2,-1]} )
+
+  integer NEW=0
+  for f in ${(@)files}; do
+    [[ "${ZWC}" -nt "${f}"  ]] || (( ++NEW ))
+  done
+
+  (( NEW > 0 )) && print -r -- ${ZWC}
+
+  return NEW
+}
+
+function check-zwc-individually() {
+  integer NEW=0
+  for ITEM in ${@}; do
+    if ! [[ "${ITEM%.zwc}.zwc" -nt "${ITEM%.zwc}" ]]; then
+      (( ++NEW ))
+      print -r -- ${ITEM}
+    fi
+  done
+
+  return NEW
+}
+
+function check() {
+  integer NEW=0
+  for F in $@; do
+    case ${F} in
+      (*.zwc(|.old))
+        inspect-digest-zwc ${F} || (( NEW += $? ))
+      ;;
+      (*)
+        if [[ -d "${F}" ]]; then
+          local -a files=( ${F:a}/*~*.zwc(ND-.) )
+          check-zwc-individually ${(@)files} || (( NEW += $? ))
+        else
+          print -u2 -r -- "$0: Invalid entry passed ${F}"
+        fi
+      ;;
+    esac
+  done
+
+  return NEW
+}
+
+function recompile() {
+  local -a files
+  for F in ${@:a}; do
+    case ${F} in
+
+      (*.zwc)
+        [[ -f "${F}" ]] || continue
+        integer NEW=0
+        files=( ${(f)"$(builtin zcompile -t ${F})"} )
+        files=( ${(@)^files:a}(ND-.) )
+        for f in ${(@)files}; do
+          [[ "${F}" -nt "${f}" ]] || (( ++NEW ))
+          (( NEW )) && break
+        done
+        if (( NEW )); then
+          builtin zcompile -Uz ${F} ${(@)files} || print -u2 -r -- "Failed to recompile ${F}"
+        fi
+      ;;
+
+      (*)
+        [[ -d "${F}" ]] || continue
+        files=( ${F}/*~*.zwc(ND-.) )
+        for f in ${(@)files}; do
+          [[ "${f}.zwc" -nt "${f}" ]] || builtin zcompile -Uz ${f} 2>/dev/null
+        done
+      ;;
+
+    esac
+  done
+}
+
+function main() {
+  if [[ "${(t)opts}" != array* ]]; then
+    print -u2 -r -- "$0: Failed parse arguments"
+    exit 1
+  fi
+
+  if (( ${opts[(I)(-t|--test)]} )); then
+    check $@
+  elif (( ${opts[(I)((-h|--help)|(-v|--version))]} )); then
+    : TODO
+  else
+    recompile $@
+  fi
+
+}
+
+main $@
+

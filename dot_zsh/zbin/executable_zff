@@ -1,0 +1,93 @@
+#!/usr/bin/env zsh
+
+emulate -LR zsh
+setopt noclobber      noappendcreate
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+local -a opts pats quals igns depths
+zparseopts -a opts -D -K -M -E    \
+  h          -help=h              \
+  v          -version=v           \
+  d:=depths  -max-depth:=d        \
+  i+:=igns   -ignore+:=i          \
+  p+:=pats   -pattern+:=p         \
+  q+:=quals  -qualifier+:=q       \
+  || exit 2
+
+# All of the non-option arguments are taken as search root directories.
+local -a roots=( ${@:-${PWD:A}} )
+roots=( ${(@)^roots}(#qND-/) )
+(( ${#roots} )) || {
+  print -r -- "No such file or directory: $@" >&2 && exit 1
+}
+
+# Max depths to recurse into directories.
+integer MAXDEPTH
+depths=( ${depths:#(-d|--max-depth)} )
+(( ${#depths} )) && {
+  MAXDEPTH="${depths[-1]}"
+} || {
+  MAXDEPTH=$(( -1 ))
+}
+
+# glob patterns to ignore for search.
+igns=( ${(@R)igns:#(-i|--ignore)} )
+local IGN
+(( ${#igns} )) && {
+  IGN="~*/(${(~j:|:)${(@)igns}})"
+}
+
+# glob patterns to search.
+pats=( ${(@R)pats:#(-p|--pattern)} )
+(( ${#pats} )) || pats=( '*' )
+local PAT
+(( ${#pats} > 1 )) && PAT="(${(j:|:)pats})"
+(( ${#pats} == 1 )) && PAT="${(@)pats}"
+
+# glob qualifiers to use for search.
+quals=( ${(@R)quals:#(-q|--qualifier)} )
+
+function match-one-depth() {
+  if (( MAXDEPTH < 0 )); then
+    while read -r line; do
+      print -rl -- ${line}/${~PAT}${~IGN}(#qND-${(j:,:)~quals})
+    done
+  else
+    integer OFFSET="${(@)#${(s:/:)1}}"
+    integer OM=$(( OFFSET + MAXDEPTH ))
+    integer DEPTH
+    while read -r line; do
+      DEPTH="${(@)#${(s:/:)line}}"
+      # Don't print anything if ${line} is longer than MAXDEPTH.
+      if (( DEPTH < OM )); then
+        print -rl -- ${line}/${~PAT}${~IGN}(#qND-${(j:,:)~quals})
+        # accumulated+=( ${line:A}(ND-/) )
+      fi
+    done
+  fi
+  return 0
+}
+
+# Convert relative/absolute paths depending on the presence of (-a|--absolute-path).
+# Also omits empty (or blank/non-printable characters only) lines.
+function format-result() {
+  local ROOT="${1}"
+  while read -r line; do
+    if [[ ${line} == *[[:graph:]]* ]]; then
+      if (( ABS )); then
+        print -r -- ${line:a}
+      else
+        print -r -- ${line:s@*/${ROOT}/@}
+      fi
+    fi
+  done
+  return 0
+}
+
+if [[ -t 0 ]]; then
+  pwd | match-one-depth
+else
+  match-one-depth </dev/stdin
+fi
+

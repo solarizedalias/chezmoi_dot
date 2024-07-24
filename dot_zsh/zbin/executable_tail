@@ -1,0 +1,20 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# tail
+# Wed Sep  9 11:57:29 2020
+# AUTHOR: solarizedalias
+# Convenient wrapper of /usr/bin/tail and /usr/local/opt/coreutils/libexec/gnubin/tail
+# which have a few incompatible options (`-r` and `-b`).
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+if (( ${@[(I)(-[Ffqr]#[b][0-9]##)]} + ${@[(I)(-[Ffq]#[r][Ffq]#([bcn][0-9]##)#)]} )); then
+  exec /usr/bin/tail $@
+else
+  exec /usr/local/opt/coreutils/libexec/gnubin/tail $@
+fi
+

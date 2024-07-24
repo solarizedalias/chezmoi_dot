@@ -1,0 +1,29 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# fix_pipx
+# Sun Nov  8 16:54:40 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber NO_append_create
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+local VENVS="${VENVS:-${HOME}/.local/pipx/venvs}"
+local -aU absp=( =python =python3 =python2.7 =python3.9 )
+local -aU bsnm=( ${(@)absp:t} )
+local -A Python=( ${(@)bsnm:^absp} )
+
+for K in ${(k@)Python}; do
+  for L in ${VENVS}/**/${K}(N-*:a); do
+    [[ -x /usr/local/bin/${K} ]] && ln -sf /usr/local/bin/${K} ${L}
+  done
+done
+

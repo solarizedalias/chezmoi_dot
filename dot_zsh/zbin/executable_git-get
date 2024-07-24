@@ -1,0 +1,112 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# git_get
+# Thu Sep  3 00:03:11 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+local SRCROOT="${HOME}/solarizedalias"
+local AUTHOR
+AUTHOR="$(command git config --global --get user.name)"
+
+local -a opts protocols=( -p git )
+# nop
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  p:=protocols -protocol:=p
+
+(( ${opts[(I)(-[hv]|--(help|version))]} )) && exit 0
+
+# FIXME Space-separated OPTARG is not supported (e.g. -b BRANCH/--depth DEPTH).
+#       Using long options with `=` works (e.g. --branch=BRANCH).
+local CLONE_OPT_PAT='(-[^-[:blank:]]|--[^-][[:graph:]]##(|=*))'
+local -a clone_opts=( ${(@M)@:#${~CLONE_OPT_PAT}} )
+set -- ${(@R)@:#${~CLONE_OPT_PAT}}
+
+#
+# PATTERNS
+#
+local -a match mbegin mend
+local GIST="https://gist.github.com/(#b)([0-9A-Za-z\-.]##)/([0-9a-f]##(.git|))"
+local SSH="git@(#b)(github.com|gitlab.com|[[:alnum:]._\-]##):([[:alnum:]\-._/]##(.git|))"
+local HTTPS="(#b)(https|git)://(github.com|gitlab.com|[[:alnum:]._\-]##)/([[:alnum:]\-._/]##(.git|))"
+local HASHOST="(#b)(github.com|gitlab.com|[[:alnum:]._\-]##)/([[:alnum:]._\-]##/[[:alnum:]._\-]##(.git|))"
+local HASUSER="(#b)([[:alnum:]\-._]##/[[:alnum:]._\-]##(.git|))"
+local HASREPO="[[:alnum:]._\-]##(.git|)"
+
+function do-clone() {
+  local -a match mbegin mend
+  local -a c=(
+    '%F{cyan}' '%F{magenta}' '%F{yellow}'
+    '%F{red}'  '%F{green}'   '%F{blue}'
+    '%f'
+  )
+  local C M Y R G B D
+  [[ -t 2 ]] && C=${c[1]} M=${c[2]} Y=${c[3]} R=${c[4]} G=${c[5]} B=${c[6]} D=${c[7]}
+  builtin print -r -u2 -P -- \
+    ${G}command${D}: \
+      git clone  \
+        ${B}${(@)clone_opts}${D} \
+        ${Y}${(M)1#(*://|*@)}${D}.../${C}${${(M)1%%[^/]##/[^/]##}:gs@(#b)([^/])/@${match[1]}${D}/${C}@}${D} \
+        .../${M}${2:a:h:t}${D}/${M}${2:a:t}${D} \
+        ''
+
+  command git clone ${(@)clone_opts} $1 ${2:a}
+}
+
+function mkdir-if-necessary() {
+  [[ -d $1 ]] || mkdir -p $1
+}
+
+function dispatch() {
+  local D arg
+  for arg in $@; do
+    if [[ ${arg} == ${~GIST} ]]; then
+      D="${SRCROOT:?}/gist.github.com/${match[1]:?}/${match[2]%(.git)}"
+      mkdir-if-necessary ${D} || continue
+      do-clone ${arg} ${D}
+    elif [[ ${arg} == ${~SSH} ]]; then
+      D="${SRCROOT:?}/${match[1]:?}/${${match[2]%(.git)}:?}"
+      mkdir-if-necessary ${D:?} || continue
+      do-clone ${arg} ${D:?}
+    elif [[ ${arg} == ${~HTTPS} ]]; then
+      D="${SRCROOT:?}/${match[2]:?}/${${match[3]%(.git)}:?}"
+      mkdir-if-necessary ${D:?} || continue
+      if [[ ${protocols[2]} != ${match[1]} ]]; then
+        arg="${arg/${match[1]}/${protocols[2]}}"
+      fi
+      do-clone ${arg} ${D:?}
+    elif [[ ${arg} == ${~HASHOST} ]]; then
+      D="${SRCROOT:?}/${match[1]}/${${match[2]%(.git)}:?}"
+      mkdir-if-necessary ${D} || continue
+      do-clone https://${arg} ${D:?}
+    elif [[ ${arg} == ${~HASUSER} ]]; then
+      D="${SRCROOT:?}/github.com/${${match[1]%(.git)}:?}"
+      mkdir-if-necessary ${D} || continue
+      do-clone git://github.com/${arg} ${D:?}
+    elif [[ ${arg} == ${~HASREPO} ]]; then
+      D="${SRCROOT:?}/github.com/${AUTHOR:?}/${${arg%(.git)}:?}"
+      do-clone git://github.com/${AUTHOR}/${arg%(.git)} ${D:?}
+    else
+      print -r -u2 -- "I don't think I understand ${arg:?}."
+    fi
+  done
+}
+
+# shellspec
+${__SOURCED__:+return}
+
+dispatch $@
+
+

@@ -1,0 +1,90 @@
+#!/usr/bin/env zsh
+
+# vim: set ft=zsh:
+
+emulate -L zsh
+setopt extended_glob warn_create_global typeset_silent no_short_loops rc_quotes no_auto_pushd
+
+local DEBUG=${DEBUG:-0}
+
+
+# ================================== DO NOT CREATE FUNCTIONS ABOVE THIS ====================================
+typeset -ag E_SPINNER000
+E_SPINNER000=( ${(k)functions}  )
+trap "unset -f -- \"\${(k)functions[@]:|E_SPINNER000}\" &>/dev/null; unset E_SPINNER000" EXIT
+trap "unset -f -- \"\${(k)functions[@]:|E_SPINNER000}\" &>/dev/null; unset E_SPINNER000; return 1" INT
+
+spinner000::throw() {
+  echo "$1" >&2
+  exit 1
+}
+
+spinner000::is_debug() {
+  [[ ${DEBUG} == (1|true|yes) ]]
+}
+
+local CMD RUNNING_MESSAGE SUCCESS_MESSAGE FAIL_MESSAGE INTERVAL
+# TODO Time to learn zparseopt.
+# --cmd=foo --sm=bar --fm=baz --int=0.1
+
+
+#
+# $1  PID
+# $2? INTERVAL=0.5
+# $3? MESSAGE="processing..."
+spinner000::spinner() {
+  local PID INTERVAL MESSAGE
+  [[ $# -lt 1 ]] && spinner000::throw "PID is missing."
+  [[ $1 != [1-9]([0-9])# ]] && spinner000::throw "PID must be a number."
+  [[ -n $2 && ! $2 =~ '^[0-9]+(\.?[0-9]+)?$' ]] && spinner000::throw "INTERVAL must be a number."
+  [[ -n $2 && $(( $2 )) == 0 ]] && INTERVAL=0.5
+
+  PID=${1:?PID is missing.}
+  INTERVAL=${INTERVAL:-${2:-0.5}}
+  MESSAGE="${3:-processing...}"
+
+  local -a spinner_chars=(
+    '|' '/' '-' '\' '|' '/' '-' '\'
+  )
+
+  local  i=1 j=1
+  while [[ "$(ps a | awk '{print $1}' | grep ${PID})" ]]; do
+    j=$(( i % ${#spinner_chars} ))
+    (( i++ ))
+    sleep ${INTERVAL} && printf '\r%s' ${spinner_chars[${j}]} && echo -n " --- ${MESSAGE}"
+  done
+}
+
+spinner000::main() {
+  local CMD RUNNING_MESSAGE SUCCESS_MESSAGE FAIL_MESSAGE PID INTERVAL
+  CMD=${1:?Command must be specified.}
+  SUCCESS_MESSAGE=${SUCCESS_MESSAGE:-DONE}
+  FAIL_MESSAGE=${FAIL_MESSAGE:-FAILED}
+  RUNNING_MESSAGE=${RUNNING_MESSAGE:-processing...}
+  local RESULT
+  {
+    : RESULT=$( ${CMD} ) &
+    PID=$!
+    spinner ${PID} ${INTERVAL} ${RUNNING_MESSAGE} >&2
+  } always {
+    echo ""
+    case ${TRY_BLOCK_ERROR} in
+      (0)
+        echo ${SUCCESS_MESSAGE} >&2
+        echo ${RESULT}
+      ;;
+      (1)
+        echo ${FAIL_MESSAGE} >&2
+        echo ${RESULT}
+      ;;
+      (*)
+        spinner000::is_debug && echo "Wierd. ${TRY_BLOCK_ERROR}" >&2
+      ;;
+    esac
+    (( TRY_BLOCK_ERROR = 0 ))
+  }
+
+  spinner000::is_debug && echo "Everything is over." >&2
+
+}
+

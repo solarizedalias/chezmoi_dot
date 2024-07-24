@@ -1,0 +1,36 @@
+#!/usr/bin/env zsh
+
+emulate -LR zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+local -a opts
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  u: -upstream:=b
+
+if (( ${opts[(I)(-h|--help|-v|--version)]} )); then
+  print -r -u2 -- 'not implemented'
+  exit 0
+fi
+
+local UPSTREAM=${opts[2]:-main}
+UPSTREAM=${UPSTREAM#(#s)=}
+
+function echo_run() {
+  print -r -- ${(j: :)argv}
+  ${(@)argv}
+}
+
+[[ ${argv[1]} == (-|--) ]] && shift
+
+local OLD_CURRENT
+OLD_CURRENT=$(git branch --show-current) || exit 2
+
+for BRANCH in ${(@)argv}; do
+  echo_run git rebase ${UPSTREAM:?} ${BRANCH:?} || exit 2
+done
+
+echo_run git switch ${OLD_CURRENT}
+

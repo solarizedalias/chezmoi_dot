@@ -1,0 +1,212 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# zf
+# Tue Aug 25 09:52:51 2020
+# AUTHOR: solarizedalias
+# Pure zsh implementation of a replacement to find command.
+# ==========================================================
+
+emulate -LR zsh
+setopt noclobber      noappendcreate
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+zmodload zsh/parameter
+zmodload zsh/files
+
+trap 'kill %% 2>/dev/null' EXIT
+trap 'kill %% 2>/dev/null; exit 1' INT
+
+#
+# ARG PARSE
+#
+
+local -a opts pats quals igns depths
+zparseopts -a opts -D -K -M -E    \
+  h          -help=h              \
+  v          -version=v           \
+  a          -absolute-path=a     \
+  d:=depths  -max-depth:=d        \
+  i+:=igns   -ignore+:=i          \
+  p+:=pats   -pattern+:=p         \
+  q+:=quals  -qualifier+:=q       \
+  || exit 2
+
+# nop
+(( ${opts[(I)(-h|--help|-v|--version)]} )) && exit 0
+
+# All of the non-option arguments are taken as search root directories.
+local -a roots=( ${@:-${PWD:A}} )
+roots=( ${(@)^roots}(#qND-/) )
+(( ${#roots} )) || {
+  print -r -- "No such file or directory: $@" >&2 && exit 1
+}
+
+# Whether to show result in absolute path or relative to each search root.
+integer ABS
+(( ${opts[(I)(-a|--absolute-path)]} )) && ABS=1
+
+# Max depths to recurse into directories.
+integer MAXDEPTH
+depths=( ${depths:#(-d|--max-depth)} )
+(( ${#depths} )) && {
+  MAXDEPTH="${depths[-1]}"
+} || {
+  MAXDEPTH=$(( -1 ))
+}
+
+# glob patterns to ignore for search.
+igns=( ${(@R)igns:#(-i|--ignore)} )
+local IGN
+(( ${#igns} )) && {
+  IGN="~*/(${(~j:|:)${(@)igns}})"
+}
+
+# glob patterns to search.
+pats=( ${(@R)pats:#(-p|--pattern)} )
+(( ${#pats} )) || pats=( '*' )
+local PAT
+(( ${#pats} > 1 )) && PAT="(${(j:|:)pats})"
+(( ${#pats} == 1 )) && PAT="${(@)pats}"
+
+# glob qualifiers to use for search.
+quals=( ${(@R)quals:#(-q|--qualifier)} )
+
+#
+# FUNCTIONS
+#
+
+#
+#
+# @STDIN
+# @STDOUT
+# @$1 Search root.
+# @DESCRIPTION Read lists of directories from stdin and print matches to stdout.
+#
+function match-one-depth() {
+  local -a m
+  if (( MAXDEPTH < 0 )); then
+    while read -r line; do
+      # print -r -- ${line} >&2
+      # [[ -d ${line:A} ]] || continue
+      m=( ${line}/${~PAT}${~IGN}(#qND-${(j:,:)~quals}) )
+      if (( ${#m} )); then
+        print -rl -- ${(@)m} >|/dev/stdout >>|${TEMPF} &
+      fi
+    done
+  else
+    integer OFFSET="${(@)#${(s:/:)1}}"
+    integer OM=$(( OFFSET + MAXDEPTH ))
+    integer DEPTH
+    while read -r line; do
+      # [[ -d ${line:A} ]] || continue
+      DEPTH="${(@)#${(s:/:)line}}"
+      # Don't print anything if ${line} is longer than MAXDEPTH.
+      if (( DEPTH < OM )); then
+        m=( ${line}/${~PAT}${~IGN}(#qND-${(j:,:)~quals}) )
+        if (( ${#m} )); then
+          print -rl -- ${(@)m} >|/dev/stdout >>|${TEMPF} &
+        fi
+      fi
+    done
+  fi
+  wait
+  return 0
+}
+
+function walk-dir-rec() {
+  local ORIGIN="${1:a}"
+  local -aU stack=( ${ORIGIN} )
+  local D
+  if (( MAXDEPTH < 0 )); then
+    while (( ${#stack} )); do
+      D="${stack[-1]}"
+      shift -p stack
+      print -r -- ${D}
+      stack+=( ${D}/*${~IGN}(#qND-/:a) )
+    done
+  else
+    integer OFFSET="${(@)#${(s:/:)ORIGIN}}"
+    integer OM=$(( OFFSET + MAXDEPTH ))
+    integer DEPTH=$(( OFFSET ))
+    while (( ${#stack} )); do
+      D="${stack[-1]}"
+      shift -p stack
+      DEPTH=$(( ${(@)#${(s:/:)D}} ))
+      print -r -- ${D}
+      (( DEPTH < OM )) || continue
+      stack+=( ${D}/*${~IGN}(#qND-/:a) )
+    done
+  fi
+}
+
+function match-rec() {
+  local ROOT="${1:a}"
+  if (( MAXDEPTH < 0 )); then
+    print -rl -- ${ROOT}/**/${~PAT}${~IGN:+${~IGN}(|/*)}(#qND-${(j:,:)~quals})
+  else
+    integer OFFSET="${(@)#${(s:/:)ROOT}}"
+    integer DEPTH=$(( OFFSET ))
+    integer OM=$(( OFFSET + MAXDEPTH ))
+    local RP
+    local -a m
+    while (( DEPTH +1 < OM )); do
+      (( ++DEPTH ))
+      RP="${RP:-${ROOT}/}*/"
+      m+=( ${~RP}${~PAT}${~IGN}(#qND-${(j:,:)~quals}) )
+    done
+    print -rl -- ${(@)m}
+  fi
+}
+
+# Convert relative/absolute paths depending on the presence of (-a|--absolute-path).
+# Also omits empty (or blank/non-printable characters only) lines.
+function format-result() {
+  # integer COUNT
+  local ROOT="${1:a}"
+  while read -r line; do
+    if [[ ${line} == *[[:graph:]]* ]]; then
+      if (( ABS )); then
+        print -r -- ${line}
+      else
+        print -r -- ${line#${ROOT}/}
+      fi
+    fi
+  done
+}
+
+function main() {
+
+  setopt localtraps
+
+  local ROOT="${1:a}"
+  local DATE=${(%):-%D\{%Y-%m-%d-%H-%M-%S\}}
+  local TEMPF="${TMPDIR:-/tmp}/${0:t}-P-$$-${DATE}"
+
+  trap '[[ -f '${TEMPF}' ]] && rm -f '${TEMPF}' || :; kill %% 2>/dev/null ; :' EXIT
+  trap '[[ -f '${TEMPF}' ]] && rm -f '${TEMPF}' || :; kill %% 2>/dev/null ; return 1' INT
+
+  : >| ${TEMPF}
+  local -a async sync delta
+  local ASYNCJOB
+  walk-dir-rec ${ROOT} | match-one-depth &
+  ASYNCJOB=$!
+
+  sync=( ${(f)"$(match-rec ${ROOT})"} )
+  kill ${ASYNCJOB} 2>/dev/null
+  async=( ${(f)"$(<${TEMPF})"} )
+  delta=( ${(@)sync:|async} )
+  # printf 'async: %d sync: %d delta: %d diff: %d\n' ${#async} ${#sync} ${#delta} $(( ${#sync} - ${#async} )) >&2
+  print -rl -- ${(@)delta}
+}
+
+#
+# MAIN
+#
+for d in ${(@)roots}; do
+  main ${d:a} | format-result ${d:a}
+done
+
+# vim:foldmethod=marker:
+

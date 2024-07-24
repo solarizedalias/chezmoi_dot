@@ -1,0 +1,48 @@
+#!/usr/bin/env zsh
+
+
+# ==========================================================
+# cppv
+# Sat Sep 18 13:25:12 2021
+# AUTHROR: solarizedalias
+#
+# Convenient wrapper around C preprocessor
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+function hint() {
+  builtin print -lr -u2 -- $@
+}
+
+function error() {
+  builtin print -lr -u2 -- $@
+  builtin exit 1
+}
+
+readonly VERSION="0.1.0"
+readonly -a ccopts=(
+  -E -Wp,-v -xc
+)
+
+local -a opts
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v
+
+if (( ${opts[(I)(-h|--help)]} )); then
+  hint "Usage: ${0:t} CPPFLAGS CFLAGS"
+  exit 0
+elif (( ${opts[(I)(-v|--version)]} )); then
+  hint "v${VERSION}"
+  exit 0
+fi
+
+local -a cc=( ${(z)${CC:-cc}:c} )
+[[ -x ${cc[1]:c} ]] || error "invalid CC: '${CC}'"
+
+hint "Running ${(j: :)cc} ${(j: :)ccopts} ${(j: :)argv} </dev/stdin"
+command ${(@)cc} ${(@)ccopts} ${(@)argv} - </dev/stdin
+

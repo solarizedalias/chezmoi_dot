@@ -1,0 +1,175 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# is_zsh
+# Tue Jul 28 08:17:42 2020
+# AUTHOR: solarizedalias
+# Detect if files are zsh source code (zcompilable).
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+local -a blackdirs=(
+  '.git'
+  'node_modules'
+)
+
+local -a blacklist=(
+  '*.zwc'
+  '*.zwc.old'
+  '.git*'
+  '*\~'
+  '(#i)readme(.md|.txt)(#c0,1)'
+  '(#i)license(.md|.txt)(#c0,1)'
+  # Files with extentions but not [z]sh
+  # Exclude a few known false positive.
+  '*([^./][^/]#).([^./](#c1,))~(*.(zsh|sh)|*/(_invoke-rc.d|_update-rc.d|_setup.py))'
+  # '(_kdump|_ktrace_points)'
+)
+
+local -a whitelist=(
+  '*.zsh'
+  # common startup files
+  '(.|)(zshrc|zshenv|zprofile|zlogin|zlogout|zcompdump)'
+)
+
+# doesn't care what the actual files inside look like
+# so make sure to use these only after blacklisting.
+local -a white_dirs=(
+  # common dirs.
+  'share/zsh/site-functions'
+  'share/zsh/functions'
+  'share/zsh/[0-9.]##(|-dev)/functions'
+)
+
+function rm mkdir {
+
+  if builtin zmodload zsh/files 2>/dev/null; then
+    function rm mkdir() {
+      builtin ${0} $@
+    }
+  else
+    function rm mkdir() {
+      command ${0} $@
+    }
+  fi
+  ${0} $@
+}
+
+function is_blacklisted() {
+  local dir pat
+  for dir in ${(@)blackdirs}; do
+    [[ $1 == */${dir}/* ]] && return 0
+  done
+
+  for pat in ${(@)blacklist}; do
+    [[ $1 == */${~pat}(#e) ]] && return 0
+  done
+  return 1
+}
+
+function is_whitelisted() {
+  local dir pat
+  for dir in ${(@)white_dirs}; do
+    [[ $1 == */${~dir}/* ]] && return 0
+  done
+  for pat in ${(@)whitelist}; do
+    [[ $1 == */${~pat}(#e) ]] && return 0
+  done
+  return 1
+}
+
+function is_parsable() {
+  zsh -n $1 2>/dev/null
+}
+
+integer COUNT=0
+function compiles() {
+  emulate -L zsh
+  local TMP_BASE="${:-${${TMPDIR:-/tmp}%%/}/}/${0}-$$"
+  mkdir -p ${TMP_BASE}
+  trap '[[ -d '${TMP_BASE}' ]] && rm -rf -- '${TMP_BASE}' 2>/dev/null' EXIT
+  trap '[[ -d '${TMP_BASE}' ]] && rm -rf -- '${TMP_BASE}' 2>/dev/null; return 1' INT
+
+  local TMP=${TMP_BASE}/$(( ++COUNT ))-${RANDOM}-${RANDOM}-${(%):-%D\{%Y-%m-%d-%H%M%S-%s\}}.zwc
+
+  if builtin zcompile -Uz ${TMP} $@ 2>/dev/null; then
+    rm -rf -- ${TMP_BASE}
+    return 0
+  fi
+  rm -rf -- ${TMP_BASE}
+  return 1
+}
+
+#######################################
+# Check if the 1st line is zsh-likely shebanged
+# Arguments:
+#   $1 Text file
+#######################################
+function is_shebanged() {
+  local FIRST
+  [[ -r "$1" ]] && read -r FIRST <"$1" || return 2
+  [[
+    "${FIRST}" ==
+      (#s)(\#\!(/##[^/]##)##/(zsh|env[[:space:]]##zsh)|\#(compdef|autoload))([[:space:]]*)#(#e)
+  ]]
+}
+
+function has_modeline() {
+  local -a ends
+  ends=( ${(f)"$(<$1)"} )
+  ends=( ${(@)ends[1,5]} ${(@)ends[-5,-1]} )
+  for L in ${(@)ends}; do
+    [[
+      ${L} ==
+        (#s)[[:blank:]]#\#[[:blank:]]##(vim|vi|ex):*((|set[[:blank:]]##)ft=zsh(|.*))
+    ]] && return 0
+  done
+  return 1
+}
+
+function is_zsh_file() {
+  # First, exclude artefacts.
+  if is_blacklisted $1; then
+    (( IS_ZSH_WHY )) && print 'blacklisted'
+    return 1
+  # Check if the 1st line is zsh-likely.
+  # And if so, check also if it is compilable.
+  elif is_whitelisted $1 || is_shebanged $1 || has_modeline $1; then
+    if ! compiles $1; then
+      (( IS_ZSH_WHY )) && print 'did not compile'
+      return 1
+    fi
+  else
+    if ! is_parsable $1; then
+      (( IS_ZSH_WHY )) && print 'could not parse'
+      return 1
+    fi
+  fi
+  return 0
+}
+
+# shellspec
+${__SOURCED__:+return}
+
+#
+# MAIN
+#
+integer ret=1
+integer STDIN=0
+[[ -t 0 ]] || (( ++STDIN ))
+
+local -a targets
+targets=( $@ )
+(( STDIN )) && targets+=( ${(f)"$(</dev/stdin)"} )
+
+targets=( ${(@)^targets:a}(#qN-.) )
+
+for target in ${(@)targets}; do
+  is_zsh_file ${target} && print ${target} && ret=0
+done
+
+return ret
+

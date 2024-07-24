@@ -1,0 +1,40 @@
+#!/usr/bin/env zsh
+# vim:ft=zsh:
+
+# ==========================================================
+# tmux_popup_scratch
+# Sat Oct 31 19:21:47 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber NO_append_create
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+local -a opts
+local -A Opts
+zparseopts -a opts -A Opts -D -K -M -E \
+  w: -width:=w \
+  h: -height:=h \
+  x: -column:=x \
+  y: -row:=y
+
+local W="${Opts[-w]:-80%}" H="${Opts[-h]:-80%}" X="${Opts[-x]:-C}" Y="${Opts[-y]:-C}"
+
+local REPLY && REPLY="$(command tmux display-message -p -F "#{session_name}")"
+
+if [[ ${REPLY} == popup ]]; then
+  command tmux detach-client
+else
+  command tmux popup \
+    -d '#{pane_current_path}' \
+    -x -y -w${W} -h${H} -KER \
+    'command tmux attach -t popup || command tmux new -s popup'
+fi
+

@@ -1,0 +1,139 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# manpath_compile
+# Thu Dec 30 21:44:37 2021
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+# TODO:
+#  * wrap `ln -r` or at least error if missing GNU ln
+#  * consider using `ln -v` as alternative to `echo_run`
+#  * consider using `ln -n`
+
+emulate -R zsh
+setopt typeset_silent NO_short_loops   NO_auto_pushd
+setopt NO_clobber     NO_append_create
+setopt extended_glob  glob_dots        rc_quotes      hist_subst_pattern
+
+function echo_run() {
+  print -r "${(j: :)argv}"
+  "$@"
+}
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+local -a opts output
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  f -full=f  \
+  p -prune=p \
+  o:=output -output:=o
+
+function print_help() {
+  print \
+"Usage: ${NAME} [OPTION]
+  -h, --help        Print help text
+  -v, --version     Print program version
+  -f, --full        Iterate on every man file and link with 'ln -fsr'
+  -p, --prune       Prune broken links
+  -o, --output=DIR  Specify the directory to place links
+"
+}
+
+(( ${opts[(I)(-h|--help)]} )) && print_help && exit 0
+(( ${opts[(I)(-v|--version)]} )) && print 'Not implemented' && exit 0
+
+integer FULL_LINK=${opts[(I)(-f|--full)]}
+integer PRUNE=${opts[(I)(-p|--prune)]}
+
+readonly OUTPUT=${output[2]:-${HOME}/.cache/manpath_compile}
+
+local -a mp
+mp=(
+  ~/.local/share/man(ND-/)
+  /usr/local/opt/coreutils/libexec/gnuman(ND-/) # coreutils
+  /usr/local/opt/ed/libexec/gnuman(ND-/)        # ed
+  /usr/local/opt/findutils/libexec/gnuman(ND-/) # findutils
+  /usr/local/opt/gnu-sed/libexec/gnuman(ND-/)   # sed
+  /usr/local/opt/gnu-tar/libexec/gnuman(ND-/)   # tar
+  /usr/local/opt/grep/libexec/gnuman(ND-/)      # grep
+  /usr/local/opt/gnu-time/libexec/gnuman(ND-/)  # time
+  /usr/local/opt/gnu-which/libexec/gnuman(ND-/) # which
+  /usr/local/opt/gnu-units/libexec/gnuman(ND-/) # units
+  /usr/local/opt/make/libexec/gnuman(ND-/)      # make
+  /usr/local/share/man(ND-/)                    # homebrew
+  /Library/Developer/CommandLineTools/usr/share/man(ND-/)
+  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/share/man(ND-/)
+  /usr/share/man(ND-/)
+  /opt/X11/share/man(ND-/)
+)
+(( ${#mp} > 0 )) || mp=( ${(@)^argv}(ND-/) )
+(( ${#mp} > 0 )) || exit 3
+
+function prepare_cache_dirs() {
+  local D
+  for D in man{1..9} mann; do
+    mkdir -p ${OUTPUT}/${D}
+  done
+}
+
+prepare_cache_dirs
+
+local -A Mans
+
+function __collect() {
+  local P
+  for P in ${(@aO)mp}; do
+    local SUF='*.((?|<->*|ntcl)(|.gz|.bz2|.z|.Z|.lzma))'
+    local -a ents=( ${P}/man?/${~SUF}(N-.) )
+    for E in ${(@)ents}; do
+      Mans[${E:t2}]=${E}
+    done
+  done
+}
+
+if (( FULL_LINK )); then
+  function __link() {
+    local K
+    for K in ${(k@)Mans}; do
+      echo_run ln -fsr ${Mans[${K}]} ${OUTPUT}/${K:h}
+    done
+  }
+else
+  function missing() {
+    ! [[ -r ${OUTPUT}/${1} ]]
+  }
+  function __link() {
+    local K
+    for K in ${(k@)Mans}; do
+      if missing ${K}; then
+        echo_run ln -fsr ${Mans[${K}]} ${OUTPUT}/${K:h}
+      fi
+    done
+  }
+fi
+
+function __prune() {
+  local L
+  local -a dead_links=(
+    ${OUTPUT}/man?/*.?(ND-@)
+  )
+  for L in ${(@)dead_links}; do
+    echo_run unlink ${L}
+  done
+}
+
+function main() {
+  __collect
+  __link
+  (( PRUNE )) && __prune
+  return 0
+}
+
+main
+

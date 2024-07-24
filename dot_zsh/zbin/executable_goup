@@ -1,0 +1,39 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# goup
+# Mon Mar  1 15:13:19 2021
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent NO_short_loops NO_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber     NO_append_create
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+local GOPATH="${GOPATH:-"$(go env GOPATH)"}"
+local GOBIN="${GOBIN:-${"$(go env GOBIN)":-${GOPATH}/bin}}"
+local -a binnames=( "${GOBIN}"/*(ND-*:t) )
+local -aU srcnames=( "${GOPATH}"/pkg/mod/^cache/*/*(ND-/:t:s/@*//) )
+local -aU targets=( ${(@)binnames:#srcnames} )
+local -aU qualified=( "${GOPATH}"/pkg/mod/*/*/${(@)^targets}*(ND-/:s@*mod/@@:s/@*//) )
+
+# print     -- GOPATH $GOPATH ''
+# print     -- GOBIN $GOBIN ''
+# print -ac -- binanmes $binnames ''
+# print -ac -- srcnames $srcnames ''
+# print -ac -- targets $targets ''
+# print -lr -- qualified $qualified ''
+
+for IT in ${(@)qualified}; do
+  local -a cmd=( go install -v "${IT}@latest" )
+  print
+  print -r -- "${(j: :)cmd}"
+  ${(@)cmd}
+done
+

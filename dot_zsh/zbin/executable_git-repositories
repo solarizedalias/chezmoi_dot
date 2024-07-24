@@ -1,0 +1,81 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# git_repositories
+# Sun Aug 23 10:05:40 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+readonly LIB="${HEAD:?}/lib"
+
+source ${LIB:?}/std.zsh
+
+
+local -a opts skips
+zparseopts -a opts -D -K -M -E h -help=h v -version=v s+:=skips -skip+:=s
+
+# XXX not implemented
+(( ${opts[(I)(-h|--help|-v|--version)]} )) && exit 0
+
+skips=( ${(@R)skips:#(-s|--skip)} )
+
+local TARGET="${1:-${PWD}}"
+
+[[ -d ${TARGET} ]] || exit 2
+
+#
+#
+# $1: directory
+integer MAX_FORKS=$(( $(builtin ulimit -u) / 2 )) CAN_FORK=${MAX_FORKS}
+
+function find-git() {
+  [[ -d $1 ]] || return 2
+  for f in ${1}/*(ND-); do
+    if [[ ${f:t} == '.git' ]]; then
+      print -r -- ${f}
+    elif [[ -d ${f} ]]; then
+      if (( CAN_FORK > 1 )); then
+        (( CAN_FORK /= 2 ))
+        $0 ${f} &
+      else
+        $0 ${f}
+      fi
+    fi
+    if (( ${(%):-%j} < 1 )); then
+       (( CAN_FORK < MAX_FORKS / 2 )) && (( CAN_FORK *= 2 ))
+    fi
+  done
+  return 0
+}
+
+function trim-ends() {
+  local lind
+  while IFS= read -r line; do
+    line="${line%/.git}"
+    print -r -- ${line}
+  done
+}
+
+function filter-skips() {
+  local line
+  while IFS= read -r line; do
+    if [[ ${line} != ${(~j:|:)~skips} ]]; then
+      print -r -- ${line}
+    fi
+  done
+}
+
+find-git ${TARGET} | trim-ends | filter-skips
+
+wait
+
+return 0
+

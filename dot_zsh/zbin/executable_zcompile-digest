@@ -1,0 +1,136 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# zcompile_digest
+# Tue Jul 28 16:52:11 2020
+# AUTHOR: solarizedalias
+# Compile zsh source codes into a digest wordcode (*.zwc)
+# ==========================================================
+emulate -R zsh
+setopt warn_create_global typeset_silent no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber NO_append_create
+
+function throw() {
+  print -u2 -- $@
+  exit 1
+}
+
+function mv rm {
+  local NAME=$0
+  if zmodload zsh/files 2>/dev/null; then
+    function ${NAME}() {
+      builtin ${NAME} $@
+    }
+  else
+    function ${NAME}() {
+      command ${NAME} $@
+    }
+  fi
+  ${NAME} $@
+}
+
+function verbose() {
+  emulate -L zsh
+  setopt NO_brace_ccl
+  (( VERBOSE )) || return 0
+  local LABEL="$1"
+  integer COLOR="${COLOR:-0}"
+  [[ -t 2 ]] && (( COLOR = 1 ))
+  LABEL="${(LC)LABEL}"
+  if (( COLOR )); then
+    case ${1} in
+      (removing)
+        LABEL=%F{yellow}${LABEL}%f
+      ;;
+      (succeeded)
+        LABEL=%F{green}${LABEL}%f
+      ;;
+      (failed)
+        LABEL=%F{red}${LABEL}%f
+      ;;
+      (*)
+        LABEL=%F{blue}${LABEL}%f
+      ;;
+    esac
+  fi
+  shift
+  builtin print -P -u2 -- "${LABEL} $@"
+}
+
+# XXX Now that we have lib/is_zsh.zsh.
+# So, you should be able to achieve the same capabilities without the standalone is_zsh.
+(( ${+commands[is_zsh]} )) || throw "Cannot find command: is_zsh"
+
+integer FORCE=0 SAVE=0 VERBOSE=0 COLOR=0
+# -f,--force Overwrite existing *.zwc
+# -s,--save  Save old files as *.zwc.old
+local -a opts
+zparseopts -D -M -E -a opts \
+  f -force=f \
+  s -save=s \
+  v -verbose=v \
+  c -color=c
+(( ${opts[(I)(-f|--force)]}   )) && FORCE=1
+(( ${opts[(I)(-s|--save)]}    )) && SAVE=1
+(( ${opts[(I)(-v|--verbose)]} )) && VERBOSE=1
+(( ${opts[(I)(-c|--color)]}   )) && COLOR=1
+
+local DIR
+# We want the logical path (don't want symlinks resolved),
+# so use PWD instead of `.(:a)` here.
+if [[ $1 == '.' ]]; then
+  DIR="${PWD}"
+elif [[ $1 == '..' ]]; then
+  DIR="${PWD:h}"
+else
+  DIR="${1:a}"
+fi
+shift
+
+DIR="${DIR%%(.zwc)##}"
+
+local ZWC="${${DIR:t}%%(.zwc)##}.zwc"
+[[ -d "${DIR:?Missing arguments}" ]] || throw "${DIR} is not a directory."
+[[ ${DIR} != / ]] || throw "I don't want to compile root directory."
+
+# The rest of args are exclude patterns.
+local -a excludes=( $@ )
+
+if [[ -f "${DIR:h}/${ZWC:?}" ]]; then
+  if (( SAVE )); then
+    verbose renaming "${DIR:h}/${ZWC:?} to ${DIR:h}/${ZWC:?}.old"
+    mv -f "${DIR:h}/${ZWC:?}" "${DIR:h}/${ZWC:?}.old" || throw "Renaming ${DIR:h}/${ZWC:?} failed."
+  elif (( FORCE )); then
+    verbose removing "${DIR:h}/${ZWC:?}"
+    rm -f "${DIR:h}/${ZWC:?}" || throw "Removing ${DIR:h}/${ZWC:?} failed."
+  else
+    throw "${DIR:h}/${ZWC:?} already exists."
+  fi
+else
+  verbose compiling "Compiling ${DIR:h}/${ZWC:?}"
+fi
+
+local -a targets=( ${(f)"$( is_zsh ${DIR}/*(ND-.) )"} )
+
+if (( ${#excludes} )); then
+  targets=( ${(@R)targets:#${(~j:|:)excludes}} )
+fi
+
+if ! (( ${#targets} )); then
+  verbose failed 'no useful files to compile'
+  exit 1
+fi
+
+(
+
+  cd -q ${DIR:h} || exit 1
+  if builtin zcompile -Uz ${ZWC:?} ${(@)targets}; then
+    verbose succeeded "${DIR:h}/${ZWC}"
+  else
+    verbose failed "${DIR:h}/${ZWC}"
+    exit 1
+  fi
+)
+exit $?
+

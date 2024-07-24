@@ -1,0 +1,34 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# duration
+# Mon Feb  5 16:13:34 2024
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent NO_short_loops NO_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber     NO_append_create
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+typeset -A Flags=( [HELP]=0 [VERSION]=0 [KILL]=0 )
+local -a opts
+zparseopts -a opts -D -K -M -E h -help=h v -version=v
+: ${Flags[HELP]::=${opts[(I)(-h|--help)]}} \
+  ${Flags[VERSION]::=${opts[(I)(-v|--version)]}}
+
+float SUM=0
+for F in $@; do
+  local D="$(ffprobe -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 $F 2>/dev/null)"
+  # print $F $D
+  (( SUM += D))
+done
+
+local OUTPUT=$(units ${:-$((SUM))s} time)
+print ${OUTPUT##	}
+

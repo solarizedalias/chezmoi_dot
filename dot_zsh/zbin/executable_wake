@@ -1,0 +1,81 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# wake
+# Sun Sep 20 10:51:49 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+typeset -A Tasks=(
+  [brewlet]='command brew let'
+  [unlugged]='command unlugged.zsh'
+  [docker]='command open -a Docker'
+  [pueue]='command pueued --daemonize'
+  [vimac]='command open /Applications/Vimac.app'
+  [menuffy]='command open -a menuffy'
+)
+
+## Runs each task specified in `$@` one by one.
+function DoTask() {
+  for a in $@; do
+    if (( ${#Tasks[(I)${a}*]} )); then
+      print -u2 -r -- ${NAME:-${0}}: ${(@)${(v)Tasks[(I)${a}*]}[1]}
+      eval ${(@)${(v)Tasks[(I)${a}*]}[1]}
+    fi
+  done
+}
+
+## Dispatch tasks `$@` in the background shell.
+function DoTaskBGWait() {
+  for a in $@; do
+    if (( ${#Tasks[(I)${a}*]} )); then
+      print -u2 -r -- ${NAME:-${0}}: ${(@)${(v)Tasks[(I)${a}*]}[1]}
+      eval ${(@)${(v)Tasks[(I)${a}*]}[1]} &
+    fi
+  done
+  wait && return 0
+}
+
+## Dispatch tasks `$@` as disowned state and return immediately.
+function DoTaskBGNoWait() {
+  for a in $@; do
+    if (( ${#Tasks[(I)${a}*]} )); then
+      print -u2 -r -- ${NAME:-${0}}: ${(@)${(v)Tasks[(I)${a}*]}[1]}
+      eval ${(@)${(v)Tasks[(I)${a}*]}[1]} &>/dev/null &!
+    fi
+  done
+  return 0
+}
+
+local -a opts
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  a -all=a \
+  b -bg=b -background=b \
+  n -nowait=n -no-wait=n
+
+local RUNNER=DoTask
+if (( ${opts[(I)(-b|--bg|--background)]} )); then
+  if (( ${opts[(I)(-n|--nowait|--no-wait)]} )); then
+    RUNNER=DoTaskBGNoWait
+  else
+    RUNNER=DoTaskBGWait
+  fi
+fi
+
+if (( ${opts[(I)(-a|-all)]} )); then
+  ${RUNNER} ${(ok)Tasks}
+else
+  ${RUNNER} $@
+fi
+

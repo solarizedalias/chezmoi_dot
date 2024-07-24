@@ -1,0 +1,16 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# launch_play_with_mpv
+# Mon Aug 21 02:52:30 2023
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+
+# XXX: `--quiet` should be passed to mpv in Chrome extension settings
+{
+  play-with-mpv 2>&1 | sed -u -E 's/\r+/\n/g; s/\x0//g'
+} >/tmp/play-with-mpv.log &!
+

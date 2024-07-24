@@ -1,0 +1,8 @@
+#!/usr/bin/env zsh
+
+# XXX nimble does not actually use stderr for error messages.
+local -a lines=( ${(f)"$(nimble dump 2>/dev/null)"} )
+local VERSION=${(Q)${${(M)lines:#version*}#*: }}
+builtin print -rn -- "${VERSION:+v${VERSION}}"
+exit 0
+

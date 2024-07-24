@@ -1,0 +1,35 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# is_text
+# Sat Aug  1 14:03:01 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+integer STDIN=0
+[[ -t 0 ]] || STDIN=1
+
+integer RET=0
+
+if (( STDIN )); then
+  RET=1
+  while read -r line; do
+    if [[ -n ${(M)"$(file -b --mime-type ${line})":#text/*} ]]; then
+      print -rl -- ${line}
+      (( RET )) && RET=0
+    fi
+  done
+else
+  local -A Result
+  Result=( ${(@)${(@s.: .)${(f)"$(file --mime-type $@)"}}##[[:blank:]]##} )
+  (( ${(k)#Result[(R)text/*]} )) || RET=1
+  print -rl -- ${(k)Result[(R)text/*]}
+fi
+
+return RET
+

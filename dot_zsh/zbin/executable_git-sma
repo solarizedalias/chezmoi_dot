@@ -1,0 +1,59 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# git_sma
+# Sun Feb 21 23:22:25 2021
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent NO_short_loops NO_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt NO_clobber     NO_append_create
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+function bail() {
+  builtin print -rl -- "$@"
+  exit 0
+}
+
+function fatal() {
+  integer C=${${(M)1:#<1->}:-1}
+  shift
+  builtin print -u2 -rl -- "$@"
+  exit C
+}
+
+function error() {
+  builtin print -u2 -rl -- "$@"
+}
+
+local -a opts
+
+# --help will never work tho
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v
+
+integer O_HELP O_VERSION
+: ${O_HELP::=${opts[(I)(-h|--help)]}} \
+  ${O_VERSION::=${opts[(I)(-v|--version)]}}
+
+(( O_HELP )) && bail "Usage: ${0:t} [OPTIONS] [DIRECTORY] [REMOTE NAME]"
+(( O_VERSION )) && bail "unknown"
+
+[[ -d "$1" ]] || fatal 1 "Invalid directory: $1"
+local DIR=$1
+local REMOTE=${2:-origin}
+
+local -a cmd=(git -C "${DIR}" remote get-url "${REMOTE}")
+local URL
+URL=$( ${(@)cmd} )
+(( $? == 0 )) || fatal 1 "command failed: ${(j: :)cmd}"
+
+git submodule add "${URL}"
+

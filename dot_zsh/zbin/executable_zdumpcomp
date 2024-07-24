@@ -1,0 +1,64 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# zdumpcomp
+# Thu Aug  6 13:31:05 2020
+# AUTHOR: solarizedalias
+# Compare two .zcompdump files
+# ==========================================================
+emulate -LR zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+function throw() {
+  print -u2 -- $@
+  exit 1
+}
+
+function validateFile() {
+  [[ -f "$1" ]] || throw "No such file $1"
+  local HEAD
+  read -r HEAD < "$1" || throw "Cannot read file $1"
+  [[ "${HEAD}" ==
+    '#files:'[[:blank:]]##<->[[:blank:]]##'version:'[[:blank:]]##[0-9.]##(-dev|)
+  ]] || throw "Invalid dump file $1"
+}
+
+validateFile "$1"
+validateFile "$2"
+
+local -a linesA linesB compdefsA compdefsB zlesA zlesB bindkeysA bindkeysB
+
+{ linesA=( ${(f)"$(<"${1}")"}); }
+compdefsA=(
+  ${(@M)${(s: :uo)${(@)linesA:#(#s)(autoload|[[:blank:]]##)}}:#_*~*=*~*\'*}
+)
+zlesA=(${(@M)linesA:#zle [[:graph:]]## _*})
+bindkeysA=(${(@M)linesA:#bindkey *})
+
+{ linesB=( ${(f)"$(<"${2}")"}); }
+compdefsB=(
+  ${(@M)${(s: :uo)${(@)linesB:#(#s)(autoload|[[:blank:]]##)}}:#_*~*=*~*\'*}
+)
+zlesB=(${(@M)linesB:#zle [[:graph:]]## _*})
+bindkeysB=(${(@M)linesB:#bindkey *})
+
+local RED GREEN BLUE YELLOW DEFAULT
+[[ -t 1 ]] && RED='\e[31m' GREEN='\e[32m' YELLOW='\e[33m' BLUE='\e[34m' DEFAULT='\e[0m'
+
+print -l  -- '' ${GREEN}++${1}${DEFAULT} ${RED}--${2}${DEFAULT}
+print -l  -- '' "${YELLOW}@compdef${DEFAULT}" ''
+print -ca -- ${BLUE}${(@)^compdefsA:|compdefsB}${DEFAULT}
+print -l  -- '' "${YELLOW}@completion widgets${DEFAULT}" ''
+print -l  -- ${BLUE}${(@)^zlesA:|zlesB}${DEFAULT}
+print -l  -- '' "${YELLOW}@key binds${DEFAULT}" ''
+print -l  -- ${BLUE}${(@)^bindkeysA:|bindkeysB}${DEFAULT}
+
+print -l  -- '' ${GREEN}++${2}${DEFAULT} ${RED}--${1}${DEFAULT}
+print -l  -- '' "${YELLOW}@compdef${DEFAULT}" ''
+print -ca -- ${BLUE}${(@)^compdefsB:|compdefsA}${DEFAULT}
+print -l  -- '' "${YELLOW}@completion widgets${DEFAULT}" ''
+print -l  -- ${BLUE}${(@)^zlesB:|zlesA}${DEFAULT}
+print -l  -- '' "${YELLOW}@key binds${DEFAULT}" ''
+print -l  -- ${BLUE}${(@)^bindkeysB:|bindkeysA}${DEFAULT}
+

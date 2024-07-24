@@ -1,0 +1,78 @@
+#!/usr/bin/env zsh
+# vim:ft=zsh:
+
+# ==========================================================
+# spotifyd
+# Tue Oct  6 10:55:01 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+integer NOEXEC
+(( ${@[(I)-n|--no-exec]} )) && (( ++NOEXEC ))
+
+function activate() {
+  command open -a Spotify
+}
+function open-bg() {
+  command open -g -a Spotify
+}
+
+function resume() {
+  command spotify play
+}
+
+function get-status() {
+  local RREF="${1:-Status}"
+  local -a status
+  status=( ${(f)"$( spotify status )"} )
+  status=(
+    ${status[1]//((#s)Spotify is currently |.(#e))/}
+    ${status[2]#Artist: }
+    ${status[3]#Album: }
+    ${status[4]#Track: }
+    ${status[5]#Position: }
+  )
+
+  : ${(PAA)RREF::=status ${status[1]}} \
+    ${(PAA)RREF::=artist ${status[2]}} \
+    ${(PAA)RREF::=album ${status[3]}} \
+    ${(PAA)RREF::=track ${status[4]}} \
+    ${(PAA)RREF::=position ${status[5]}}
+}
+
+function is-dead() {
+  [[ "$( osascript -l JavaScript -e 'Application("Spotify").running()' )" != true ]]
+}
+
+function keep-awaik() {
+  integer POLLINT="${1:-3}"
+  while sleep $(( POLLINT )); do
+    if is-dead; then
+      open-bg && resume
+    fi
+  done
+}
+
+function main() {
+  if (( NOEXEC )); then
+    exit 0
+  else
+    is-dead && open-bg
+    sleep 1
+    resume >/dev/null
+    keep-awaik
+  fi
+}
+
+main &!
+print -r -- "${0}:Process is running as $!"
+

@@ -1,0 +1,160 @@
+#!/usr/bin/env zsh
+
+# vim: set ft=zsh:
+
+# ==========================================================
+# git_xpull
+# Sun Aug 16 11:31:03 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -L zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+setopt noclobber      noappendcreate
+
+readonly THISFILE="${${(%):-%N}:a}"
+readonly THIS="${THISFILE:t}"
+readonly HERE="${THISFILE:h}"
+readonly LIB="${HERE}/lib"
+
+source ${LIB}/std.zsh
+source ${LIB}/spinner.zsh
+
+#
+# Declare parameters
+#
+local -a targets
+local DATE
+DATE="$(command date +%Y-%m-%d-%H%M%S)"
+readonly TEMP_BASE="/tmp/${THIS}-$$-${DATE}"
+
+#
+# Preparation
+#
+function prepare_temp() {
+  [[ -d ${TEMP_BASE} ]] && throw "${TEMP_BASE} already exists."
+  umask 077
+  mkdir -p ${TEMP_BASE}
+
+}
+
+#
+# @TRAP EXIT INT
+#
+function cleanup() {
+  [[ -d ${TEMP_BASE:?} ]] && rm -rf ${TEMP_BASE:?}
+}
+
+function setup-fifo() {
+  integer i
+  for ((i = 1; i <= ${#targets}; i++)); do
+    mkfifo ${TEMP_BASE}/${i}
+  done
+}
+
+#
+# @disown
+#
+function pull-all() {
+  integer j
+  for ((j = 1; j <= ${#targets}; j++)); do
+    pushd -q ${targets[j]} || continue
+    [[ -p ${TEMP_BASE}/${j} ]] && {
+      {
+        print -P '%2/'
+        git pull
+      } 2>/dev/null  >| ${TEMP_BASE}/${j} &!
+    }
+    popd -q
+  done
+}
+
+# @STDOUT
+# Blocks until ALL of the named pipes are closed for write.
+function wait-fifo() {
+  emulate -L zsh
+
+  trap 'cleanup' EXIT
+  trap 'cleanup; exit 1' INT
+
+  local -a fifos=( ${TEMP_BASE:?}/{1..${#targets}} )
+  fifos=( ${^fifos}(ND-p) )
+  (( ${#fifos} )) || throw "No pipes found to read from"
+
+  while (( ${#fifos} )); do
+    if (( ${#fifos} == 0)); then
+      return 0
+    elif (( 10 < ${#fifos}  )); then
+      buffered=( ${(@)fifos[1,10]} )
+      fifos=( ${(@)fifos[11,-1]} )
+    else
+      buffered=( ${(@)fifos} )
+      fifos=()
+    fi
+    cat ${(@)buffered} && rm -f ${(@)buffered} &!
+
+    while [[ -n "$(echo ${(@)^buffered}(ND-p) )" ]]; do
+      :
+    done
+
+  done
+
+
+}
+
+# @STDIN
+# @STDOUT
+function colorize() {
+  emulate -L zsh
+  setopt nobraceccl
+  local -a match mbegin mend
+
+  local line
+  while read -r line; do
+    if [[ ${line} == *'|'*<->* ]]; then
+      print -P -- " ${${(s:|:)line}[1]} | ${${(s:|:)line}[2]:gs@+@%F\{green\}+%f@:gs@-@%F\{red\}-%f@}"
+    else
+      print -- "${line}"
+    fi
+  done
+}
+
+function get-repositories() {
+  # Avoid creating new arrays.
+  setopt local_options warn_create_global
+  (( ${+parameters[targets]} )) || throw 'Array `targets` is not set.'
+  [[ ${(t)targets} == array* ]] || throw "Type Error: Expected array \`targets\`. Received (${(t)targets})."
+  local ROOT="${1:?}"
+  targets=( ${ROOT}/**/.git(ND:h) )
+  (( ${#targets} )) || throw "No git repository found in ${ROOT}."
+  # (( ${#targets} > 100 )) && throw "Too many git repositories." || true
+}
+
+function main() {
+  local TARGET
+  if ! (( $# )); then
+    {
+      [[ -t 0 ]] && set -- ${PWD}
+    } || set -- "$(cat -)"
+  fi
+  TARGET="${${1:a}:-${PWD}}"
+  #
+  # Early exit
+  #
+  [[ -d ${TARGET} ]] || throw "${TARGET} is not a directory"
+  # one empty line
+  echo ''
+  get-repositories ${TARGET}
+  prepare_temp
+  setup-fifo
+  pull-all
+  wait-fifo | grep -v 'Already up to date\.' | colorize
+}
+
+# shellspec
+${__SOURCED__:+return}
+
+main $@
+

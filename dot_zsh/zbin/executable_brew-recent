@@ -1,0 +1,31 @@
+#!/usr/bin/env zsh
+# vim: set ft=zsh:
+
+# ==========================================================
+# brew_recent
+# Fri Jul 24 12:22:43 2020
+# AUTHOR: solarizedalias
+# View recent homebrew logs.
+# ==========================================================
+
+#: Usage: brew recent [-d|--update][-g|--upgrade]
+#: View logs stolen from Brewlet.
+#:   -d, --update       View updates of formula info.
+#:   -g, --upgrade      View upgrades of formulae.
+
+local -a opts
+local UPDATE=1 UPGRADE=0
+zparseopts -a opts -K -M -E d -update=d g -upgrade=g
+
+(( ${opts[(I)(-g|--upgrade)]} )) && {
+  UPDATE=0 UPGRADE=1
+}
+
+(( ${opts[(I)(-d|--update)]} )) && {
+  UPDATE=1 UPGRADE=0
+}
+
+(( UPDATE ))  && brewlet-log-viewer.zsh d
+(( UPGRADE )) && brewlet-log-viewer.zsh g
+
+

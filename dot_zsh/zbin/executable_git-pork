@@ -1,0 +1,49 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# git_pork
+# Tue Apr  6 19:49:37 2021
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -R zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+function echo_run() {
+  print -r -- "$@"
+  "$@"
+}
+
+function rename-branch-if-different() {
+  local CURRENT_BRANCH
+  CURRENT_BRANCH=$(git branch --show-current)
+  if [[ "${CURRENT_BRANCH}" != "${1}" ]]; then
+    print -r -- "${CURRENT_BRANCH} != ${1}"
+    echo_run git branch -m "${CURRENT_BRANCH}" "${1}"
+  fi
+}
+
+local -a opts names
+zparseopts -a opts -D -K -M -E \
+  h -help=h \
+  v -version=v \
+  n:=names -name=n
+
+local NAME=${names[2]:-main}
+
+builtin set -e
+cd "${1:-.}"
+pwd
+echo_run git remote rename origin upstream
+echo_run git fetch upstream || : # XXX I often pork deleted repositories.
+echo_run gh repo create --source="${PWD}" --private --description='' "${PWD##*/}"
+rename-branch-if-different "${NAME}"
+echo_run git switch "${NAME}"
+
+# XXX Sometimes, pork'ed repo cannot be found (yet?).
+#     So I try waiting for a sec.
+sleep 1
+echo_run git push --set-upstream origin "${NAME}"
+

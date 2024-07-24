@@ -1,0 +1,165 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# git-xpull
+# Thu Aug 20 12:59:48 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+# **********************************************************
+# TODO:
+#   [√] TRAP CLEANUP !!!
+#   [ ] Usage
+#   [ ] TIMEOUT
+#   [ ] Separate stdout and stderr
+#
+# **********************************************************
+
+emulate -LR zsh
+setopt typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob  glob_dots      rc_quotes      hist_subst_pattern
+
+readonly SOURCE="${${(%):-%N}:a}"
+readonly NAME="${SOURCE:t}"
+readonly HEAD="${SOURCE:h}"
+
+integer W="${COLUMNS}"
+
+local DATE
+DATE=${(%):-'%D{%F-%H%M%S}'}
+readonly PIPE="/tmp/${NAME}-$$-${DATE}.fifo"
+readonly LOCK="/tmp/${NAME}-$$-${DATE}.lock"
+
+local -a pids
+
+function on_exit() {
+  [[ -p ${PIPE} ]] && rm -f ${PIPE}
+  [[ -f ${LOCK} ]] && rm -f ${LOCK}
+}
+
+function on_abort() {
+  on_exit
+  kill ${(@)pids}
+  exit 1
+}
+
+trap on_exit EXIT
+trap on_abort 1 2 3 15
+
+function locked() {
+  [[ -f ${LOCK} && "$(<${LOCK})" != ${sysparams[pid]} ]]
+}
+
+function lock() {
+  if locked; then
+    return 1
+  fi
+  print ${sysparams[pid]} > ${LOCK}
+}
+function unlock() {
+  [[ -f ${LOCK} && "$(<${LOCK})" == ${sysparams[pid]} ]] && rm -f ${LOCK}
+}
+
+function zleep() {
+  : $(builtin read -u 1 -t $1)
+}
+
+#
+# Should be called inside a working tree.
+#
+function pull() {
+  {
+    local CMD="${(P)1}"
+    local ID RES
+    ID="${${"${(j:/:)${(s:/:)${(s.:.)"$(
+      git config --local --get remote.origin.url
+    )"}[-1]}[-2,-1]}":-${(%):-%2/}}%.git}"
+    RES="$(eval ${CMD})"
+
+    until lock; do
+      zleep 1
+    done
+
+    if [[ -n ${RES//[[:blank:]]/} && ${RES} != 'Already up to date.' ]]; then
+      print -l -P -- \
+        '' "%F{blue}${${(s:/:)ID}[1]}%f/%F{yellow}${${(s:/:)ID}[2]}%f" \
+        "${RES}" ''
+    fi
+  } always {
+    unlock
+  }
+}
+
+# @STDIN
+# @STDOUT
+function colorize() {
+  emulate -LR zsh
+  setopt nobraceccl extended_glob
+
+  local line
+  while IFS= read -r line; do
+    if [[ ${line} == *'|'*<->*[-+]# ]]; then
+      print -r -P -- \
+        " ${${(s:|:)line}[1]} | ${${(s:|:)line}[2]:gs@+@%F\{green\}+%f@:gs@-@%F\{red\}-%f@}"
+    else
+      print -r -- "${line}"
+    fi
+  done
+}
+
+local GITCMD
+local -a opts cmds
+zparseopts -a opts -D -K -M -E h -help=h c:=cmds -command:=c
+(( ${#cmds} )) && {
+  GITCMD="${cmds[(R)^(-c|--command)]}"
+}
+
+(( ${+commands[${GITCMD[(w)1]}]} )) || GITCMD='git pull origin master'
+
+integer STDIN=0
+(( $# )) || STDIN=1
+
+local -a targets=( ${(@)^argv:a}(ND-/) )
+
+(( STDIN )) && {
+  while IFS= read -r line; do
+    [[ -d ${line} ]] && targets+=( ${line:a} )
+    print -P -n -u 2 \
+      "\r%F{yellow}${(pr:${W}:)${${(M)${line:a}%/*/*}:s@(#s)/@@:gs@/@'%f/%F\{yellow\}'@}}%f"
+  done
+}
+
+mkfifo -m 600 ${PIPE}
+
+integer GRAB
+{
+  while zleep 1; do
+    :
+  done < ${PIPE}
+} &
+
+GRAB=$!
+
+colorize < "${PIPE}" &
+
+integer COUNT=1
+integer END="${#targets}"
+for ((COUNT = 1; COUNT <= END; ++COUNT)); do
+
+  while (( ${#jobstates} > 15 )); do
+    zleep 0.5 && jobs &>/dev/null
+  done
+  pushd -q ${targets[COUNT]} || continue
+
+  pull GITCMD $(( COUNT )) 2>/dev/null >>| ${PIPE} &
+  pids+=( $! )
+  popd -q
+done
+
+until (( ${#jobstates} < 2 )); do
+  zleep 1
+done
+
+kill $GRAB
+

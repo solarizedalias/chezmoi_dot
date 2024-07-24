@@ -1,0 +1,43 @@
+#!/usr/bin/env zsh
+
+# ==========================================================
+# rat (executable)
+# Tue Aug 18 10:37:54 2020
+# AUTHOR: solarizedalias
+# Pure Zsh replacement of cat (use mapfile).
+# ==========================================================
+
+emulate -R zsh
+setopt warn_create_global noclobber noappendcreate
+
+(( $# )) || builtin set -- -
+builtin set -- ${(@)argv[1,${argv[(i)--]}-1]} ${(@)argv[${argv[(i)--]}+1,-1]}
+
+(
+  builtin zmodload zsh/system
+  integer BUF_SIZE=1048575 READ F_SIZE ERRNO
+
+  integer FD BYTES RET
+  local F
+  while (( $# )); do
+    if [[ "${1}" == - ]]; then
+      while builtin sysread -s $(( BUF_SIZE )) -c BYTES -i 0 -o 1; do
+        continue
+      done
+      (( $? && $? != 5)) && RET=$?
+    elif builtin sysopen -r -u FD "${1}"; then
+      while builtin sysread -s $(( BUF_SIZE )) -c BYTES -i $(( FD )) -o 1; do
+        continue
+      done
+      (( $? && $? != 5)) && RET=$?
+      builtin exec {FD}<&-
+    elif (( ERRNO )); then
+      exit ERRNO
+    fi
+    shift
+  done
+  exit RET
+)
+
+exit $?
+
