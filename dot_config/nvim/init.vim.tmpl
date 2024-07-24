@@ -107,7 +107,6 @@ else
   endfunction
 endif
 
-{{ if eq .chezmoi.hostname "MBP2017SA" }}
 " @@@@@@@@@@@@@@@@@@@@@@@@@@ DEIN @@@@@@@@@@@@@@@@@@@@@@@@@@@
 if s:nvim
   let g:dein#enable_notification = v:true
@@ -192,7 +191,6 @@ endif
 execute 'set runtimepath^=' . expand('~/.vim/custom')
 
 call ApplyCustom('fzf.vim')
-{{ end }}
 
 " vim:foldmethod=indent:
 
