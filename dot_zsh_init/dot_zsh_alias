@@ -10,7 +10,11 @@ function zsh_alias() {
   alias xa='bindkey "^Xa" expand-aliases'
   alias x_='bindkey "^Xa" _expand_alias'
   alias xxx='xa && alias xxx=x && x'
+{{ if eq .chezmoi.hostname "MBP2017SA" }}
   alias xxxx='xa && alnum_async && pefp && pept && rehash && alias xxxx=x && x'
+{{ else }}
+  alias xxxx='xa && pefp && pept && rehash && alias xxxx=x && x'
+{{ end }}
 
   #
   # essentials for my Z life
