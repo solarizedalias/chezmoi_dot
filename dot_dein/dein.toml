@@ -671,23 +671,23 @@ hook_add = '''
 
 '''
 
-[[plugins]]
-repo = 'raghur/vim-ghost'
-hook_add = '''
+# [[plugins]]
+# repo = 'raghur/vim-ghost'
+# hook_add = '''
 
-  let g:ghost_darwin_app = 'alacritty'
-  function! s:SetupGhostBuffer()
-    if match(expand("%:a"), '\v/ghost-(github|reddit)\.com-')
-      set ft=markdown
-    endif
-  endfunction
+#   let g:ghost_darwin_app = 'alacritty'
+#   function! s:SetupGhostBuffer()
+#     if match(expand("%:a"), '\v/ghost-(github|reddit)\.com-')
+#       set ft=markdown
+#     endif
+#   endfunction
 
-  augroup vim_ghost
-    autocmd!
-    autocmd User vim-ghost#connected call s:SetupGhostBuffer()
-  augroup END
+#   augroup vim_ghost
+#     autocmd!
+#     autocmd User vim-ghost#connected call s:SetupGhostBuffer()
+#   augroup END
 
-'''
+# '''
 
 [[plugins]]
 repo = 'vim-jp/vimdoc-ja'
