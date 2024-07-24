@@ -1,5 +1,5 @@
 .git/
 
 {{- if ne .chezmoi.os "darwin" }}
-
+zbin/tail
 {{- end}}
