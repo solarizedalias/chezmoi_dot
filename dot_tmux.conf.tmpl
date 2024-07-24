@@ -3,7 +3,7 @@
 {{- if eq .chezmoi.os "darwin" }}
 set -g default-shell /usr/local/bin/zsh
 {{ else if eq .chezmoi.os "linux" }}
-set -g default-shell /usr/bin/zsh
+set -g default-shell /bin/zsh
 {{ end -}}
 
 # ================================ TPM =================================
