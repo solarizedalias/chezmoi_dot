@@ -1,5 +1,10 @@
 # shell
+
+{{- if eq .chezmoi.os "darwin" }}
 set -g default-shell /usr/local/bin/zsh
+{{ else if eq .chezmoi.os "linux" }}
+set -g default-shell /usr/bin/zsh
+{{ end }}
 
 # ================================ TPM =================================
 
