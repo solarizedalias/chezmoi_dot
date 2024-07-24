@@ -1,0 +1,26 @@
+-- vim:ft=lua:
+-- FIXME: specific to neovim
+std = luajit
+read_globals = {
+  vim = {
+    fields = {
+      g = { read_only = false, other_fields = true, },
+      b = { read_only = false, other_fields = true, },
+      w = { read_only = false, other_fields = true, },
+      t = { read_only = false, other_fields = true, },
+      env = { read_only = false, other_fields = true, },
+      opt = { read_only = false, other_fields = true, },
+      opt_local = { read_only = false, other_fields = true, },
+      opt_global = { read_only = false, other_fields = true, },
+      o = { read_only = false, other_fields = true, },
+      bo = { read_only = false, other_fields = true, },
+      wo = { read_only = false, other_fields = true, },
+      go = { read_only = false, other_fields = true, },
+      lsp = { read_only = false, other_fields = true },
+    },
+    other_fields = true,
+  }
+}
+cache = true
+codes = true
+
