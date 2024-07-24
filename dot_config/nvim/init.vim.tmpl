@@ -177,8 +177,6 @@ command! DeinInstallAll call dein#install()
 " endif
 
 " ------------------------------------------------------------
-{{ end }}
-
 " ################################# Lua ######################################
 if s:nvim
   lua require('lua_config')
@@ -189,12 +187,12 @@ if s:nvim
   lua require('winleave_sign')
   lua require('dein_utils').init()
 endif
-
 " %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CUSTOM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 execute 'set runtimepath^=' . expand('~/.vim/custom')
 
 call ApplyCustom('fzf.vim')
+{{ end }}
 
 " vim:foldmethod=indent:
 
