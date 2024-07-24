@@ -2,5 +2,5 @@
 # shellcheck shell=sh
 # shellcheck source=/dev/null
 
-path=(~/zbin(N-/) ${(@)path})
+path=(~/.zsh/zbin(N-/) ${(@)path})
 
