@@ -34,7 +34,8 @@ let g:fzf_preview_window = 'right:50%'
 let g:fzf_commands_expect = 'ctrl-e'
 
 let s:pty = !empty($TERM)
-let s:fd_base = 'fd --type f --hidden --follow --exclude=.git --exclude=mackup --exclude=\*.zwc '
+const s:fd_name = executable('fd') ? 'fd' : 'fdfind'
+let s:fd_base = s:fd_name . ' --type f --hidden --follow --exclude=.git --exclude=mackup --exclude=\*.zwc '
 if s:pty || has('gui_running')
   let s:fd_cmd = s:fd_base . '--color=always '
 else
