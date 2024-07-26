@@ -322,7 +322,7 @@ time_format               = "%T"
 style                     = "white"
 
 [username]
-format                    = "[$user in ]($style)"
+format                    = "[$user ]($style)"
 show_always               = false
 
 [zig]
