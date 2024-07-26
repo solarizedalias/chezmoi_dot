@@ -94,24 +94,6 @@ autoload -Uz bashcompinit && bashcompinit
 source ~/dotfiles/.zinit_plugin
 {{ end }}
 
-{{ if eq .chezmoi.hostname "MBP2017SA" }}
-builtin pushd -q "${DROOT:-${HOME}/dotfiles}"
-
-. ./.bash_alias
-. ./.zsh_alias
-. ./.bash_function
-. ./.zsh_function
-. ./.zsh_configs
-. ./.zsh_loadings
-. ./.zsh_bindkey
-setalias
-zsh_alias
-
-# ! return to where I was
-builtin popd -q
-
-{{ else }}
-
 source ~/.bash_alias
 source ~/.zsh_init/.zsh_alias
 source ~/.bash_function
@@ -121,8 +103,6 @@ source ~/.zsh_init/.zsh_loadings
 source ~/.zsh_init/.zsh_bindkey
 setalias
 zsh_alias
-
-{{ end }}
 
 #
 # PROMPT
