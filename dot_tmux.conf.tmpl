@@ -194,11 +194,21 @@ bind q kill-pane
 # start copy mode <C-s> + y
 bind y copy-mode
 set -g mode-keys vi
+
+{{ if eq .chezmoi.os "darwin" }}
 set -s copy-command "reattach-to-user-namespace pbcopy"
 # required: brew install reattach-to-user-namespace
 # USAGE) v: start select, y: yank, i: back to normal mode
-bind-key -T copy-mode-vi v send-keys -X begin-selection
 bind-key -T copy-mode-vi y send-keys -X copy-pipe "reattach-to-user-namespace pbcopy" \; send-keys -X clear-selection
+{{ else if eq .chezmoi.os "linux" }}
+{{   if .chezmoi.kernel.osrelease | lower | contains "microsoft" }}
+# WSL
+bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "win32yank.exe -i"
+{{   end }}
+# linux but not WSL
+{{ end }}
+
+bind-key -T copy-mode-vi v send-keys -X begin-selection
 bind-key -T copy-mode-vi i send-keys -X cancel
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
