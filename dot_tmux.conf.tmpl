@@ -204,8 +204,10 @@ bind-key -T copy-mode-vi y send-keys -X copy-pipe "reattach-to-user-namespace pb
 {{   if .chezmoi.kernel.osrelease | lower | contains "microsoft" }}
 # WSL
 bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "win32yank.exe -i"
-{{   end }}
+{{   else }}
 # linux but not WSL
+# TODO
+{{   end }}
 {{ end }}
 
 bind-key -T copy-mode-vi v send-keys -X begin-selection
