@@ -203,7 +203,9 @@ format                    = "[$symbol$version]($style) "
 disabled                  = false
 
 [hostname]
-format                    = "[$hostname in ]($style)"
+format                    = "[$ssh_symbol$hostname ]($style)"
+ssh_only = false
+ssh_symbol = " "
 
 [hg_branch]
 symbol                    = " "
