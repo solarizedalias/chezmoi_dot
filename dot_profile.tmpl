@@ -1,0 +1,194 @@
+# shellcheck shell=sh
+# shellcheck disable=SC2181,SC1090,SC2089,SC2090
+:
+
+# zmodload zsh/zprof && zprof
+
+#
+# LANG
+#
+#LANG=ja_JP.UTF-8
+export LANG=en_US.UTF-8
+
+{{- if eq .chezmoi.hostname "MBP2017SA" }}
+[ -z "${DROOT}" ] && DROOT="${HOME}/dotfiles"
+{{ end }}
+
+source_if_available() {
+  if [ -r "$1" ]; then
+    . "$1"
+  else
+    return 1
+  fi
+  return 0
+}
+
+# ****************************************************************************
+#                                   PATH
+# ****************************************************************************
+if [ -z "${ZSH_VERSION}" ]; then
+  PATH="/usr/local/sbin:${PATH}"
+  PATH="/usr/local/bin:${PATH}"
+  PATH="/usr/local/opt/curl/bin:${PATH}"                                 # Brewed curl
+  PATH="/usr/local/opt/openjdk/bin:${PATH}"                              # Brewed java
+  PATH="${HOME}/.luarocks/bin:${PATH}"                                   # luarocks
+  PATH="${HOME}/.nimble/bin:${PATH}"                                     # .+* NIM .+*
+  PATH="${HOME}/relma/bin:${PATH}"                                       # jiro4989/relma
+  PATH="${HOME}/.yarn/v1/bin:${PATH}"                                    # yarn global
+  PATH="${HOME}/.nodebrew/current/bin:${PATH}"                           # Node.js
+
+  PATH="/usr/local/opt/llvm/bin:${PATH}"                                 # llvm (clang)
+
+  DENO_INSTALL="${HOME}/.deno"
+  export DENO_INSTALL
+  PATH="${DENO_INSTALL}/bin:${PATH}"                                     # deno
+
+  PATH="${HOME}/go/bin:${PATH}"                                          # Golang
+  PATH="${HOME}/.cargo/bin:${PATH}"                                      # Rust Cargo
+  PATH="${PATH}:${HOME}/Library/Python/2.7/bin"                          # Python2.7 pip
+  PATH="${PATH}:${HOME}/.cabal/bin"                                      # Cabal (haskel)
+
+  PATH="${PATH}:${HOME}/fakebin"
+  PATH="${HOME}/.local/bin:${PATH}"
+  PATH="${HOME}/bin:${PATH}"
+  PATH="/Users/ykksd/bin/kotoriotoko/BIN:${PATH}"
+  PATH="${PATH}:${HOME}/shellshoccar/bin"
+
+  # Wine
+  # PATH="/Applications/Wine Staging.app/Contents/Resources/start/bin:${PATH}"
+  # PATH="/Applications/Wine Staging.app/Contents/Resources/wine/bin:${PATH}"
+  export PATH
+
+  #
+  # EDITOR
+  #
+  {
+    if type nvim >/dev/null;then
+      EDITOR='nvim'
+    elif type vim >/dev/null;then
+      EDITOR='vim'
+    fi
+  }
+  VISUAL="${EDITOR}"
+  GIT_EDITOR="${EDITOR}"
+  export GIT_EDITOR
+  export VISUAL
+  export EDITOR
+fi
+
+#
+# RUBY
+#
+if type rbenv >/dev/null 2>&1; then
+  if [ -n "${ZSH_VERSION+x}" ]; then
+    source_if_available "${DROOT:-${HOME}/dotfiles}/.zsh_init_cache.d/rbenv-init--" ||
+      eval "$(rbenv init -)"
+  else
+    eval "$(rbenv init -)"
+  fi
+fi
+export RUBY_CONFIGURE_OPTS
+RUBY_CONFIGURE_OPTS="--with-openssl-dir=/usr/local/opt/opensssl@1.1"
+
+#
+# Node.js
+#
+NODE_PATH="${HOME}/.config/yarn/global/node_modules:${HOME}/.nodebrew/current/lib/node_modules"
+export NODE_PATH
+NTL_RUNNER=yarn
+export NTL_RUNNER
+
+TCLLIBPATH="/usr/local/lib"
+export TCLLIBPATH
+
+#
+# RUST
+#
+type rustc >/dev/null 2>/dev/null && {
+  # RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
+  RUST_SRC_PATH="/Users/ykksd/.rustup/toolchains/nightly-x86_64-apple-darwin"
+  export RUST_SRC_PATH
+}
+
+#
+# OCaml
+#
+source_if_available "${DROOT:-${HOME}/dotfiles}.zsh_init_cache.d/opam-init.zsh"
+
+{{ if eq .chezmoi.hostname "MBP2017SA" }}
+#
+# BREW
+#
+HOMEBREW_BUNDLE_FILE='/Users/ykksd/solarizedalias/gists/submodules/Brewfile/Brewfile'
+export HOMEBREW_BUNDLE_FILE
+HOMEBREW_BUNDLE_MAS_SKIP='iMovie'
+export HOMEBREW_BUNDLE_MAS_SKIP
+HOMEBREW_MOONSHINE_FILE='/Users/ykksd/solarizedalias/gists/submodules/Brewfile/Moonshine'
+export HOMEBREW_MOONSHINE_FILE
+
+# ~~~~~~~~~~~~~~~~~ LESS is MORE ~~~~~~~~~~~~~~~~~~~
+LESS='--tabs=2 --LONG-PROMPT --ignore-case'
+export LESS
+LESSOPEN="|/usr/local/bin/lesspipe.sh %s" LESS_ADVANCED_PREPROCESSOR=1
+export LESSOPEN LESS_ADVANCED_PREPROCESSOR
+export LESSOPEN
+if [ -z "${ZSH_VERSION}" ]; then
+  LESS_TERMCAP_mb=$(tput bold)                # begin blinking
+  LESS_TERMCAP_md=$(tput bold; tput setaf 4)  # begin bold (blue)
+  LESS_TERMCAP_me=$(tput sgr0)                # end mode
+  LESS_TERMCAP_se=$(tput sgr0)                # end standout-mode
+  LESS_TERMCAP_so=$(tput bold; tput setaf 3)  # begin standout-mode (yellow)
+  LESS_TERMCAP_ue=$(tput rmul; tput sgr0)     # end underline
+  LESS_TERMCAP_us=$(tput smul; tput setaf 2)  # begin underline (green)
+  export LESS_TERMCAP_mb LESS_TERMCAP_md LESS_TERMCAP_me LESS_TERMCAP_se \
+         LESS_TERMCAP_so LESS_TERMCAP_ue LESS_TERMCAP_us
+fi
+
+# NO MORE, NO LESS
+export MANPAGER
+MANPAGER='/usr/bin/less -is'
+[ -x '/usr/local/bin/less' ] && MANPAGER='/usr/local/bin/less -isR'
+
+# :::::::::::::::::::::: bat :::::::::::::::::::::::::::
+BAT_PAGER='more -R -e --chop-long-lines'
+export BAT_PAGER
+{{ end }}
+
+# ::::::::::::::::::::: delta ::::::::::::::::::::::::::
+# Since v0.17.0, delta change its behavior to determine the pager and setting BAT_PAGER now affects unexpectedly.
+# Setting DELTA_PAGER solves it.
+DELTA_PAGER=less
+export DELTA_PAGER
+
+# ::::::::::::::::::::: ripgrep ::::::::::::::::::::::::
+RIPGREP_CONFIG_PATH=${HOME}/.ripgreprc
+export RIPGREP_CONFIG_PATH
+
+######################## FZF ##########################
+FZF_DEFAULT_COMMAND='fd --color=always --type=f --hidden --follow --exclude=.git '
+export FZF_DEFAULT_COMMAND
+
+FZF_DEFAULT_OPTS='--ansi --marker="*" --tabstop=2 --cycle --reverse --bind="ctrl-d:page-down,ctrl-l:page-up,ctrl-o:top,ctrl-space:toggle,ctrl-t:toggle-preview,alt-space:preview-page-down,∆:preview-down,˚:preview-up,alt-down:preview-page-down,alt-up:preview-page-up,ctrl-/:deselect-all" --preview-window=right:60%'
+export FZF_DEFAULT_OPTS
+
+FZF_TMUX=1
+export FZF_TMUX
+
+FZF_TMUX_OPTS='-p 70%'
+export FZF_TMUX_OPTS
+
+# ====================== skim =========================
+SKIM_DEFAULT_COMMAND='fd --color=always --type=f --hidden --follow --exclude=.git --exclude=mackup --exclude=.git_ || git ls-tree -t --name-only HEAD || rg --files || ag -l -g "" || find .'
+export SKIM_DEFAULT_COMMAND
+
+SKIM_DEFAULT_OPTIONS='--regex -m --color=dark,marker:#6d60e0,cursor:#2097e2,prompt:#44d4a9 --ansi --tabstop=2 --layout=reverse --prompt "❯❯ " --cmd-prompt "☞ " --bind=ctrl-d:page-down,ctrl-l:page-up,ctrl-space:toggle,alt-down:preview-page-down,alt-space:preview-page-down,alt-up:preview-page-up,ctrl-/:deselect-all --preview-window=right:60%'
+export SKIM_DEFAULT_OPTIONS
+
+#
+# MISC
+#
+
+# if (which zprof > /dev/null) ;then
+#   zprof | less
+# fi
+

@@ -24,9 +24,9 @@ export FZF_CTRL_R_OPTS="
       --preview-window=right:70%:wrap
       --bind=\"ctrl-space:toggle-preview,ctrl-v:replace-query\"
     "
-
 bindkey "^R" fzf-history-widget
-export FZF_ALT_C_COMMAND="fd -td --hidden --color=always --exclude=.git --exclude=.git_ --exclude=mackup"
+
+export FZF_ALT_C_COMMAND="fd -td --hidden --color=always --exclude=.gis"
 export FZF_ALT_C_OPTS=" --height=80% --bind=\"ctrl-r:toggle-sort\"
       --preview=\"eza -alhF --group-directories-first --git --git-ignore --tree --level=2 --color-scale --color=always {} ; \"
       --preview-window=right:60%
