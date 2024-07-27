@@ -55,10 +55,9 @@ if [[ ! -o login ]];then
   return
 fi
 
-{{ if eq .chezmoi.hostname "MBP2017SA" }}
-
 typeset -A ZINIT
 ZINIT[ZCOMPDUMP_PATH]="${HOME}/.zcompdump"
+{{- if eq .chezmoi.hostname "MBP2017SA" }}
 ### Added by Zinit's installer
 if [[ ! -f ${HOME}/.zinit/bin/zinit.zsh ]]; then
   print -P "%F{33}▓▒░ %F{220}Installing DHARMA Initiative Plugin Manager (zdharma/zinit)…%f"
@@ -83,7 +82,9 @@ zinit-zsh/z-a-submods \
 zinit-zsh/z-a-bin-gem-node
 
 ### End of Zinit's installer chunk
-{{ else }}
+
+{{- else }}
+
 ### Added by Zinit's installer
 if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
     print -P "%F{33} %F{220}Installing %F{33}ZDHARMA-CONTINUUM%F{220} Initiative Plugin Manager (%F{33}zdharma-continuum/zinit%F{220})…%f"
@@ -105,6 +106,8 @@ autoload -Uz bashcompinit && bashcompinit
 
 {{ if eq .chezmoi.hostname "MBP2017SA" }}
 source ~/dotfiles/.zinit_plugin
+{{ else }}
+source ~/.zsh_init/zinit/.zinit_plugin
 {{ end }}
 
 source ~/.bash_alias

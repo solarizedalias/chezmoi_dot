@@ -1,0 +1,114 @@
+# vim:ft=zsh:
+
+zinit ice wait'0' lucid light-mode
+zinit for \
+    MichaelAquilina/zsh-you-should-use \
+    paoloantinori/hhighlighter \
+    IngoHeimbach/zsh-easy-motion \
+
+zinit ice wait'!0' lucid atload'
+  HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND="bg=green,fg=black,bold"
+  bindkey "^P" "history-substring-search-up"
+  bindkey "^N" "history-substring-search-down"
+'
+zinit light zsh-users/zsh-history-substring-search
+
+zinit ice wait'0a' lucid \
+  atload'bindkey "^]^R" history-search-multi-word; bindkey -r "^R" ' \
+  atinit'zstyle ":history-search-multi-word" page-size "7"'
+zinit light solarizedalias/history-search-multi-word
+
+zinit ice wait'0b' id-as'fzf/key-bindings.zsh' lucid
+zinit snippet https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh
+
+zinit ice wait'!0' lucid id-as'fzf/key-bindings-atload'
+zinit snippet ${HOME}/.zsh_init/zinit/snippets/fzf/keybindings.zsh/atload.zsh
+
+zinit ice wait'0' id-as'fzf/completion.zsh' lucid
+zinit snippet https://raw.githubusercontent.com/junegunn/fzf/master/shell/completion.zsh
+
+zinit ice wait'0b' id-as'fzf/completion.zsh-atload.zsh' lucid
+zinit snippet ${HOME}/.zsh_init/zinit/snippets/fzf/completion.zsh/atload.zsh
+
+zinit ice wait'1d' ver'work' lucid atload'
+  zle -N enable-fzf-tab enable-fzf-tab
+  bindkey "^]^E" enable-fzf-tab
+'
+# Personal fork
+zinit light solarizedalias/fzf-tab
+
+zinit ice wait'0' lucid as'completion'
+zinit light Valodim/zsh-curl-completion
+
+zinit ice wait'0' lucid as'completion' id-as'docker/_docker-compose'
+zinit snippet https://raw.githubusercontent.com/docker/compose/master/contrib/completion/zsh/_docker-compose
+
+zinit ice wait'0' lucid as'completion' id-as'watchexec/_watchexec' atclone'mv zsh _watchexec'
+zinit snippet https://raw.githubusercontent.com/watchexec/watchexec/main/completions/zsh
+
+# FIXME
+local GITHUBLOCAL="${HOME}/solarizedalias/github.com"
+local SOLARIZEDALIAS="${GITHUBLOCAL}/solarizedalias"
+zinit ice wait'0' lucid id-as'_local/git-extras-completion.zsh' atload'
+  unfunction _git-ignore &>/dev/null
+  autoload -Uz _git-ignore
+'
+zinit snippet ${SOLARIZEDALIAS}/git-extras/etc/git-extras-completion.zsh
+
+zinit ice wait"!1" silent
+zinit light solarizedalias/zconvey
+zinit ice wait"!1" as"command" pick"cmds/zc-bg-notify" silent
+zinit light solarizedalias/zconvey
+zinit ice wait"!1" as"command" pick"cmds/plg-zsh-notify" silent
+zinit light solarizedalias/zconvey
+
+zinit ice wait'!0' silent atload'
+  unset -f -m "zsh-notify-*"
+  zstyle ":notify:*" notifier plg-zsh-notify
+  zstyle ":notify:*" command-complete-timeout 120
+  zstyle ":notify:*" blacklist-regex "v.*|.?man|bat|sk|fzf"
+'
+zinit load marzocchi/zsh-notify
+
+# Fork. upstream (https://github.com/Valodim/zsh-capture-completion)
+zinit ice wait'0' lucid as'program'
+zinit light solarizedalias/zsh-capture-completion
+
+zinit ice wait'0' lucid as'completion' pick'misc/zsh/_ghq'
+zinit light x-motemen/ghq
+
+zinit ice wait'1b' silent atinit"
+  ZINIT[COMPINIT_OPTS]='-C';
+  (( "'${+parameters[_comp_dumpfile]}'" )) || zicompinit
+  zicdreplay -q
+"
+zinit light solarizedalias/fast-syntax-highlighting
+
+zinit ice wait'1c' lucid pick"manydots-magic" compile"manydots-magic"
+zinit light knu/zsh-manydots-magic
+
+
+# TODO
+zinit ice wait'1a' lucid id-as'dotfiles/.loadings.zsh'
+zinit snippet $HOME/dotfiles/.loadings.zsh
+
+# TODO
+zinit ice wait'1a' lucid id-as'dotfiles/.shared_rc'
+zinit snippet $HOME/dotfiles/.shared_rc
+
+# TODO
+zinit ice wait'0' lucid id-as'dotfiles/.zsh_compdef'
+zinit snippet $HOME/dotfiles/.zsh_compdef
+
+zinit ice wait'0' lucid
+zinit light zpm-zsh/colors
+
+zinit ice wait'0' pick'zsh-abbr.zsh' lucid
+zinit light olets/zsh-abbr
+
+zinit ice wait'0' lucid
+zinit light hlissner/zsh-autopair
+
+zinit ice wait'0' lucid
+zinit light okapia/zsh-viexchange
+
