@@ -40,7 +40,13 @@ unsetopt GLOBAL_RCS
 if [[ -x /usr/libexec/path_helper ]]; then
   eval "$(/usr/libexec/path_helper -s)"
 fi
-{{ end }}
+{{ else if .chezmoi.os | eq "linux" }}
+{{-  if .chezmoi.osRelease.id | eq "ubuntu" }}
+
+# see /etc/zsh/zshrc
+typeset -g skip_global_compinit=1
+{{-  end }}
+{{- end }}
 
 if [[ -r ~/.profile ]]; then
   . ~/.profile
