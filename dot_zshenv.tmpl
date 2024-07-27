@@ -12,6 +12,15 @@ if [[ -o interactive ]]; then
     }
   fi
 fi
+{{ else }}
+if [[ -o interactive ]]; then
+  if [[ -x ~/.local/share/zinit/module/Src/zdharma_continuum/zinit.so ]]; then
+    module_path+=( ~/.local/share/zinit/module/Src )
+
+    # enable zpmod util
+    zmodload zdharma_continuum/zinit
+  fi
+fi
 {{ end }}
 
 export PATH
