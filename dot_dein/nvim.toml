@@ -720,3 +720,6 @@ lua_post_source = '''
   })
 '''
 
+[[plugins]]
+repo = 'https://github.com/xvzc/chezmoi.nvim'
+
