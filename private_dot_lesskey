@@ -1,0 +1,16 @@
+#command
+h left-scroll
+l right-scroll
+
+#env
+LESS = -R --tabs=2 --LONG-PROMPT --ignore-case --chop-long-lines --tilde
+
+#line-edit
+^F right
+^B left
+^W word-backspace
+^K word-delete
+^A home
+^E end
+^P up
+^N down
