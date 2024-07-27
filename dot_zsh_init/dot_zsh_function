@@ -81,8 +81,6 @@
   autoload -Uz jstr
   autoload -Uz nimeval
 
-  # wrapper around `/usr/bin/tail` and `gtail`
-  autoload -Uz tail
   # `cat`
   autoload -Uz rat
   # `sleep`
