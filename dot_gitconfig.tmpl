@@ -10,7 +10,6 @@
 [pager]
   blame = delta --pager=less
 
-{{- if eq .chezmoi.os "darwin" }}
 #
 # URL
 #
@@ -18,17 +17,9 @@
 [url "git@github.com:"]
   insteadOf = git://github.com/
   insteadOf = https://github.com/
-  ; pushInsteadOf = git://github.com/
   pushInsteadOf = https://github.com/
 
-; [url "git://github.com/"]
-;   insteadOf = https://github.com/
-;   insteadOf = git@github.com:
-
-; [url "git@github.com:solarizedalias/"]
-;   insteadOf = https://github.com/solarizedalias/
-;   insteadOf = git://github.com/solarizedalias/
-
+{{- if eq .chezmoi.os "darwin" }}
 [credential]
   helper = osxkeychain
 
