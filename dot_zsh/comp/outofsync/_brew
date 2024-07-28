@@ -48,7 +48,7 @@ __brew_list_aliases() {
 
     ${(@)${(s:___:)${(@)${(f)"$(
       brew alias 2>/dev/null
-    )"}//(#b)brew alias (*)=\'(*)\'/${match[1]}___${match[2]}___}}# }
+    )"}//(#b)brew alias (*)=\'(*)\'/${match[1]}___${${match[2]}[(w)1]}___}}# }
   )
   builtin print -r -- "${(@)brew_aliases}"
 }
