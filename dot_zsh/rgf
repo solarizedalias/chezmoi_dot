@@ -25,7 +25,7 @@ res=(
         --reverse \
         --bind "change:reload:$RG_PREFIX {q} || true" \
         --ansi --phony --query "$INITIAL_QUERY" \
-        --preview='preview.sh {}'
+        --preview='preview.zsh {}'
   )"}
 )
 
