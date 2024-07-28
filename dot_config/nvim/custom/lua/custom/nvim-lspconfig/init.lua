@@ -266,7 +266,7 @@ lspconfig.clangd.setup({
 
 -- TODO: A lot has changed since the last time I checked the lspconfig doc.
 --       We should probably adapt to the latest situation. (2023-08-11)
-do
+if false then
   local sumneko_root_path = vim.fn.stdpath('cache') .. '/lspconfig/sumneko_lua/lua-language-server'
   local sumneko_binary = sumneko_root_path .. '/bin/' .. 'lua-language-server'
 
@@ -335,6 +335,89 @@ do
     },
   }
   lspconfig.sumneko_lua.setup({ on_attach = custom_attach, capabilities = capabilities })
+else
+  local runtime_path = vim.split(package.path, ';')
+  table.insert(runtime_path, 'lua/?.lua')
+  table.insert(runtime_path, 'lua/?/init.lua')
+
+  local function match_any(s, pats)
+    for _, v in ipairs(pats) do
+      if string.match(s, v) then
+        return true
+      end
+    end
+    return false
+  end
+
+  ---@type string[]
+  local libraries = vim.api.nvim_list_runtime_paths()
+  -- Remove huge and not useful directories.
+  libraries = vim.tbl_filter(function(it)
+    local home = vim.env['HOME']
+    return not match_any(it, {
+      home .. '/%.config/nvim',
+      '.*/bundles/.cache/.*',
+    })
+  end, libraries)
+
+  lspconfig.lua_ls.setup({
+    on_init = function(client)
+      local path = client.workspace_folders[1].name
+      if vim.uv.fs_stat(path .. '/.luarc.json') or vim.uv.fs_stat(path .. '/.luarc.jsonc') then
+        return
+      end
+
+      client.config.settings.Lua = vim.tbl_deep_extend('force', client.config.settings.Lua, {
+        runtime = {
+          -- Tell the language server which version of Lua you're using
+          -- (most likely LuaJIT in the case of Neovim)
+          version = 'LuaJIT',
+        },
+        -- Make the server aware of Neovim runtime files
+        workspace = {
+          checkThirdParty = false,
+          library = {
+            libraries,
+            -- Depending on the usage, you might want to add additional paths here.
+            -- "${3rd}/luv/library"
+            -- "${3rd}/busted/library",
+          },
+          -- or pull in all of 'runtimepath'. NOTE: this is a lot slower
+          -- library = vim.api.nvim_get_runtime_file("", true)
+        },
+      })
+    end,
+    on_attach = custom_attach,
+    capabilities = capabilities,
+    settings = {
+      Lua = {
+        runtime = {
+          version = 'LuaJIT',
+          -- Setup your lua path
+          path = runtime_path,
+        },
+        diagnostics = {
+          globals = { 'vim', 'describe' },
+        },
+        format = {
+          enable = true,
+        },
+        workspace = {
+          -- Make the server aware of Neovim runtime files
+          library = libraries,
+          -- Don't complain about files under these directories.
+          ignoreDir = {
+            '**/vim-persisted-undo/**',
+            '**/.config/nvim/bundles',
+            '**/.vim/bundles',
+          },
+          checkThirdParty = false,
+        },
+        -- Do not send telemetry data containing a randomized but unique identifier
+        telemetry = { enable = false },
+      },
+    },
+  })
 end
 
 lspconfig.jsonls.setup({
