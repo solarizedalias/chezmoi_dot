@@ -48,7 +48,7 @@ function markdown() {
 }
 
 function binary() {
-  if [[ -x $1 || ${1:e} == (a|dylib) ]]; then
+  if [[ -x $1 || ${1:e} == (a|so|dylib) ]]; then
     my_ldd $@
   else
     command hexyl --color=always $@
@@ -65,6 +65,7 @@ function my_ldd() {
     print -u2 "we need either otool or ldd but found none"
     return 1
   fi
+  ${(@)cmd_ldd} $@
 }
 
 function zwc() {
