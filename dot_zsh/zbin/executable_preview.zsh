@@ -49,9 +49,21 @@ function markdown() {
 
 function binary() {
   if [[ -x $1 || ${1:e} == (a|dylib) ]]; then
-    command otool -L $@
+    my_ldd $@
   else
     command hexyl --color=always $@
+  fi
+}
+
+function my_ldd() {
+  local -a cmd_ldd
+  if (( ${+commands[otool]} )); then
+    cmd_ldd=( otool -L )
+  elif (( ${+commands[ldd]} )); then
+    cmd_ldd=( ldd )
+  else
+    print -u2 "we need either otool or ldd but found none"
+    return 1
   fi
 }
 
@@ -69,8 +81,7 @@ function auto() {
     dir $@
   elif [[ ${1:e} == zwc ]]; then
     zwc $@
-  # solarizedalias/N_magic
-  elif [[ "$( command magic --mimeType $1 )" == (text/*|application/(json|javascript)) ]]; then
+  elif [[ "$( command file --brief --mime-type $1 )" == (text/*|application/(json|javascript)) ]]; then
     if [[ ${1:e} == (md|markdown) ]]; then
       markdown $@
     else
