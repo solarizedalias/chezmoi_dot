@@ -702,12 +702,12 @@ lua_post_source = '''
   })
 '''
 
-[[plugins]]
-repo = 'yutkat/confirm-quit.nvim'
-on_event = 'CmdlineEnter'
-lua_post_source = '''
-  require('confirm-quit').setup()
-'''
+# [[plugins]]
+# repo = 'yutkat/confirm-quit.nvim'
+# on_event = 'CmdlineEnter'
+# lua_post_source = '''
+#   require('confirm-quit').setup()
+# '''
 
 [[plugins]]
 repo = '~/solarizedalias/github.com/boltlessengineer/smart-tab.nvim'
