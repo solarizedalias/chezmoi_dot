@@ -68,6 +68,12 @@ if (( ${+commands[brew]} )); then
 fi
 {{ end }}
 
+{{- if eq (get .chezmoi.osRelease "name") "Ubuntu" }}
+# TODO: move to .profile or any other common rcs (for other shells)
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+path=( ${(@)path} /snap/bin(ND-/) )
+{{end}}
+
 path=(
   ~/bin(ND-/)
   ~/.local/bin(ND-/)
@@ -134,12 +140,6 @@ manpath=(
   # ${(@)manpath}
   ~/.cache/manpath_compile(ND-/)
 )
-{{end}}
-
-{{- if eq (get .chezmoi.osRelease "name") "Ubuntu" }}
-# TODO: move to .profile or any other common rcs (for other shells)
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-path=( ${(@)path} /snap/bin(ND-/) )
 {{end}}
 
 # make sure all the entry so far really exist.
