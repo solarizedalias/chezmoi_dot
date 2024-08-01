@@ -1,5 +1,8 @@
 # vim:ft=zsh:
 
+zinit ice wait'0' lucid as'completion'
+zinit light sainnhe/zsh-completions
+
 zinit ice wait'0' lucid light-mode
 zinit for \
     MichaelAquilina/zsh-you-should-use \
