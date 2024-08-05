@@ -13,6 +13,7 @@ hook_post_source = '''
   \   'around',
   \   'buffer',
   \   'tmux',
+  \   'file',
   \ ])
 
   call ddc#custom#patch_global('sourceOptions', #{
@@ -343,7 +344,7 @@ hook_post_source = '''
   call ddc#custom#patch_global('sourceParams', #{
         \   path: #{
         \     cmd: [
-        \       {{ .fd | squote }},
+        \       'fd',
         \       '--relative-path',
         \       '--hidden',
         \       '--max-depth=5',
