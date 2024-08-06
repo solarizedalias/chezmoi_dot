@@ -71,6 +71,12 @@ fi
 {{- if eq (get .chezmoi.osRelease "name") "Ubuntu" }}
 # TODO: move to .profile or any other common rcs (for other shells)
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+typeset -gx -U -T LD_LIBRARY_PATH ld_library_path ':'
+ld_library_path=(
+  /home/linuxbrew/.linuxbrew/lib(ND-/)
+  ${(@)ld_library_path}
+)
+
 path=( ${(@)path} /snap/bin(ND-/) )
 {{end}}
 
