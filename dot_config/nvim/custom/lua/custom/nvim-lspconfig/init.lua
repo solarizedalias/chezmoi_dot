@@ -244,7 +244,7 @@ if true then
     on_attach = nim_attach,
     settings = {
       nim = {
-        nimsuggestPath = '~/.local/bin/nimsuggest',
+        nimsuggestPath = vim.fn.exepath('nimsuggest')
         -- TODO: project local settings
       },
     },
