@@ -236,6 +236,7 @@ zstyle    ':completion:*:*:(mdcat|glow):*:*' \
   local TTT
   # choosenim (my own _choosenim in .zsh/comps)
   source ${DROOT}/.env
+  TTT=${TTT:-${GHT}}
   zstyle ':completion::complete:choosenim:*' fetch-remote true
   zstyle ':completion::complete:choosenim:*' use-auth solarizedalias${TTT:+:}${TTT}
 
