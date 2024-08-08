@@ -15,7 +15,7 @@ readonly SOURCE="${${(%):-%N}:a}"
 readonly NAME="${SOURCE:t}"
 readonly HEAD="${SOURCE:h}"
 
-local SRCROOT="${HOME}/solarizedalias"
+local SRCROOT="${SRCROOT:-${HOME}/solarizedalias}"
 local AUTHOR
 AUTHOR="$(command git config --global --get user.name)"
 
