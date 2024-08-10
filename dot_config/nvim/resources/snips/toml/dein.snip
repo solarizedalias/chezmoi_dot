@@ -1,0 +1,41 @@
+# vim:set noet:
+
+# SNIPPETS for dein.toml
+#
+
+snippet     plugins
+abbr        plugins
+alias       pl plg
+options     head
+	[[plugins]]
+	repo = '`getreg('+')=='' ? '<\`0\`>' : substitute(getreg('+'), '\%(^\%(http[s]\=\|git\)\%(://\|@\)github\.com[/:]\|\.git$\)', '', 'g')`'
+
+snippet     repo
+abbr        repo
+options     head
+	repo = '`getreg('+')=='' ? '<\`0\`>' : substitute(getreg('+'), '\%(^\%(http[s]\=\|git\)\%(://\|@\)github\.com[/:]\|\.git$\)', '', 'g')`'
+
+snippet     hook
+alias       ha hook hookadd hook_add
+abbr        hook_add
+options     head
+	hook_add = '''
+		${0}
+	'''
+
+snippet     deps
+alias       depends dependency
+abbr        depends
+options     head
+	depends = [
+		'${0}'
+	]
+
+snippet     on_ft
+alias       oft onft
+abbr        on_ft
+options     head
+	on_ft = [
+		'${0}'
+	]
+

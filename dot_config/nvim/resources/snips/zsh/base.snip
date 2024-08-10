@@ -1,0 +1,352 @@
+# vim:set noexpandtab:
+extends sh
+
+# **********************************
+#           Shell Grammer
+# **********************************
+snippet     func
+alias       fn
+abbr        function <NAME>() { :; }
+options     head
+	${1:function} ${2:#:name}() {
+		${0:TARGET}
+	}
+
+snippet     raise
+abbr        raise()
+options     head
+	${1:function} ${2:raise}() {
+		print ${3:\$@} >&2
+		${4:exit 1}
+	}
+
+snippet     anon
+alias       ()
+abbr        () { <list> } <params>
+options     head
+	() {
+		${0}
+	} ${1:#:params}
+
+snippet     iff
+alias       ifopen
+abbr        if <COND>;then :; fi
+options     head
+	if ${1:condition}; then
+		${0:TARGET}
+	fi
+
+snippet     elif
+alias       elff
+abbr        elif <COND>;then :;
+options     head
+	elif ${1:condition}; then
+		${0:TARGET}
+
+snippet     elsee
+alias       elee els elss
+options     head
+	else
+		${0:TARGET}
+
+snippet     casee
+alias       cass
+abbr        case <T> in (*) : ;; esac
+options     head
+	case \${${1:var}} in
+		(${3:branch1})
+			${0:TARGET}
+		;;
+		(*)
+			${3::}
+		;;
+	esac
+
+snippet     casepat
+abbr        (pattern) ... ;;
+alias       of
+options     head
+	(${1:branch})
+		${0:TARGET}
+	;;
+
+snippet     while
+options     word
+	while ${1:condition}; do
+		${0:TARGET}
+	done
+
+snippet     whilereadline
+alias       wrl WRL
+abbr        while read -r line;do CMD;done
+options     word
+	while read -r ${1:line}; do
+		${0}
+	done
+
+snippet     until
+options     word
+	until ${1:condition}; do
+		${0:TARGET}
+	done
+
+snippet     repeat
+options     word
+	repeat ${1:expr}; do
+		${0:TARGET}
+	done
+
+snippet     select
+options     word
+	select ${1:item} in ${2:items}; do
+		${0:TARGET}
+	done
+
+snippet     forin
+options     word
+	for ${1:item} in ${2:items}; do
+		${0:TARGET}
+	done
+
+snippet     fornum
+alias       forn forcount forc
+options     word
+	for ((${1:i} = ${2:1}; $1 <= \${#${3:arr}}; ++$1)); do
+		${0:TARGET}
+	done
+
+snippet     tryblock
+options     head
+	{
+		${1:#:try}
+	} always {
+		${2:#:doAlways}
+	}
+
+snippet     trycatch
+abbr        { try } always { if catch *;then caught fi; }
+options     head
+	autoload -Uz throw catch
+	local EXCEPTION
+	{
+		${1:#:try}
+	} always {
+		if catch ${2:*}; then
+			${3::}
+		fi
+	}
+
+snippet     trycatchall
+alias       trycatchexcept tca
+abbr        { list } always { if catch *;then case ${CAUGHT} in (*) ;; esac fi; }
+options     head
+	autoload -Uz throw catch
+	local EXCEPTION
+	{
+		${1:#:try}
+	} always {
+		if catch *; then
+			case ${CAUGHT} in
+				(${2:#MyException})
+					${3::}
+				;;
+				(${4:*})
+					${5::}
+				;;
+			esac
+		fi
+	}
+
+
+# **********************************
+#               !?
+# **********************************
+snippet     zparseopts
+alias       zpar parse popts
+abbr        zparseopts -a opts -D -K -M -E
+options     head
+	local -a ${1:opts}
+	zparseopts -a $1 -D -K -M -E ${0}
+
+snippet     trapfunc
+abbr        unset -f ${functions_source[(R)${SOURCE}]}
+options     head
+	trap 'unset -f ${functions_source[(R)'${${1:SOURCE}:?}']}; autoload -Uz '${${2:NAME}:?}' ' EXIT
+	trap 'unset -f ${functions_source[(R)'${$1:?}']}; autoload -Uz '${$2:?}' return 1' INT
+
+
+# **********************************
+#             WORD !?
+# **********************************
+snippet     devnull
+alias       dvn redirdvn
+abbr        >/dev/null
+regexp      \s
+	>/dev/null
+
+snippet     2devnull
+alias       2dvn tdvn redirtdvn
+abbr        2>/dev/null
+regexp      \s
+	2>/dev/null
+
+snippet     12devnull
+alias       advn 12dvn redir12dvn
+abbr        2>&1 >/dev/null
+regexp      \s
+	>/dev/null 2>&1
+
+snippet     2to1
+alias       tto twotoone redirtto redir2to1
+abbr        2>&1
+regexp      \s
+	2>&1
+
+snippet     bothdevnull
+alias       bdvn redirbdvn
+abbr        &>/dev/null
+regexp      \s
+	&>/dev/null
+
+snippet     1to2
+alias       ott onetotwo redirott redir1to2
+abbr        >&2
+regexp      \s
+	>&2
+
+snippet     commandarray
+alias       cmdarr
+abbr        ${(f)"$(cmd)"}
+regexp      \s
+	\${(f)"\$(${0:#:command})"}
+
+snippet     commandarraymatch
+alias       cmdarrm
+abbr        ${(@M)${(f)"$(cmd)"}}
+	\${(@M)\${(f)"\$(${1:command})"}:#${2:#:pattern}}
+
+snippet     commandnthword
+alias       cmdnw
+abbr        Arr<Nth Word>
+regexp      \s
+	\${(@)^\${(f)"\$(${1:#:command})"}/(#m)(*)/\${\${(s:${2: }:)MATCH}[${3:1}]}}
+
+#
+# CONDITIONS
+#
+snippet     file
+alias       -f testfile [[-f
+abbr        [[ -f FILE ]]
+regexp      \s
+	[[ -f ${0} ]]
+
+
+# *********************************
+#          [[:CHARCLASS:]]
+# *********************************
+snippet     charclass
+alias       chcl char [[:
+abbr        [[:CHARCLASS:]]
+	[[:${1:#:CHARCLASS}:]]
+
+snippet     alnum
+abbr        [[:alnum:]] A-Za-z0-9
+regexp      \[\[:
+	alnum:
+
+snippet     alpha
+abbr        [[:alpha:]] A-Za-z
+regexp      \[\[:
+	alpha:
+
+snippet     ascii
+abbr        [[:ascii:]] 0-9A-Za-z[\]^_`{|}~
+regexp      \[\[:
+	ascii:
+
+snippet     blank
+abbr        [[:blank:]] \t [:space:]
+regexp      \[\[:
+	blank:
+
+snippet     cntrl
+abbr        [[:cntrl:]] ^A-^Z..
+regexp      \[\[:
+	cntrl:
+
+snippet     digit
+abbr        [[:digit:]] 0-9
+regexp      \[\[:
+	digit:
+
+snippet     graph
+abbr        [[:graph:]] [:print:] - [:space:]
+regexp      \[\[:
+	graph:
+
+snippet     lower
+abbr        [[:lower:]] a-z
+regexp      \[\[:
+	lower:
+
+snippet     print
+abbr        [[:print:]] [:graph:] + [:space:]
+regexp      \[\[:
+	print:
+
+snippet     punct
+abbr        [[:punct:]] [:graph:] - [:alnum:]
+regexp      \[\[:
+	punct:
+
+snippet     space
+abbr        [[:space:]]
+regexp      \[\[:
+	space:
+
+snippet     upper
+abbr        [[:upper:]] A-Z
+regexp      \[\[:
+	upper:
+
+snippet     xdigit
+abbr        [[:xdigit:]] 0-9A-Fa-f
+regexp      \[\[:
+	xdigit:
+
+snippet     IDENT
+abbr        [[:IDENT:]] 0-9A-Za-z_
+regexp      \[\[:
+	IDENT:
+
+snippet     IFS
+abbr        [[:IFS:]]
+regexp      \[\[:
+	IFS:
+
+snippet     IFSSPACE
+abbr        [[:space:]]
+regexp      \[\[:
+	IFSSPACE:
+
+snippet     INCOMPLETE
+abbr        [[:INCOMPLETE:]] (a byte for incomplete multibyte character)
+regexp      \[\[:
+	INCOMPLETE:
+
+snippet     INVALID
+abbr        [[:INVALID:]] (a invalid byte for multibyte character)
+regexp      \[\[:
+	INVALID:
+
+snippet     WORD
+abbr        [[:WORD:]] (What's in ${WORDCHARS})
+regexp      \[\[:
+	WORD:
+
+# misc
+snippet     zinit
+options     head
+	zinit ice wait'${1:!0}' ${2:lucid}
+	zinit ${3:light} `getreg('+')=='' ? '<\`0\`>' : substitute(getreg('+'), '\%(^\%(http[s]\=\|git\)\%(://\|@\)github\.com[/:]\|\.git$\)', '', 'g')`
+

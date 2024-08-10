@@ -1,0 +1,109 @@
+
+# Snippets for Nim
+# vim:set noet:
+
+snippet     blockk
+alias       bk:
+abbr        block: stmt
+options     head
+	block:
+		${0:TARGET}
+
+snippet     whilee
+alias       wl:
+abbr        while cond: stmt
+options     head
+	while ${1:#:cond}:
+		${0:TARGET}
+
+snippet     whenisMainModule
+alias       main: whenmain whenMain
+abbr        when isMainModule:
+options     head
+	when isMainModule:
+		${0:TARGET}
+
+snippet     whenfalse
+alias       wf:
+abbr        when false: stmt
+options     head
+	when false:
+		${0:TARGET}
+
+snippet     whendefined
+alias       wd:
+abbr        when defined(SYMBOL):
+options     head
+	when defined(${1:#:symbol}):
+		${0:TARGET}
+
+snippet     whennotdefined
+alias       wnd:
+abbr        when not defined(SYMBOL):
+options     head
+	when not defined(${1:#:symbol}):
+		${0:TARGET}
+
+snippet     whennotdefinednimscript
+alias       ndn:
+abbr        when not defined(nimscript):
+options     head
+	when not defined(nimscript):
+		${0:TARGET}
+
+snippet     nosideeffectblock
+alias       nse:
+abbr        {.noSideEffect.}:
+options     head
+	{.noSideEffect.}:
+		${0:TARGET}
+
+snippet     castnosideeffect
+alias       cnse:
+abbr        {.cast(noSideEffect).}:
+options     head
+	{.cast(noSideEffect).}:
+		${0:TARGET}
+
+snippet     try_except_E
+alias       tryee:
+abbr        try: stmt;except E: stmt;
+options     head
+	try:
+		${0:TARGET}
+	except ${1:#:Exception}:
+		${2}
+
+snippet     try_except
+alias				trye:
+abbr        try: stmt; except: stmt;
+options     head
+	try:
+		${0:TARGET}
+	except:
+		${1}
+
+snippet     casty
+abbr        cast[typeof(p)](cast[int](p))
+	cast[typeof(${1})](cast[int](${1:#:p}))
+
+snippet     raise_new
+alias       raisen
+abbr        raise newException(E, "msg")
+options     head
+	raise newException(${1:#:Exception}, "${2:#:Message}")
+
+snippet     discard_todo
+alias       disto
+abbr        discard "TODO"
+options     head
+	discard "TODO"
+
+snippet     discard_triple_quote
+alias       dtq
+abbr        discard """..."""
+options     head
+	discard """
+		${0}
+	"""
+

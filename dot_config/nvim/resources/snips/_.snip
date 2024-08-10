@@ -1,0 +1,28 @@
+# vim:noet:
+
+#
+# GLOBAL SNIPPETS
+#
+
+
+snippet     ft
+abbr        # vim:ft=
+options     head
+	# vim:ft=${1:#:filetype}:
+
+snippet     noet
+abbr        # vim:noet:
+options     head
+	# vim:noet:
+
+snippet     sol
+abbr        solarizedalias
+options     head
+	solarizedalias
+
+snippet     github
+abbr        github.com
+options     word
+	https://github.com/${2:#:solarizedalias}/${0}
+
+

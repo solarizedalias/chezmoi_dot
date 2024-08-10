@@ -1,0 +1,77 @@
+# vim:noet:
+
+#### idiom/phrase
+
+snippet     try_expect
+alias       trye
+abbr        try expect(...);
+options     head
+	try expect($1);
+
+snippet     catch
+abbr        catch |...| {...};
+options     word
+
+
+
+#### common construct
+
+snippet     test
+abbr        test "..." {...}
+options     head
+	test "${1}" {
+		${0:TARGET}
+	}
+
+snippet     fn
+abbr        fn ...(...) {...}
+options     head
+	fn ${1}(${2}) ${3} {
+		${0:TARGET}
+	}
+
+snippet     blk
+abbr        {...}
+options     word
+	{
+		${0:TARGET}
+	}
+
+snippet     if
+abbr        if (...) {...}
+options     head
+	if ($1) {
+		${0:TARGET}
+	}
+
+
+snippet     while
+abbr        while (...) {...}
+options     head
+	while ($1) {
+		${0:TARGET}
+	}
+
+snippet     switch
+abbr        switch {...}
+options     head
+	switch ($1) {
+		${0:TARGET}
+	}
+
+snippet     cases
+alias       cs
+abbr        ... => {...},
+options     head
+	${1} => {
+		${0:TARGET},
+	}
+
+snippet     casee
+alias       ce
+abbr        ... => ...,
+options     head
+	${1} =>  ${0:TARGET},
+
+
+

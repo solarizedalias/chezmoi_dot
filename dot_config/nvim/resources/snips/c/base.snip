@@ -1,0 +1,47 @@
+
+# vim:set noet:
+
+snippet     #inc
+abbr        #include <>
+options     head
+	#include <${0}>
+
+snippet     #incl
+abbr        #include ""
+options     head
+	#include "${0}"
+
+snippet     mainv
+abbr        int main(void) {}
+options     head
+	int main(void) {
+		${0}
+	}
+
+snippet     main
+abbr        int main(int argc, char **argv) {}
+options     head
+	int main(int argc, char **argv) {
+		${0}
+	}
+
+snippet     comment
+alias       com
+abbr        /* */
+options     word
+	/* ${0:TARGET} */
+
+snippet     doc
+abbr        /** */
+options     head
+	/**
+	 * ${0}
+	 */
+
+snippet     for
+abbr        for (;;) {  }
+options     head
+	for (${1}) {
+		${0:TARGET}
+	}
+

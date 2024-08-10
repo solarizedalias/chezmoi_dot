@@ -1,0 +1,19 @@
+snippet     header
+alias       doc
+abbr        ### HEADER ###
+options     head
+	#######################################
+	# ${1:#:Description}
+	# Globals:
+	#   ${2:#:VAR1}
+	# Arguments:
+	#   ${3:#:Arguments}
+	#######################################
+
+snippet     todo
+abbr        # TODO
+options     head
+	# TODO(${1:solarizedalias}): ${2:#:Description} ${3:#:(bug ${4:#:which bug?\\\})}
+
+
+# vim: set noet:

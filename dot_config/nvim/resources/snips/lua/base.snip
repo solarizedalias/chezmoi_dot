@@ -1,0 +1,40 @@
+
+# vim:set noet:
+
+snippet     func
+abbr        function ...() end
+alias       fn
+options     head
+	function ${1:#:name}(${2:#:param})
+		${0}
+	end
+
+snippet     lfunc
+abbr        local function ...() end
+alias       lfn
+options     head
+	local function ${1:#:name}(${2:#:param})
+		${0}
+	end
+
+snippet     do
+abbr        do .. end
+options     head
+	do
+		${0:TARGET}
+	end
+
+snippet     for
+abbr        for ... do ... end
+options     head
+	for ${1} do
+		${0}
+	end
+
+snippet     if
+abbr        if ... then ... end
+options     head
+	if ${1:#:cond} then
+	  ${0}
+	end
+

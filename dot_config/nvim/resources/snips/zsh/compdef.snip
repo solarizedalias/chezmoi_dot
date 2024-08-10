@@ -1,0 +1,167 @@
+# vim:noet:
+
+#
+# SNIPPENTS FOR ZSH COMPLETIONS
+#
+
+
+snippet     opts
+abbr        options
+options     head
+	emulate -LR zsh
+	setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+	setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+	${0}
+
+snippet     vars
+abbr        comp variables
+options     head
+	local context curcontext=${curcontext} state line expl state_descr ret=1
+	typeset -A opt_args
+	${0}
+
+snippet     sub
+alias       cmds subc
+abbr        subcommands
+options     head
+	local -a subcommands=(
+		${0}
+	)
+
+snippet     _arg
+alias       arg arguments
+abbr        _arguments
+options     head
+	_arguments \\
+		${0} && ret=0
+
+snippet     _argSC
+alias       argSC argumentsSC
+abbr        _arguments -S -C
+options     head
+	_arguments -S -C \\
+		${0} && ret=0
+
+snippet     _alt
+alias       alt alternative
+abbr        _alternative
+options     head
+	_alternative \\
+		'${1:#:foo}:${2:#:}:${3:#:action}'
+			${0} && ret=0
+
+snippet     state
+abbr        case ${state} in
+options     head
+	case ${state} in
+		(${1:command_args})
+			${0}
+		;;
+	esac
+
+snippet     words
+abbr        case ${words[1]} in
+options     head
+	case ${words[1]} in
+		(${1})
+			${0}
+		;;
+	esac
+
+snippet     _msg
+alias       msg
+abbr        _message
+options     head
+  _message "${1:description}"
+
+snippet     desc
+alias       _desc _describe
+abbr        _describe
+options     head
+  _describe "${1:description}" ${2:array}
+
+#
+# Utility Functions
+#
+
+snippet     _cache_invalid
+alias       cacheinvalid ci
+abbr        _cache_invalid
+options     word
+	_cache_invalid ${1:#:cache_identifier}
+
+snippet     _directories
+alias       dirs directories
+abbr        _directories
+options     word
+	_directories
+
+snippet     _call_function
+alias       cf callfunction
+abbr        _call_function
+options     word
+	_call_function ${1:ret} ${2:#:func}
+
+snippet     _call_program
+alias       cp callprogram
+abbr        _call_program
+options     word
+	_call_program "${1:#:tag}" ${2:#:string}
+
+snippet     _command_names
+alias       cn commandnames
+abbr        _command_names
+options     word
+	_command_names
+
+snippet     _dispatch
+alias       dispatch disp
+abbr        _dispatch
+options     word
+	_dispatch ${1:tag} ${2:$1}
+
+snippet     _files
+alias       files
+abbr        _files
+options     word
+	_files
+
+snippet     _guard
+alias       guard
+abbr        _guard
+options     word
+	_guard "${1:#:pattern}" "${2:#:descr}"
+
+snippet     _path_files
+alias       pf pathfiles
+abbr        _path_files
+options     word
+	_path_files
+
+snippet     _retrieve_cache
+alias       retrievecache
+abbr        _retrieve_cache
+options     word
+	_retrieve_cache ${1:#:cache_identifier}
+
+snippet     _sep_parts
+alias       sepparts spp
+abbr        _sep_parts '(foo bar)' @ '(ftp news)'
+options     word
+	_sep_parts ${1:#:array1} ${2:#:separator} ${3:#:array2}
+
+snippet     _store_cache
+alias       storecache stc
+abbr        _store_cache
+options     word
+	_store_cache ${1:#:cache_identifier} ${2:#:param}
+
+snippet     _values
+alias       values
+abbr        _values -s , 'desc' '*foo[bar]' '(two)*one[num]:desc' 'two[baz]::desc:(1 2 3)'
+options     word
+	_values ${1:-s ${2:,\}} ${3:-S ${4:=\}} '${5:#:description}' ${6:#:spec}
+
+
+# vim:set noet:
+

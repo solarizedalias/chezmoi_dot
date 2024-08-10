@@ -1,0 +1,134 @@
+# vim: set noet:
+
+#
+# SNIPPETS FOR .shellspec files
+#
+
+snippet     Include
+alias       inc include
+abbr        Include
+options     head
+	Include ${1:#:./}${2:foo.sh}
+
+snippet     Before
+alias       before bfr
+abbr        Before "setup"
+options     head
+	Before "${1:setup}"
+
+snippet     After
+alias       after aft aftr afr
+abbr        After "cleanup"
+options     head
+	After "${1:setup}"
+
+snippet     Data
+alias       data dt
+abbr        Data #|<data> ...End
+options     head
+	Data
+		#|${0}
+	End
+
+snippet     Data:expand
+alias       dataex dtx
+abbr        Data:expand #|<data> ...End
+options     head
+	Data:expand
+		#|${0}
+	End
+
+snippet     Data:filter
+alias       datafilter dtf
+abbr        Data | <fileter> #|<data> ...End
+options     head
+	Data | ${1:<filter>}
+		#|${0}
+	End
+
+
+
+
+
+
+snippet     Describe
+alias       desc dsc
+abbr        Describe 'description' ...End
+options     head
+	Describe '${1:#:description}'
+		${0:TARGET}
+	End
+
+snippet     Context
+alias       context ctxt ctx
+abbr        Context 'description' ...End
+options     head
+	Context '${1:#:description}'
+		${0:TARGET}
+	End
+
+snippet     It
+alias       it
+abbr        It 'should do dat thang' ...End
+options     head
+	It '${1:#:shoud do dat thang}'
+		${0:TARGET}
+	End
+
+snippet     When-run
+alias       whenrun run
+abbr        When run <eval>
+options     head
+	When run ${1:evaluation}${0}
+
+snippet     When-call
+alias       whencall call
+abbr        When call <eval>
+options     head
+	When call ${1:evaluation}${0}
+
+snippet     When-run-command
+alias       whenruncommand command cmd whenruncmd wrc
+abbr        When run  command <command>
+options     head
+	When run command ${1:evaluation}${0}
+
+snippet     When-run-script
+alias       whenrunscript script scpt whenrunscpt wrsp
+abbr        When run script <shell script>
+options     head
+	When run script ${1:evaluation}${0}
+
+snippet     When-run-source
+alias       whenrunsource source src whenrunsrc wrso
+abbr        When run script <shell script>
+options     head
+	When run source ${1:evaluation}${0}
+
+snippet     The
+alias       the
+abbr        The <subject> should
+options     head
+	The ${0} should
+
+snippet     word
+alias       wordof wo
+abbr        word <num> of
+options     word
+	word ${1:<num>} of ${0}
+
+snippet     line
+alias       lineof lo
+abbr        line <num> of
+options     word
+	line ${1:<num>} of ${0}
+
+#
+# matcher
+#
+snippet     exist
+alias       ex ext
+abbr        be exist
+options     head
+	be exist
+
