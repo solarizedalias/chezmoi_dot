@@ -14,7 +14,7 @@ function echo_run() {
 
 echo_run git fetch --prune
 
-echo_run git branch -vv | \
+git branch -vv | \
   grep ': gone]' | \
   awk '{print $1}' | \
   xargs -t -r git branch -d
