@@ -179,6 +179,7 @@ command! DeinInstallAll call dein#install()
 " ################################# Lua ######################################
 if s:nvim
   lua require('lua_config')
+  lua require('my_clipboard').init()
   lua require('diagnostic_config')
   lua require('my_cmd')
   lua require('my_maps')
