@@ -17,11 +17,12 @@ let g:ale_close_preview_on_insert = 1
 let g:ale_echo_delay = 100
 
 let g:ale_linters = {
-      \ 'nim': [ 'nimcheck' ],
-      \ 'vim': [ 'vint' ],
+      \ 'nim':        [ 'nimcheck' ],
+      \ 'vim':        [ 'vint' ],
       \ 'javascript': [ 'eslint' ],
-      \ 'jsonc': [],
-      \ 'rust': [],
+      \ 'typescript': [],
+      \ 'jsonc':      [],
+      \ 'rust':       [],
       \}
 
 let g:ale_fixers = {
@@ -29,8 +30,8 @@ let g:ale_fixers = {
       \ 'nim':        [ 'nimpretty', 'trim_whitespace' ],
       \ 'c':          [ 'clang-format' ],
       \ 'lua':        [ 'stylua' ],
-      \ 'javascript': ['prettier'],
-      \ 'rust': ['rustfmt'],
+      \ 'javascript': [ 'prettier' ],
+      \ 'rust':       [ 'rustfmt' ],
       \}
 
 let g:ale_fix_on_save_ignore = {
@@ -39,9 +40,6 @@ let g:ale_fix_on_save_ignore = {
       \ }
 
 let g:ale_pattern_options = {
-      \ '.*dein.*\.toml$' : {'ale_linters': [], 'ale_fixers': []},
-      \ '\.min\.js$'      : {'ale_linters': [], 'ale_fixers': []},
-      \ '\.min\.css$'     : {'ale_linters': [], 'ale_fixers': []},
       \ '\.txt$'          : {'ale_linters': [], 'ale_fixers': []},
       \}
 
