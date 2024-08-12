@@ -37,7 +37,7 @@ function verbose() {
   local LABEL="$1"
   integer COLOR="${COLOR:-0}"
   [[ -t 2 ]] && (( COLOR = 1 ))
-  LABEL="${(LC)LABEL}"
+  LABEL="${(LCs:_:)LABEL}"
   if (( COLOR )); then
     case ${1} in
       (removing)
@@ -45,6 +45,9 @@ function verbose() {
       ;;
       (succeeded)
         LABEL=%F{green}${LABEL}%f
+      ;;
+      (succeeded_with_sudo)
+        LABEL=%F{magenta}${LABEL}%f
       ;;
       (failed)
         LABEL=%F{red}${LABEL}%f
@@ -125,8 +128,10 @@ fi
 (
 
   cd -q ${DIR:h} || exit 1
-  if builtin zcompile -Uz ${ZWC:?} ${(@)targets}; then
+  if builtin zcompile -Uz ${ZWC:?} ${(@)targets} 2>/dev/null ; then
     verbose succeeded "${DIR:h}/${ZWC}"
+  elif sudo zsh -c "builtin zcompile -Uz ${ZWC:?} ${(@)targets}"; then
+    verbose succeeded_with_sudo "${DIR:h}/${ZWC}"
   else
     verbose failed "${DIR:h}/${ZWC}"
     exit 1
