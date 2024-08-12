@@ -103,7 +103,6 @@ setalias() {
   alias ng='nimgrep'
   alias cn='choosenim'
 
-
   {{ if eq .chezmoi.os "darwin" }}
   alias ldd='otool -L'
   alias otl='otool -l'
@@ -149,8 +148,8 @@ setalias() {
   alias gp='ghostplay'
   alias tunes='vim -c "Tunes" -c "q"'
 
-  alias cbat='{{- .bat }} --paging never'
-  alias bl='{{- .bat }} --pager=less'
+  alias cbat='bat --paging never'
+  alias bl='bat --pager=less'
 
   #
   # .+* V .+*
