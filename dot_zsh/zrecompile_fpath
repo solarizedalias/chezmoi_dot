@@ -12,24 +12,40 @@ setopt warn_create_global typeset_silent no_auto_pushd
 setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
 setopt NO_clobber NO_append_create NO_notify NO_monitor
 
-local -a fpath_save=( ${(@)fpath} )
+local -a excludes=( ${(R@)argv:#(-[^-]|--[^-][[:graph:]]##)} )
+local -a opts=(     ${(M@)argv:#(-[^-]|--[^-][[:graph:]]##)} )
 
-trap "fpath=(${fpath_save:?}); return 1" 1 2 3 15
+local -a fpath_dirs=( ${(@)^fpath:s/(.zwc)#(#e)//}(ND-/) )
 
-local -a excludes=( ${(R@)@:#(-[^-]|--[^-][[:graph:]]##)} )
-local -a opts=( ${(M@)@:#(-[^-]|--[^-][[:graph:]]##)} )
+local -a root_owned
+local -a user_owned
 
-fpath=( ${(@)^fpath:s/(.zwc)#(#e)//}(ND-/) )
-
+local ZCPD_CMD=~/.zsh/zbin/zcompile-digest
 local -a children
 local fp
-for fp in ${(@)fpath}; do
-  zcompile-digest ${(@)opts} ${fp} ${(@)excludes} &
+
+for fp in ${(@)fpath_dirs}; do
+  local F_OWNER=$(stat -c "%U" ${fp})
+
+  if [[ ${F_OWNER} == ${USER} ]]; then
+    user_owned+=( ${fp} )
+  elif [[ ${F_OWNER} == root ]]; then
+    root_owned+=( ${fp} )
+  fi
+done
+
+for fp in ${(@)root_owned}; do
+  # to cache the password
+  sudo true >/dev/null
+  sudo ${ZCPD_CMD} ${(@)opts} ${fp} ${(@)excludes} &
+  children+=( $! )
+done
+
+for fp in ${(@)user_owned}; do
+  ${ZCPD_CMD} ${(@)opts} ${fp} ${(@)exclude} &
   children+=( $! )
 done
 
 builtin wait ${(@)children}
 builtin jobs &>/dev/null
-
-fpath=( ${(@)fpath_save:?fpath_save not set} )
 

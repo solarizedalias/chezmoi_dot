@@ -1,3 +1,5 @@
+#
+# vim:ft=zsh
 
 emulate -LR zsh
 setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
