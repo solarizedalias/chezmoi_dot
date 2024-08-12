@@ -33,7 +33,7 @@ zinit snippet https://raw.githubusercontent.com/junegunn/fzf/master/shell/comple
 zinit ice wait'0b' id-as'fzf/completion.zsh-atload.zsh' lucid
 zinit snippet ${HOME}/.zsh_init/zinit/snippets/fzf/completion.zsh/atload.zsh
 
-zinit ice wait'1d' ver'work' lucid atload'
+zinit ice wait'1d' lucid atload'
   zle -N enable-fzf-tab enable-fzf-tab
   bindkey "^]^E" enable-fzf-tab
 '
