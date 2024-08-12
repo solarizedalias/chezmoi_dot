@@ -75,10 +75,11 @@ if [ -z "${ZSH_VERSION}" ]; then
   export VISUAL
   export EDITOR
 
-# LS_COLORS
-source ~/.zsh_init/misc/ls_colors.zsh
+  # LS_COLORS
+  source ~/.zsh_init/misc/ls_colors.zsh
 fi
 
+{{ if eq .chezmoi.hostname "MBP2017SA" }}
 #
 # RUBY
 #
@@ -118,7 +119,6 @@ type rustc >/dev/null 2>/dev/null && {
 #
 source_if_available "${DROOT:-${HOME}/dotfiles}.zsh_init_cache.d/opam-init.zsh"
 
-{{ if eq .chezmoi.hostname "MBP2017SA" }}
 #
 # BREW
 #
@@ -128,6 +128,8 @@ HOMEBREW_BUNDLE_MAS_SKIP='iMovie'
 export HOMEBREW_BUNDLE_MAS_SKIP
 HOMEBREW_MOONSHINE_FILE='/Users/ykksd/solarizedalias/gists/submodules/Brewfile/Moonshine'
 export HOMEBREW_MOONSHINE_FILE
+
+
 
 # ~~~~~~~~~~~~~~~~~ LESS is MORE ~~~~~~~~~~~~~~~~~~~
 LESS='--tabs=2 --LONG-PROMPT --ignore-case'
