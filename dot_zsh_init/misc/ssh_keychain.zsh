@@ -10,5 +10,5 @@
   local -a keys
   keys=( ${(f)"$(<${F})"} )
 
-  builtin eval "$(keychain -q --agents ssh --eval ${(@)keys})"
+  builtin eval "$(keychain --noask -q --eval ${(@)keys})"
 }
