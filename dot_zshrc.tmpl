@@ -122,6 +122,11 @@ source ~/.zsh_init/misc/less.zsh
 source ~/.zsh_init/misc/terminal.zsh
 source ~/.zsh_init/misc/lscolors.zsh
 source ~/.zsh_init/misc/zlscolors.zsh
+
+{{- if eq .chezmoi.os "linux" }}
+source ~/.zsh_init/misc/ssh_keychain.zsh
+{{ end -}}
+
 source ~/.zsh_init/completion/zstyle.zsh
 
 setalias
