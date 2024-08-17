@@ -710,7 +710,8 @@ lua_post_source = '''
 # '''
 
 [[plugins]]
-repo = '~/solarizedalias/github.com/boltlessengineer/smart-tab.nvim'
+# repo = '~/solarizedalias/github.com/boltlessengineer/smart-tab.nvim'
+repo = 'solarizedalias/smart-tab.nvim''
 lua_post_source = '''
   local st = require('smart-tab')
   st.setup({
