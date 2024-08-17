@@ -82,6 +82,11 @@ path=( ${(@)path} /snap/bin(ND-/) )
 
 path=(
   ~/bin(ND-/)
+
+{{- if and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
+  ~/winbin(ND-/)
+{{ end }}
+
   ~/.local/bin(ND-/)
 
   ~/relma/bin(ND-/)                             # jiro4989/relma
@@ -121,6 +126,8 @@ path=(
 {{- if eq .chezmoi.os "darwin" }}
   ~/.orbstack/bin(ND-/)
   ~/Library/Python/2.7/bin(ND-/)                # Python2.7 pip
+{{ else }}
+
 {{ end }}
   ~/.cabal/bin(ND-/)                            # Cabal (haskel)
   ~/fakebin(ND-/)
