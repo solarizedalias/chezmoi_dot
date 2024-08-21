@@ -1,4 +1,4 @@
-local repr_func = require('repr/impl').repr_func
+local repr_impl = require('repr/impl')
 
 local inspect = {}
 
@@ -48,7 +48,12 @@ end
 --longControlCharEscapes["\127"]="\\127"
 
 local function escape(str)
-  return (str:gsub('\\', '\\\\'):gsub('(%c)%f[0-9]', longControlCharEscapes):gsub('%c', shortControlCharEscapes))
+  return (
+    str
+      :gsub('\\', '\\\\')
+      :gsub('(%c)%f[0-9]', longControlCharEscapes)
+      :gsub('%c', shortControlCharEscapes)
+  )
 end
 
 local function isIdentifier(str)
@@ -169,11 +174,13 @@ local function processRecursive(process, item, path, visited)
     for k, v in rawpairs(processed) do
       processedKey = processRecursive(process, k, makePath(path, k, inspect.KEY), visited)
       if processedKey ~= nil then
-        processedCopy[processedKey] = processRecursive(process, v, makePath(path, processedKey), visited)
+        processedCopy[processedKey] =
+          processRecursive(process, v, makePath(path, processedKey), visited)
       end
     end
 
-    local mt = processRecursive(process, getmetatable(processed), makePath(path, inspect.METATABLE), visited)
+    local mt =
+      processRecursive(process, getmetatable(processed), makePath(path, inspect.METATABLE), visited)
     if type(mt) ~= 'table' then
       mt = nil
     end -- ignore not nil/table __metatable field
@@ -301,7 +308,9 @@ function Inspector:putValue(v)
   elseif tv == 'table' then
     self:putTable(v)
   elseif tv == 'function' then
-    self:puts(repr_func(v, self.level, self.indent))
+    self:puts(repr_impl.repr_func(v, self.level, self.indent))
+  elseif tv == 'userdata' then
+    self:puts(repr_impl.repr_userdata(v, self:getId(v)))
   else
     self:puts('<', tv, ' ', self:getId(v), '>')
   end

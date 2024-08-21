@@ -42,11 +42,26 @@ end
 
 ---@param f function
 ---@param level number indent level
+---@param tab string
 function M.repr_func(f, level, tab)
   vim.validate({ level = { level, 'number' }, tab = { tab, 'string' } })
   local info = debug.getinfo(f)
   local params = repr_params(info.nparams, info.isvararg)
-  return indent(string.format(func_repr_fmt, params, info.what, info.source, info.linedefined), level, tab)
+  return indent(
+    string.format(func_repr_fmt, params, info.what, info.source, info.linedefined),
+    level,
+    tab
+  )
+end
+
+---@param v userdata
+---@param id string
+function M.repr_userdata(v, id)
+  local mt = getmetatable(v)
+  if mt and mt.__tostring then
+    return tostring(v)
+  end
+  return '<userdata ' .. id .. '>'
 end
 
 return M
