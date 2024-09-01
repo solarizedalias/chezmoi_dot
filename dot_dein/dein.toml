@@ -41,7 +41,7 @@ repo = 'tyru/capture.vim'
 repo = 'voldikss/vim-floaterm'
 hook_add = '''
 
-  let g:floaterm_shell = '/usr/local/bin/zsh -l'
+  let g:floaterm_shell = executable('/usr/local/bin/zsh -l') ? '/usr/local/bin/zsh -l' : '/bin/zsh -l'
 
   nnoremap <leader>zz <cmd>FloatermToggle<cr>
   command! Gitui FloatermNew --width=220 --height=60 gitui
