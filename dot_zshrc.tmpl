@@ -27,6 +27,9 @@ fpath=(
   ~/.zsh_hooks(N-/)
   ~/.zsh_widget(N-/)
   ~/.local/share/zsh/functions(N-/)
+{{ if eq .chezmoi.os "linux" }}
+  /home/linuxbrew/.linuxbrew/share/zsh/site-functions(N-/)
+{{ end }}
   ${(@)fpath}
 )
 
