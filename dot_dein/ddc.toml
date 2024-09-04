@@ -444,6 +444,7 @@ hook_post_source = '''
 
   call ddc#custom#patch_filetype('zsh', 'sources',
         \ [
+        \   'codeium',
         \   'shell-native',
         \   'neosnippet',
         \   'tabnine',
@@ -476,9 +477,10 @@ hook_post_source = '''
   " XXX: probably it's better to enable nvim-lua by per-buffer basis
   "      But I don't have in mind any easy way to figure out if the buffer is for neovim lua code.
   call ddc#custom#patch_filetype('lua', 'sources', [
-    \ 'tabnine',
-    \ 'nvim-lua',
     \ 'lsp',
+    \ 'nvim-lua',
+    \ 'codeium',
+    \ 'tabnine',
     \ 'neosnippet',
     \ 'around',
     \ 'buffer',
