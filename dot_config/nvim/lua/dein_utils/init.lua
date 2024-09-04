@@ -94,8 +94,8 @@ end
 M._clean_unused_old = clean_unused_old
 
 function M.clean_unused()
-  local get = require('dein_utils/clean').get
-  local dein_vim_plugins = get()
+  local get_vim_plugins = require('dein_utils/clean').get_vim_plugins
+  local dein_vim_plugins = get_vim_plugins()
   table.sort(dein_vim_plugins)
   local unused = vim.fn['dein#check_clean']()
   table.sort(unused)
@@ -135,7 +135,7 @@ local cmd_opt = { nargs = 1, complete = 'customlist,dein#command#update#complete
 function M.init()
   add_command('DeinLog', cmd_DeinLog, cmd_opt)
   add_command('DeinOpenGH', cmd_DeinOpenGH, cmd_opt)
-  add_command('DeinCleanUnuseed', cmd_DeinCleanUnused, { nargs = 0 })
+  add_command('DeinCleanUnused', cmd_DeinCleanUnused, { nargs = 0 })
 end
 
 return M
