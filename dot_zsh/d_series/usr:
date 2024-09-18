@@ -1,0 +1,50 @@
+
+# ==========================================================
+# usr_
+# Thu Nov 19 09:00:35 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a match mbegin mend
+
+local USR='/usr'
+
+if [[ $1 == d ]]; then
+
+  # if [[ $2 == (#b)(${USR}/)([^/]##)/([^/]##) ]]; then
+  #   typeset -ag reply
+  #   reply=( usr:${match[2]}/${match[3]} $(( ${#match[1]} + ${#match[2]} + 1 + ${#match[3]} )) )
+  # else
+  #   return 1
+  # fi
+  return 1
+
+elif [[ $1 == n ]]; then
+
+  [[ $2 == (#b)usr:(?*)(|/(?*)) ]] || return 1
+  typeset -ag reply
+  reply=( ${USR}/${match[1]}[^/]#(ND-/) ${USR}/${match[1]}[^/]#/${match[3]}[^/]#(ND-/) )
+elif [[ $1 == c ]]; then
+
+  local context curcontext=${curcontext} state line expl state_descr
+  integer ret=1
+  local -A opt_args val_args
+  local -a usrdirs=( ${USR}/*/*(#qND-/:s@${USR}/@@) )
+  usrdirs=( usr:${(@)^usrdirs} )
+
+  local -a opts=( -f )
+  [[ ${RBUFFER[1]} == \] ]] || opts=( '-S]' )
+  _wanted dynamic-dirs expl '/usr/' compadd ${(@)opts} -a usrdirs && ret=0
+
+  return ret
+else
+  return 1
+fi
+
+return 0
+

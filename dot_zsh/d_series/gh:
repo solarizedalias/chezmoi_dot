@@ -1,0 +1,53 @@
+
+# ==========================================================
+# gh:
+# Thu Nov  5 15:26:26 2020
+# AUTHOR: solarizedalias
+#
+# ==========================================================
+
+emulate -LR zsh
+setopt warn_create_global typeset_silent no_short_loops no_auto_pushd
+setopt extended_glob      glob_dots      rc_quotes      hist_subst_pattern
+
+local -a match mbegin mend
+
+local GHD="${SRCROOT:-${HOME}/solarizedalias/github.com}"
+
+if [[ $1 == d ]]; then
+  # turn the directory path into a name
+
+  # if [[ $2 == (#b)(${GHD}/)([^/]##)/([^/]##) ]]; then
+  #   typeset -ag reply
+  #   reply=( gh:${match[2]}/${match[3]} $(( ${#match[1]} + ${#match[2]} + 1 + ${#match[3]} )) )
+  # else
+  #   return 1
+  # fi
+  return 1
+
+elif [[ $1 == n ]]; then
+  # turn the name into a directory path
+
+  [[ $2 == (#b)gh:(?*) ]] || return 1
+  typeset -ag reply
+  reply=( ${GHD}/*/${match[1]}(ND-/) )
+
+elif [[ $1 == c ]]; then
+  # completion code
+
+  local context curcontext=${curcontext} state line expl state_descr
+  integer ret=1
+  local -A opt_args val_args
+  local -a ghdirs=( ${GHD}/*/*(ND-/:t) )
+  ghdirs=( gh:${(@)^ghdirs} )
+  local -a opts=( -f )
+  [[ ${RBUFFER[1]} == \] ]] || opts+=( '-S]' )
+  _wanted dynamic-dirs expl '~/solarizedalias/github.com/' compadd ${(@)opts} -a ghdirs && ret=0
+
+  return ret
+else
+  return 1
+fi
+
+return 0
+
