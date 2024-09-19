@@ -1,5 +1,5 @@
 # zstyle ':completion:*' auto-description 'specify: %d.'
-# zstyle ':completion:*' cache-path /Users/ykksd/.cache/shell/zsh
+# zstyle ':completion:*' cache-path ~/.cache/shell/zsh
 # zstyle :completion::complete:-command-:: cache-policy _path_commands_caching_policy
 # zstyle :completion::complete:docker:argument-1: cache-policy __docker_caching_policy
 # zstyle :completion::complete:docker-compose:argument-1: cache-policy __docker-compose_caching_policy
@@ -418,7 +418,7 @@ zstyle ':completion:*:zman:argument-rest:plugins' matcher 'r:|=** l:|=*'
 # zstyle ':completion::expand:*' substitute true
 # zstyle ':completion:*:*:-subscript-:*' tag-order indexes parameters
 # zstyle ':completion:*:*:' tag-order '!options' $'options:-single-letter:single\\ letter\\ options\n           options:-short:short\\ options\n           options:-long:long\\ options'
-# zstyle ':completion:*' urls /Users/ykksd/.urls
+# zstyle ':completion:*' urls ~/.urls
 # zstyle ':completion:*' use-cache true
 
 zstyle ':completion:*:*:(git|g|hub):*' user-commands \

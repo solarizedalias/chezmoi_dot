@@ -35,7 +35,7 @@
   # # compdef _gnu_generic pueue
   # compdef _gnu_generic memo
 
-  # # complete -o nospace -C /Users/ykksd/bin/vault vault
+  # # complete -o nospace -C ~/bin/vault vault
 
   # # This is soooooo sloooooooooooooowwwwwwwwwwwwwwww!!!!!!!!!!!!!!!!!!!!!!!
   # # source $(dirname $(gem which colorls))/tab_complete.sh

@@ -51,7 +51,7 @@ if [ -z "${ZSH_VERSION}" ]; then
   PATH="${PATH}:${HOME}/fakebin"
   PATH="${HOME}/.local/bin:${PATH}"
   PATH="${HOME}/bin:${PATH}"
-  PATH="/Users/ykksd/bin/kotoriotoko/BIN:${PATH}"
+  PATH="${HOME}/bin/kotoriotoko/BIN:${PATH}"
   PATH="${PATH}:${HOME}/shellshoccar/bin"
 
   # Wine
@@ -110,7 +110,7 @@ export TCLLIBPATH
 #
 type rustc >/dev/null 2>/dev/null && {
   # RUST_SRC_PATH="$(rustc --print sysroot)/lib/rustlib/src/rust/src"
-  RUST_SRC_PATH="/Users/ykksd/.rustup/toolchains/nightly-x86_64-apple-darwin"
+  RUST_SRC_PATH="${HOME}/.rustup/toolchains/nightly-x86_64-apple-darwin"
   export RUST_SRC_PATH
 }
 
@@ -122,11 +122,11 @@ source_if_available "${DROOT:-${HOME}/dotfiles}.zsh_init_cache.d/opam-init.zsh"
 #
 # BREW
 #
-HOMEBREW_BUNDLE_FILE='/Users/ykksd/solarizedalias/gists/submodules/Brewfile/Brewfile'
+HOMEBREW_BUNDLE_FILE="${HOME}/solarizedalias/gists/submodules/Brewfile/Brewfile"
 export HOMEBREW_BUNDLE_FILE
 HOMEBREW_BUNDLE_MAS_SKIP='iMovie'
 export HOMEBREW_BUNDLE_MAS_SKIP
-HOMEBREW_MOONSHINE_FILE='/Users/ykksd/solarizedalias/gists/submodules/Brewfile/Moonshine'
+HOMEBREW_MOONSHINE_FILE="${HOME}/solarizedalias/gists/submodules/Brewfile/Moonshine"
 export HOMEBREW_MOONSHINE_FILE
 
 

@@ -10,7 +10,7 @@ trap 'path=( '" ${(j: :)${(qqqq@)oldpath:?}} "' )' EXIT
 trap 'path=( '" ${(j: :)${(qqqq@)oldpath:?}} "' ); return 1' INT
 
 local -aU to_remove=(
-  '/Users/ykksd/miniconda3/bin'
+  "${HOME}/miniconda3/bin"
   ${(@M)path:#/usr/local/opt/*/gnubin}
   ${(@M)path:#/*/emscripten-core/emsdk/*}
 )
