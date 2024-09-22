@@ -87,8 +87,6 @@ path=(
   ~/winbin(ND-/)
 {{ end }}
 
-  ~/.local/bin(ND-/)
-
   ~/relma/bin(ND-/)                             # jiro4989/relma
   ~/.nimble/bin(ND-/)                           # nim
   ~/.nodebrew/current/bin(ND-/)                 # Node.js
@@ -101,6 +99,8 @@ path=(
   ~/.cargo/bin(ND-/)                            # Rust Cargo
   ~/.rbenv/shims(ND-/)                          # ruby
   ~/.dotnet/tools(ND-/)                         # dotnet
+
+  ~/.local/bin(ND-/)
 
 {{ if eq .chezmoi.os "darwin" }}
   /usr/local/bin(ND-/)                          # homebrew
