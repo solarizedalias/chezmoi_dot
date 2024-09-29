@@ -119,6 +119,8 @@ path=(
   /usr/local/opt/gnu-units/libexec/gnubin(ND-/) # units
   /usr/local/opt/make/libexec/gnubin(ND-/)      # make
   /usr/local/opt/bison/bin(ND-/)                # bison
+{{ else if eq .chezmoi.os "linux" }}
+  /opt/nvim(ND-/)
 {{ end }}
 
   "${(@)path}"
