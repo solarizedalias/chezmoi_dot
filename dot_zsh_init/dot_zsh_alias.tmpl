@@ -16,6 +16,9 @@ function zsh_alias() {
   alias xxxx='xa && pefp && pept && rehash && alias xxxx=x && x'
 {{ end }}
 
+  # help prevent adding dangerous commands to the shell history
+  alias rm=' rm'
+
   #
   # essentials for my Z life
   #
