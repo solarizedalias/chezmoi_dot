@@ -84,8 +84,10 @@ path=(
   ~/bin(ND-/)
 
 {{- if and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
+  # WSL specific
   ~/winbin(ND-/)
 {{ end }}
+  ~/.local/bin(ND-/)
 
   ~/relma/bin(ND-/)                             # jiro4989/relma
   ~/.nimble/bin(ND-/)                           # nim
@@ -93,18 +95,18 @@ path=(
   ~/.yarn/v1/bin(ND-/)                          # yarn global
   ~/.luarocks/bin(ND-/)                         # luarocks
 
-  /usr/local/opt/llvm/bin(ND-/)                 # brewed clang
   "${DENO_INSTALL::=${HOME}/.deno}/bin"(ND-/)   # deno
   ~/go/bin(ND-/)                                # Golang
   ~/.cargo/bin(ND-/)                            # Rust Cargo
   ~/.rbenv/shims(ND-/)                          # ruby
   ~/.dotnet/tools(ND-/)                         # dotnet
 
-  ~/.local/bin(ND-/)
-
 {{ if eq .chezmoi.os "darwin" }}
-  /usr/local/bin(ND-/)                          # homebrew
-  /usr/local/sbin(ND-/)                         # homebrew
+  # macOS specific
+
+  ~/.orbstack/bin(ND-/)
+
+  /usr/local/opt/llvm/bin(ND-/)                 # brewed clang
   /usr/local/opt/curl/bin(ND-/)                 # brewed curl
   /usr/local/opt/sqlite/bin(ND-/)               # sqlite3
   /usr/local/opt/openjdk/bin(ND-/)              # java
@@ -119,21 +121,17 @@ path=(
   /usr/local/opt/gnu-units/libexec/gnubin(ND-/) # units
   /usr/local/opt/make/libexec/gnubin(ND-/)      # make
   /usr/local/opt/bison/bin(ND-/)                # bison
+
+  /usr/local/bin(ND-/)                          # homebrew
+  /usr/local/sbin(ND-/)                         # homebrew
+
+  ~/Library/Python/2.7/bin(ND-/)                # Python2.7 pip
+  ~/fakebin(ND-/)
+
 {{ else if eq .chezmoi.os "linux" }}
   /opt/nvim(ND-/)
 {{ end }}
-
   "${(@)path}"
-
-{{- if eq .chezmoi.os "darwin" }}
-  ~/.orbstack/bin(ND-/)
-  ~/Library/Python/2.7/bin(ND-/)                # Python2.7 pip
-{{ else }}
-
-{{ end }}
-  ~/.cabal/bin(ND-/)                            # Cabal (haskel)
-  ~/fakebin(ND-/)
-  ~/shellshoccar/bin(ND-/)
 )
 
 {{- if eq .chezmoi.os "darwin" }}
