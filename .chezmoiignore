@@ -1,6 +1,11 @@
 **/*.zwc
 
 {{ if and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
+# WSL
 {{ else }}
 winbin/
+{{ end }}
+
+{{ if not (eq .chezmoi.os "darwin") }}
+.zsh/d_series/keg:
 {{ end }}
