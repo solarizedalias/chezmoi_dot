@@ -14,10 +14,14 @@
 # URL
 #
 
+{{ if stat "/.dockerenv" -}}
+{{- /* Docker container */ -}}
+{{ else }}
 [url "git@github.com:"]
   insteadOf = git://github.com/
   insteadOf = https://github.com/
   pushInsteadOf = https://github.com/
+{{- end -}}
 
 {{- if eq .chezmoi.os "darwin" }}
 [credential]

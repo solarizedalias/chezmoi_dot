@@ -1,4 +1,4 @@
-####
+# vim: ft=zsh:
 
 () {
   local CACHE="${HOME}/starship-init-zsh.zsh"
