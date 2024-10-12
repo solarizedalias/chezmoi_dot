@@ -14,7 +14,7 @@
 # URL
 #
 
-{{ if stat "/.dockerenv" -}}
+{{ if env "DOCKER_CONTAINER" -}}
 {{- /* Docker container */ -}}
 {{ else }}
 [url "git@github.com:"]
