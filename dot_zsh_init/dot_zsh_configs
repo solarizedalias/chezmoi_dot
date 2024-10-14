@@ -265,6 +265,7 @@ zstyle ':completion:*:*:docker-*:*' option-stacking yes
     zstyle ':chpwd:*'                recent-dirs-max     500
     zstyle ':chpwd:*'                recent-dirs-default true
     local   RECENT_DIRS_FILE="${XDG_CACHE_HOME:-${HOME}/.cache}/shell/zsh/chpwd-recent-dirs"
+    mkdir -p ${RECENT_DIRS_FILE:h}
     zstyle ':chpwd:*'                recent-dirs-file    ${RECENT_DIRS_FILE}
     zstyle ':chpwd:*'                recent-dirs-pushd   true
     local -a prune_pats=(
