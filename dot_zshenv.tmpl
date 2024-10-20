@@ -71,7 +71,8 @@ fi
 {{- if eq (get .chezmoi.osRelease "name") "Ubuntu" }}
 
 # TODO: move to .profile or any other common rcs (for other shells)
-(( ${+commands[brew]} )) && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+[[ -x /home/linuxbrew/.linuxbrew/bin/brew ]] &&
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
 # typeset -gx -U -T LD_LIBRARY_PATH ld_library_path ':'
 # ld_library_path=(
