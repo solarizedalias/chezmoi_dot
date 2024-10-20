@@ -16,6 +16,8 @@
   export STARSHIP_CONFIG
   STARSHIP_CONFIG=~/starship.toml
   () {
+    (( ${+commands[starship]} )) || return
+
     local CACHE="${HOME}/starship-init-zsh.zsh"
     if [[ -r ${CACHE} ]]; then
       . ${CACHE}
