@@ -49,6 +49,9 @@ zinit snippet https://raw.githubusercontent.com/docker/compose/master/contrib/co
 zinit ice wait'0' lucid as'completion' id-as'watchexec/_watchexec' atclone'mv zsh _watchexec'
 zinit snippet https://raw.githubusercontent.com/watchexec/watchexec/main/completions/zsh
 
+zinit ice wait'0' lucid as'completion'
+zinit light nix-community/nix-zsh-completions
+
 zinit ice wait"!1" silent
 zinit light solarizedalias/zconvey
 zinit ice wait"!1" as"command" pick"cmds/zc-bg-notify" silent
